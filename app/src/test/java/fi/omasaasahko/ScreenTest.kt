@@ -209,9 +209,15 @@ class ScreenTest {
             app.now.plusSeconds(86400),app.now.plusSeconds(120000),"Voimakasta sadetta. Testien esimerkkivaroitus.","",
             listOf(WarningArea("Uusimaa",listOf(polygon))),app.now)
         var dark by mutableStateOf(true)
+        var warningFontScale by mutableFloatStateOf(1f)
         var warnings by mutableStateOf(WarningsState(snapshot=WarningSnapshot(app.now,app.now,listOf(warning))))
-        compose.setContent { AppTheme(dark=dark,dynamic=false) { AppScreen(app,true,{},{},{},{},{},{},warnings=warnings,
-            onWarningsInterval={ warnings=warnings.copy(intervalMinutes=it) }) } }
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, warningFontScale)) {
+                AppTheme(dark=dark,dynamic=false) { AppScreen(app,true,{},{},{},{},{},{},warnings=warnings,
+                    onWarningsInterval={ warnings=warnings.copy(intervalMinutes=it) }) }
+            }
+        }
         compose.onNodeWithText("Varoitukset").performClick()
         screenshot("warnings-dark")
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Sadevaroitus"))
@@ -233,6 +239,12 @@ class ScreenTest {
         compose.onNodeWithText("Ilmoitusasetukset · 30 min ↓").performClick()
         compose.onNodeWithText("60 min").performScrollTo().performClick()
         assertEquals(60,warnings.intervalMinutes)
+        compose.runOnIdle { warningFontScale = 1.6f }
+        compose.onNodeWithTag("warnings-scroll").performScrollToIndex(1)
+        compose.onNodeWithTag("warning-days").performScrollToIndex(2)
+        screenshot("warnings-days-large-font-light")
+        compose.runOnIdle { dark = true }
+        screenshot("warnings-days-large-font-dark")
     }
 
     @Test fun `price alert switch is independent and notification opens its delivery day`() {

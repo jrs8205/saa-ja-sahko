@@ -1,6 +1,6 @@
 package fi.omasaasahko.ui
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -61,13 +61,12 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         }
         item {
             Text("Valitse päivä · vieritä sivulle", style = MaterialTheme.typography.labelLarge)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("warning-days")) {
-                item { FilterChip(selected = selectedDay == "all", onClick = { selectedDay = "all" },
-                    label = { Text("Kaikki") }, modifier = Modifier.testTag("warning-day-all")) }
+            Spacer(Modifier.height(10.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.testTag("warning-days")) {
+                item { WarningDayCard("Kaikki", "päivät", selectedDay == "all", "warning-day-all") { selectedDay = "all" } }
                 items(selectableDays, key = { it.toString() }) { day ->
-                    FilterChip(selected = selectedDay == day.toString(), onClick = { selectedDay = day.toString() },
-                        label = { Column { Text(dayLabel(day)); Text(day.format(DateTimeFormatter.ofPattern("d.M.")), style = MaterialTheme.typography.labelSmall) } },
-                        modifier = Modifier.testTag("warning-day-$day"))
+                    WarningDayCard(dayLabel(day), day.format(DateTimeFormatter.ofPattern("d.M.")),
+                        selectedDay == day.toString(), "warning-day-$day") { selectedDay = day.toString() }
                 }
             }
         }
@@ -145,6 +144,22 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         item {
             Text("Alue määräytyy FMI:n varoitusrajoista. Likimääräinen sijainti voi vaikuttaa kohdistukseen lähellä alueen rajaa. Mukana ovat myös kaikki syötteessä julkaistut tulevat varoitukset.", style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = { uri.openUri("https://www.ilmatieteenlaitos.fi/varoitukset") }) { Text("Varoitukset FMI:n sivuilla ↗") }
+        }
+    }
+}
+
+@Composable
+private fun WarningDayCard(title: String, subtitle: String, selected: Boolean, tag: String, onClick: () -> Unit) {
+    Surface(selected = selected, onClick = onClick, modifier = Modifier.testTag(tag),
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+        Column(Modifier.widthIn(min = 112.dp).heightIn(min = 80.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, softWrap = false)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, softWrap = false)
         }
     }
 }
