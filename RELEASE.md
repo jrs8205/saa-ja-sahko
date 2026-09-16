@@ -38,7 +38,7 @@ C7:0B:B7:BE:13:92:07:37:47:8F:A8:1C:DD:82:12:BE:BE:DD:C8:AC:8B:63:26:C7:96:4B:6F
 
 Googlelle annetaan **varmenteen** sormenjälki, ei ylempänä olevaa APK-tiedoston tiivistettä. Julkinen varmenne on `docs/release-certificate.pem`. Yksityinen allekirjoitusavain ei kuulu Googleen tai GitHubiin.
 
-[Googlen rekisteröintiohje](https://support.google.com/android-developer-console/answer/16640821?hl=en) voi edellyttää konsolin antaman omistajuustodistuksen sisällyttämistä allekirjoitettuun APK:hon. Rekisteröintiä ei ole tehty puolestasi. Jos konsoli pyytää `adi-registration.properties`-tiedostoa, sen sisältö tarvitaan konsolista erillistä rekisteröintipakettia varten.
+**Käyttäjä vahvisti 16.9.2026 rekisteröinnin onnistuneen Google Android Developer Consolessa.** Rekisteröinti ei ole enää avoin tehtävä. Konsoliin ei kirjauduttu avustajan toimesta; tieto perustuu käyttäjän vahvistukseen. Sovellusta ei julkaistu Play-kauppaan. [Googlen rekisteröintiohje](https://support.google.com/android-developer-console/answer/16640821?hl=en) on viitteenä mahdollisia myöhempiä tarpeita varten.
 
 ## Avaimen säilyttäminen ja tulevat päivitykset
 
