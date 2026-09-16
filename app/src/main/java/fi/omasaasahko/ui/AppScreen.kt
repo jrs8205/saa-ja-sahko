@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import fi.omasaasahko.AppState
 import fi.omasaasahko.WarningsState
+import fi.omasaasahko.data.PriceAlertState
 import fi.omasaasahko.domain.Resolution
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,10 +25,12 @@ fun AppScreen(
     warnings: WarningsState = WarningsState(), onWarningsRefresh: () -> Unit = {},
     onWarningsEnable: (Boolean) -> Unit = {}, onWarningsInterval: (Int) -> Unit = {},
     onWarningsTest: () -> Unit = {}, onNotificationSettings: () -> Unit = {}, warningsRequest: Int = 0,
+    priceAlerts: PriceAlertState = PriceAlertState(), onPriceAlerts: (Boolean) -> Unit = {}, pricesRequest: Int = 0, priceDateRequest: String? = null,
 ) {
     // Restore the tab on rotation/process recreation; a new launch always starts with weather.
     var tab by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(warningsRequest) { if (warningsRequest > 0) tab = 2 }
+    LaunchedEffect(pricesRequest) { if (pricesRequest > 0) tab = 1 }
     val weatherScroll = rememberLazyListState()
     val priceScroll = rememberLazyListState()
     val warningsScroll = rememberLazyListState()
@@ -57,7 +60,7 @@ fun AppScreen(
                 onRefresh = refresh,
                 modifier = Modifier.widthIn(max = 720.dp).fillMaxSize()) {
                 if (tab == 0) WeatherScreen(state, permitted, onPermission, onSettings, onLocationSettings, weatherScroll)
-                else if (tab == 1) ElectricityScreen(state, onResolution, priceScroll, onVat)
+                else if (tab == 1) ElectricityScreen(state, onResolution, priceScroll, onVat, priceAlerts, onPriceAlerts, onNotificationSettings, pricesRequest, priceDateRequest)
                 else WarningsScreen(state, warnings, permitted, warningsScroll, onWarningsEnable, onWarningsInterval,
                     onWarningsTest, onNotificationSettings, onPermission)
             }

@@ -16,6 +16,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.semantics.SemanticsProperties
 import fi.omasaasahko.domain.*
+import fi.omasaasahko.data.PriceAlertState
 import fi.omasaasahko.ui.*
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -51,6 +52,7 @@ class ScreenTest {
         compose.onNodeWithText("NYKYISEN TUNNIN KESKIHINTA").assertIsDisplayed()
         assertEquals(Resolution.HOUR, state.resolution)
         compose.onNodeWithText("Huomenna").performClick()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Tuntikeskiarvot · 24 tuntia"))
         compose.onNodeWithText("Tuntikeskiarvot · 24 tuntia").assertIsDisplayed()
         compose.onNodeWithText("Sää", useUnmergedTree = true).performClick()
         compose.onNodeWithText("Tikkurila, Vantaa").assertIsDisplayed()
@@ -64,7 +66,8 @@ class ScreenTest {
         screenshot("weather-dark")
         compose.onNodeWithText("Pörssi-sähkö").performClick()
         screenshot("electricity-dark")
-        compose.onNodeWithText("Hintavärit · snt/kWh").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Hintavärit · snt/kWh"))
+        compose.onNodeWithText("Hintavärit · snt/kWh").assertIsDisplayed()
         screenshot("electricity-chart-dark")
         compose.runOnIdle { dark = false }
         screenshot("electricity-chart-light")
@@ -90,7 +93,8 @@ class ScreenTest {
             }
         }
         compose.onNodeWithText("Pörssi-sähkö").performClick()
-        compose.onNodeWithText("Tunti").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Tunti"))
+        compose.onNodeWithText("Tunti").assertIsDisplayed()
         screenshot("electricity-large-font")
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("price-timeline"))
         compose.onNodeWithTag("price-timeline").performScrollTo()
@@ -229,6 +233,23 @@ class ScreenTest {
         compose.onNodeWithText("Ilmoitusasetukset · 30 min ↓").performClick()
         compose.onNodeWithText("60 min").performScrollTo().performClick()
         assertEquals(60,warnings.intervalMinutes)
+    }
+
+    @Test fun `price alert switch is independent and notification opens its delivery day`() {
+        var alerts by mutableStateOf(PriceAlertState(allowed=true))
+        var request by mutableIntStateOf(0)
+        var date by mutableStateOf("2026-09-17")
+        compose.setContent { AppTheme(dynamic=false) { AppScreen(PreviewData.state,true,{},{},{},{},{},{},
+            priceAlerts=alerts,onPriceAlerts={ alerts=alerts.copy(enabled=it) },pricesRequest=request,priceDateRequest=date) } }
+        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("price-alert-switch").assertIsOff().performClick().assertIsOn()
+        compose.runOnIdle { request++ }
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Torstaina 17.9."))
+        compose.onNodeWithText("Torstaina 17.9.").assertIsDisplayed()
+        // A notification opened on its delivery day must select today, not the following day.
+        compose.runOnIdle { date="2026-09-16"; request++ }
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Keskiviikkona 16.9."))
+        compose.onNodeWithText("Keskiviikkona 16.9.").assertIsDisplayed()
     }
 
     private fun screenshot(name: String) {

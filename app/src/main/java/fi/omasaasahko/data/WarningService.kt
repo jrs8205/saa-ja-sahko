@@ -59,7 +59,8 @@ class WarningService(context: Context) {
                     .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build())
         } else {
             WorkManager.getInstance(context).cancelUniqueWork(WORK)
-            NotificationManagerCompat.from(context).cancelAll()
+            val manager = context.getSystemService(NotificationManager::class.java)
+            manager.activeNotifications.filter { it.notification.channelId == CHANNEL }.forEach { manager.cancel(it.tag,it.id) }
         }
     }
     suspend fun cached(): WarningSnapshot? = withContext(Dispatchers.IO) { mutex.withLock {

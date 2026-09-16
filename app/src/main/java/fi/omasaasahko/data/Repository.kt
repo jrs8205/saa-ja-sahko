@@ -21,7 +21,7 @@ interface DataRepository {
     suspend fun prices(now: Instant): PriceData
 }
 
-class Repository(context: Context) : DataRepository {
+class Repository(context: Context, private val cachePrices: Boolean = true) : DataRepository {
     private val cache = File(context.filesDir, "forecast-cache").apply { mkdirs() }
     private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(25, TimeUnit.SECONDS).callTimeout(35, TimeUnit.SECONDS).build()
@@ -82,7 +82,7 @@ class Repository(context: Context) : DataRepository {
             .addQueryParameter("start", date.atStartOfDay(HELSINKI).toInstant().toString())
             .addQueryParameter("end", date.plusDays(2).atStartOfDay(HELSINKI).toInstant().minusSeconds(1).toString()).build())
         val parsed = Parsers.prices(body, now)
-        save("prices", JSONObject().put("fetched", now.toString()).put("body", body))
+        if (cachePrices) save("prices", JSONObject().put("fetched", now.toString()).put("body", body))
         return parsed
     }
 

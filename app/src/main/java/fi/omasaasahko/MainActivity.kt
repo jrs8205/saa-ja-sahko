@@ -22,13 +22,17 @@ import fi.omasaasahko.ui.*
 
 class MainActivity : ComponentActivity() {
     private var warningsRequest by mutableIntStateOf(0)
+    private var pricesRequest by mutableIntStateOf(0)
+    private var priceDateRequest by mutableStateOf<String?>(null)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.getBooleanExtra("showWarnings", false)) warningsRequest++
+        if (intent.getBooleanExtra("showPrices", false)) { priceDateRequest=intent.getStringExtra("priceDate"); pricesRequest++ }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (intent.getBooleanExtra("showWarnings", false)) warningsRequest++
+        if (intent.getBooleanExtra("showPrices", false)) { priceDateRequest=intent.getStringExtra("priceDate"); pricesRequest++ }
         enableEdgeToEdge()
         val preferences = getSharedPreferences("preferences", MODE_PRIVATE)
         val locator = DeviceLocation(applicationContext)
@@ -46,9 +50,14 @@ class MainActivity : ComponentActivity() {
             AppTheme {
                 val model: AppViewModel = viewModel(factory = factory)
                 val warningsModel: WarningsViewModel = viewModel()
+                val priceAlertModel: PriceAlertViewModel = viewModel()
+                val priceAlerts by priceAlertModel.state.collectAsStateWithLifecycle()
                 val warnings by warningsModel.state.collectAsStateWithLifecycle()
                 val state by model.state.collectAsStateWithLifecycle()
                 LaunchedEffect(state.place) { warningsModel.place(state.place) }
+                LaunchedEffect(state.prices) { priceAlertModel.prices(state.prices) }
+                LaunchedEffect(pricesRequest) { if (pricesRequest > 0) model.refreshPrices() }
+                val priceNotificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> priceAlertModel.enable(granted) }
                 val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     warningsModel.enable(granted)
                 }
@@ -60,11 +69,11 @@ class MainActivity : ComponentActivity() {
                 DisposableEffect(owner, model) {
                     val observer = LifecycleEventObserver { _, event ->
                         if (event == Lifecycle.Event.ON_START) {
-                            permitted = locator.permitted(); model.start(permitted); warningsModel.start()
+                            permitted = locator.permitted(); model.start(permitted); warningsModel.start(); priceAlertModel.resume()
                         } else if (event == Lifecycle.Event.ON_STOP) { model.stop(); warningsModel.stop() }
                     }
                     owner.lifecycle.addObserver(observer)
-                    if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) { model.start(permitted); warningsModel.start() }
+                    if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) { model.start(permitted); warningsModel.start(); priceAlertModel.resume() }
                     onDispose { owner.lifecycle.removeObserver(observer); model.stop(); warningsModel.stop() }
                 }
                 AppScreen(state, permitted,
@@ -80,7 +89,12 @@ class MainActivity : ComponentActivity() {
                         else notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }, onWarningsInterval = warningsModel::interval, onWarningsTest = warningsModel::test,
                     onNotificationSettings = { startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)) },
-                    warningsRequest = warningsRequest)
+                    warningsRequest = warningsRequest, priceAlerts=priceAlerts, pricesRequest=pricesRequest, priceDateRequest=priceDateRequest,
+                    onPriceAlerts = { enabled ->
+                        if (!enabled) priceAlertModel.enable(false)
+                        else if (PriceAlerts(applicationContext).allowed()) priceAlertModel.enable(true)
+                        else priceNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    })
             }
         }
     }

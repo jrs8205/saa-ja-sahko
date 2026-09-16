@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fi.omasaasahko.AppState
+import fi.omasaasahko.data.PriceAlertState
 import fi.omasaasahko.domain.*
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -36,9 +37,11 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scroll: LazyListState, onVat: (Boolean) -> Unit = {}) {
+fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scroll: LazyListState, onVat: (Boolean) -> Unit = {},
+    alerts: PriceAlertState = PriceAlertState(), onAlerts: (Boolean) -> Unit = {}, onNotificationSettings: () -> Unit = {}, pricesRequest: Int = 0, priceDateRequest: String? = null) {
     var tomorrow by rememberSaveable { mutableStateOf(false) }
     val today = state.now.atZone(HELSINKI).toLocalDate()
+    LaunchedEffect(pricesRequest) { if (pricesRequest > 0) tomorrow = priceDateRequest == today.plusDays(1).toString() }
     val date = today.plusDays(if (tomorrow) 1 else 0)
     val rows = remember(state.prices, date, state.resolution, state.includeVat) { Prices.slots(state.prices?.quarters.orEmpty(), date, state.resolution, state.includeVat) }
     val current = remember(state.prices, today, state.resolution, state.now, state.includeVat) {
@@ -81,6 +84,19 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
             }
         }
         state.pricesError?.let { item { Notice(it) } }
+        item {
+            Card {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Ilmoita huomisen hinnat", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                        Switch(checked=alerts.enabled,onCheckedChange=onAlerts,modifier=Modifier.testTag("price-alert-switch"))
+                    }
+                    Text("Keskihinta sekä halvin ja kallein tunti. Ilmoitus kerran, kun kaikki huomisen hinnat ovat saatavilla.",style=MaterialTheme.typography.bodySmall)
+                    Text("Taustatarkistus 30 min välein. Android voi viivästyttää ilmoitusta.",style=MaterialTheme.typography.bodySmall)
+                    if (!alerts.allowed) TextButton(onClick=onNotificationSettings) { Text("Ilmoitusasetukset") }
+                }
+            }
+        }
         item {
             Row(Modifier.fillMaxWidth().testTag("vat-switch")
                 .toggleable(value = state.includeVat, role = Role.Switch, onValueChange = onVat)
