@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Real transparent separations keep the sun and bolt legible when tinted. -->
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.6" android:strokeLineCap="round"
+        android:pathData="M40,23 L40,26 M26.5,28 L29,30.5 M22,41 L25,41 M53.5,28 L51,30.5" />
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M28,41 A12,12 0,0 1,51,36.2 C42,34.6 34,39.7 31.5,47.7 L30.5,48 C28.8,46.1 28,43.7 28,41 Z" />
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M36,71 C29,71 25,67 25,61 C25,55 29,51 35,51 C37,42 47,39 54,43 C59,45 61,49 62,52 L58.1,50.5 L44.2,69.5 L54.5,69.5 L54,71 Z M72,52.1 C78,53.7 81,58 81,63 C81,68 77,71 71,71 L65.9,71 L77.6,58.5 L66.8,58.5 Z" />
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M59,53 L49,67 L58,67 L53,82 L72,61 L63,61 L68,53 Z" />
+</vector>
