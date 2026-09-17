@@ -1,5 +1,7 @@
 # 0.2.2:n toinen katselmointi ja korjaukset — 17.9.2026
 
+Tämä on toisen kierroksen historiallinen tilanne. Uusin korjausraportti: [REVIEW-0.2.2-ROUND3.md](REVIEW-0.2.2-ROUND3.md). Kolmas kierros korvaa muun muassa alla kuvatun TTL-odotuksen ja paikannimen säilytystavan.
+
 Lähtötila: puhdas työpuu, HEAD `7cd2461`, toiminnalliset muutokset commitissa `2073661`. katselmoinnin raportti tarkistettiin lähdekoodista, tuotantopolkujen regressiotesteillä sekä debug/release-käännöksillä ja lintillä. Korjattu koodi ja testit ovat commitissa **`6a761fa`**. Alla oleva tilanne kuvaa tämän korjauskierroksen lopputulosta. Fyysisiä puhelimia tai Pebbleä ei käytetty.
 
 ## Uudet 15 kohtaa

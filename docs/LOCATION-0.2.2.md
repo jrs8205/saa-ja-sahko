@@ -1,6 +1,6 @@
 # Paikkahaku, FMI-asemat ja ilmoitusten sijainti — 0.2.2
 
-Uusin korjaus- ja varmennustilanne: [REVIEW-0.2.2.md](REVIEW-0.2.2.md). Alla olevat aiemmat testimäärät ja APK-tiiviste kuvaavat niitä edeltäviä käännöksiä.
+Uusin korjaus- ja varmennustilanne: [REVIEW-0.2.2-ROUND3.md](REVIEW-0.2.2-ROUND3.md). Alla olevat aiemmat testimäärät ja APK-tiiviste kuvaavat niitä edeltäviä käännöksiä.
 
 17.9.2026. VersionName 0.2.2, versionCode 6. Toiminnalliset muutokset ovat commitissa `2073661`, joka sisältää myös aiemmat paikalliset 0.2.1-muutokset. Käyttäjä pyysi lähdekoodin ja dokumentaation commitoinnin sekä pushin GitHubin main-haaraan. Käyttäjä valitsi lähimmän FMI-aseman havainnot, katseltavan paikan koordinaattien ennusteet ja ilmoitusten seuraavan puhelimen sijaintia.
 
@@ -22,7 +22,7 @@ Hakulaatikko kattaa ensin 25 kilometrin ympyrän, tarvittaessa 100 ja 300 km. As
 
 ## Ilmoitukset
 
-Uuden paikannuksen alkaessa vanhan paikan uusien varoitusten lähettäminen estetään. Tuoreet koordinaatit tallennetaan heti; nimi valmistuu erikseen. Jos sovellus suljetaan nimen haun aikana, jo saadut tuoreet koordinaatit sallitaan taustavaroituksille. Jos tuoretta sijaintia ei saada, käyttöliittymä näyttää paikannuksen virheen ja seuranta jatkuu viimeksi saaduille laitekoordinaateille. Odotus puretaan virheessä, peruutuksessa ja sulkemisessa; prosessin kuoleman varalta se vanhenee kahdessa minuutissa. Alkuperäisen 0.2.2:n pysyvä estolippu korjattiin katselmointikierroksella. Jo näkyvää ilmoitusta ei peruta pelkän paikannuksen alkamisen takia.
+Uuden paikannuksen alkaessa vanhan paikan uusien varoitusten lähettäminen estetään. Tuoreet koordinaatit tallennetaan heti; nimi valmistuu erikseen. Jos sovellus suljetaan nimen haun aikana, jo saadut tuoreet koordinaatit sallitaan taustavaroituksille. Jos tuoretta sijaintia ei saada, käyttöliittymä näyttää paikannuksen virheen ja seuranta jatkuu viimeksi saaduille laitekoordinaateille. Odotus puretaan virheessä, peruutuksessa ja sulkemisessa; prosessin kuollessa muistin odotus katoaa heti. Odotus kuuluu sen aloittaneelle palveluinstanssille. Alkuperäisen 0.2.2:n pysyvä estolippu korjattiin katselmointikierroksella. Jo näkyvää ilmoitusta ei peruta pelkän paikannuksen alkamisen takia.
 
 Tuoreen sijainnin jälkeen viimeinen tuore CAP-snapshot arvioidaan uudelleen. Verkkosyöte haetaan sovelluksen käynnistys-/päivitysloopissa, ei erikseen jokaisesta paikan muutoksesta. Jo näkyvän, saman alueellisen varoituksen paikkateksti päivitetään hiljaisesti; käyttäjän jo poistamaa samansisältöistä varoitusta ei tuoda takaisin. Taustalla ei paikanneta, joten matkalla sovellus on avattava.
 
@@ -56,7 +56,7 @@ $env:SAA_PRICE_CHECK = '0'
 
 Valmis paikallinen paketti: `Saa-Sahko-0.2.2-release.apk`. APK:n SHA-256: `D4B77C62928C96998D1D8633C66222CD084079D094A1CC50C3154DA70464DCDC`. Aiemmat 0.2.0- ja 0.2.1-APK:t säilyivät muuttumattomina.
 
-Tässä työssä ei käytetty puhelimia tai Pebbleä, asennettu APK:ta eikä tehty GitHub-releasea. Käyttäjä antoi myöhemmin luvan commitointiin ja GitHub-pushiin; toiminnallinen commit on `2073661` ja dokumentaatio tulee seuraavaan commitiin. Puhelimien viimeksi erikseen varmennettu versio on 0.2.1; tämän toteutuksen kahden puhelimen käytös ja pitkä tausta-ajastus on vielä kokeiltava laitteilla.
+Tässä työssä ei käytetty puhelimia tai Pebbleä, asennettu APK:ta eikä tehty GitHub-releasea. Käyttäjä antoi myöhemmin luvan commitointiin ja GitHub-pushiin; alkuperäinen toiminnallinen commit on `2073661` ja sen dokumentaatio `7cd2461`. Puhelimien viimeksi erikseen varmennettu versio on 0.2.1; tämän toteutuksen kahden puhelimen käytös ja pitkä tausta-ajastus on vielä kokeiltava laitteilla.
 
 ## Aiemman 15 kohdan katselmoinnin suhde muutokseen
 
