@@ -1,6 +1,7 @@
 package fi.omasaasahko.data
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -42,13 +43,20 @@ class WarningService(context: Context) {
     fun allowed(): Boolean = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED &&
         NotificationManagerCompat.from(context).areNotificationsEnabled() &&
         context.getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL)?.importance != NotificationManager.IMPORTANCE_NONE
-    fun place(): Place? = runCatching {
-        val p = JSONObject(requireNotNull(prefs.getString("place", null)))
-        Place(p.getDouble("lat"), p.getDouble("lon"), p.getString("name"), Instant.parse(p.getString("at")))
-    }.getOrNull()
-    fun savePlace(place: Place) {
-        prefs.edit { putString("place", JSONObject().put("lat", place.latitude).put("lon", place.longitude)
-            .put("name", place.name).put("at", place.locatedAt.toString()).toString()) }
+    val locationPending: Boolean get() = prefs.getBoolean("locationPending", false)
+    fun place(): Place? = synchronized(placeLock) { runCatching {
+        placeFromJson(JSONObject(requireNotNull(prefs.getString("place", null))))
+    }.getOrNull() }
+    fun beginLocationUpdate() = synchronized(placeLock) {
+        prefs.edit(commit = true) { putBoolean("locationPending", true) }
+    }
+    fun savePlace(place: Place, ready: Boolean = true) = synchronized(placeLock) {
+        prefs.edit(commit = true) { putString("place", place.toJson().toString()); putBoolean("locationPending", !ready) }
+    }
+    suspend fun reevaluate() {
+        val now = Instant.now()
+        cached()?.takeIf { java.time.Duration.between(it.fetchedAt, now).seconds in 0..900 }
+            ?.let { notifyNew(it, now) }
     }
     fun setEnabled(value: Boolean) {
         prefs.edit { putBoolean("enabled", value) }
@@ -106,13 +114,15 @@ class WarningService(context: Context) {
         })
     }
     @android.annotation.SuppressLint("MissingPermission")
-    internal fun notifyNew(snapshot: WarningSnapshot, now: Instant) {
-        if (!enabled || !allowed() || !DeviceLocation(context).permitted() || snapshot.partial) return
+    internal fun notifyNew(snapshot: WarningSnapshot, now: Instant) { synchronized(placeLock) {
+        if (locationPending || !enabled || !allowed() || !DeviceLocation(context).permitted() || snapshot.partial) return
         val place = place() ?: return
         createChannel()
         val manager = NotificationManagerCompat.from(context)
         val local = snapshot.local(place, now)
         val active = local.associateBy { it.fingerprint(place) }
+        val existing = context.getSystemService(NotificationManager::class.java).activeNotifications
+            .filter { it.notification.channelId == CHANNEL }.associateBy { it.tag }
         val seen = runCatching { JSONObject(prefs.getString("seen", "{}")!!) }.getOrDefault(JSONObject())
         val posted = prefs.getStringSet("posted", emptySet()).orEmpty().toSet()
         // A full snapshot replaces the preceding one. Removed/cancelled/expired alerts disappear.
@@ -121,21 +131,23 @@ class WarningService(context: Context) {
         seen.keys().forEach { key -> if (seen.optLong(key) > now.epochSecond) kept.put(key, seen.getLong(key)) }
         active.forEach { (key, warning) ->
             if (!enabled || place() != place || !DeviceLocation(context).permitted()) return
-            if (!kept.has(key)) {
-                val title = "${warning.level.label}: ${warning.event}"
-                val text = "${place.name} · ${updatedLabel(warning.onset)}–${updatedLabel(warning.expires)}\n${warning.description}"
-                manager.notify(key, 1, notification(title, text).setTimeoutAfter((warning.expires.toEpochMilli() - now.toEpochMilli()).coerceAtLeast(1)).build())
+            val title = "${warning.level.label}: ${warning.event}"
+            val text = "${place.name} · ${updatedLabel(warning.onset)}–${updatedLabel(warning.expires)}\n${warning.description}"
+            val previous = existing[key]?.notification
+            if (!kept.has(key) || (previous != null && previous.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() != text)) {
+                manager.notify(key, 1, notification(title, text).setOnlyAlertOnce(kept.has(key))
+                    .setTimeoutAfter((warning.expires.toEpochMilli() - now.toEpochMilli()).coerceAtLeast(1)).build())
                 kept.put(key, warning.expires.epochSecond)
             }
         }
         prefs.edit(commit = true) { putString("seen", kept.toString()); putStringSet("posted", active.keys) }
-    }
+    } }
     @android.annotation.SuppressLint("MissingPermission")
     fun testNotification() {
         if (!allowed()) return
         createChannel()
         NotificationManagerCompat.from(context).notify("test", 2,
-            notification("Säävaroitusten testi", "Ilmoitukset toimivat. Tämä on testi, ei FMI:n säävaroitus.").setTimeoutAfter(60_000).build())
+            notification("Säävaroitusten testi", "Tämä on testi, ei FMI:n säävaroitus. Jos näet tämän kellossa, säävaroituskanavan välitys toimii.").setTimeoutAfter(60_000).build())
     }
     private fun notification(title: String, text: String): NotificationCompat.Builder {
         val intent = Intent(context, MainActivity::class.java).putExtra("showWarnings", true)
@@ -144,9 +156,10 @@ class WarningService(context: Context) {
         return NotificationCompat.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_warning_notification)
             .setContentTitle(title).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setContentIntent(pending).setAutoCancel(true).setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setLocalOnly(false)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
     }
-    private fun createChannel() {
+    fun createChannel() {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, "Oman alueen säävaroitukset", NotificationManager.IMPORTANCE_HIGH).apply {
                 description = "FMI:n keltaiset, oranssit ja punaiset varoitukset sekä tulevat päivät"
@@ -156,6 +169,7 @@ class WarningService(context: Context) {
         const val FEED = "https://alerts.fmi.fi/cap/feed/atom_fi-FI.xml"
         const val CHANNEL = "weather-warnings"
         const val WORK = "weather-warning-check"
+        private val placeLock = Any()
         private val mutex = Mutex()
         private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS).readTimeout(25, TimeUnit.SECONDS).callTimeout(40, TimeUnit.SECONDS).build()
     }

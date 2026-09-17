@@ -38,7 +38,8 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scroll: LazyListState, onVat: (Boolean) -> Unit = {},
-    alerts: PriceAlertState = PriceAlertState(), onAlerts: (Boolean) -> Unit = {}, onNotificationSettings: () -> Unit = {}, pricesRequest: Int = 0, priceDateRequest: String? = null) {
+    alerts: PriceAlertState = PriceAlertState(), onAlerts: (Boolean) -> Unit = {}, onNotificationSettings: () -> Unit = {}, pricesRequest: Int = 0, priceDateRequest: String? = null,
+    onAlertsTest: () -> Unit = {}) {
     var tomorrow by rememberSaveable { mutableStateOf(false) }
     val today = state.now.atZone(HELSINKI).toLocalDate()
     LaunchedEffect(pricesRequest) { if (pricesRequest > 0) tomorrow = priceDateRequest == today.plusDays(1).toString() }
@@ -92,8 +93,12 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
                         Switch(checked=alerts.enabled,onCheckedChange=onAlerts,modifier=Modifier.testTag("price-alert-switch"))
                     }
                     Text("Keskihinta sekä halvin ja kallein tunti. Ilmoitus kerran, kun kaikki huomisen hinnat ovat saatavilla.",style=MaterialTheme.typography.bodySmall)
-                    Text("Taustatarkistus 30 min välein. Android voi viivästyttää ilmoitusta.",style=MaterialTheme.typography.bodySmall)
+                    Text("Taustahaku klo 14–16 Suomen aikaa, 15 min välein. Haku loppuu ilmoituksen jälkeen. Android voi viivästyttää tarkistusta.",style=MaterialTheme.typography.bodySmall)
                     if (!alerts.allowed) TextButton(onClick=onNotificationSettings) { Text("Ilmoitusasetukset") }
+                    else if (alerts.enabled) {
+                        TextButton(onClick=onAlertsTest, enabled=!alerts.testPending) { Text("Testaa ilmoitus 10 s kuluttua") }
+                        if (alerts.testPending) Text("Lukitse puhelin nyt ja odota ilmoitusta kelloon.",style=MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }

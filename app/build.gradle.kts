@@ -8,6 +8,13 @@ val releaseProperties = Properties().apply {
     val source = rootProject.file("release-signing.properties")
     if (source.exists()) source.inputStream().use { load(it) }
 }
+val localProperties = Properties().apply {
+    val source = rootProject.file("local.properties")
+    if (source.exists()) source.inputStream().use { load(it) }
+}
+val mmlApiKey = (localProperties.getProperty("MML_API_KEY")?.trim()?.takeIf { it.isNotEmpty() }
+    ?: System.getenv("MML_API_KEY")?.trim().orEmpty())
+    .replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
 android {
     namespace = "fi.omasaasahko"
     compileSdk = 37
@@ -15,11 +22,12 @@ android {
         applicationId = "fi.omasaasahko"
         minSdk = 33
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.2.0"
+        versionCode = 6
+        versionName = "0.2.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "MML_API_KEY", "\"$mmlApiKey\"")
     }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     if (releaseProperties.isNotEmpty()) {
         signingConfigs {
             create("personalRelease") {

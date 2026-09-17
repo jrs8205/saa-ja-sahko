@@ -29,8 +29,9 @@ import java.time.format.DateTimeFormatter
 fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scroll: LazyListState,
     onEnable: (Boolean) -> Unit, onInterval: (Int) -> Unit, onTest: () -> Unit, onSettings: () -> Unit, onPermission: () -> Unit) {
     val place = app.place
+    val notificationPlace = app.devicePlace ?: app.place?.takeIf { app.selectedPlace == null }
     val snapshot = state.snapshot
-    val local = if (permitted) snapshot?.local(place, app.now).orEmpty() else emptyList()
+    val local = if (permitted || app.selectedPlace != null) snapshot?.local(place, app.now).orEmpty() else emptyList()
     val uri = LocalUriHandler.current
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var selectedDay by rememberSaveable { mutableStateOf("all") }
@@ -70,7 +71,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                 }
             }
         }
-        if (!permitted || place == null) item {
+        if ((!permitted && app.selectedPlace == null) || place == null) item {
             Card { Column(Modifier.padding(16.dp)) {
                 Text("Salli sijainti sääsivulla, jotta varoitukset kohdistuvat oikealle alueelle.")
                 TextButton(onClick = onPermission) { Text("Salli sijainti") }
@@ -84,10 +85,12 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                             Text("Varoitusilmoitukset", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text("Keltainen, oranssi ja punainen", style = MaterialTheme.typography.bodySmall)
                         }
-                        Switch(checked = state.enabled, onCheckedChange = onEnable, enabled = permitted && place != null)
+                        Switch(checked = state.enabled, onCheckedChange = onEnable, enabled = permitted && notificationPlace != null)
                     }
-                    Text("Seurataan viimeksi haettua sijaintia. Paikka päivittyy avatessasi sovelluksen.", style = MaterialTheme.typography.bodySmall)
-                    place?.let { Text("Sijainti haettu ${updatedLabel(it.locatedAt)}", style = MaterialTheme.typography.bodySmall) }
+                    Text("Ilmoitukset seuraavat puhelimen sijaintia. Suosikin tai hakutuloksen katselu ei muuta seurantaa.", style = MaterialTheme.typography.bodySmall)
+                    notificationPlace?.let { Text("Seurataan: ${it.name} · ${updatedLabel(it.locatedAt)}", style = MaterialTheme.typography.bodySmall) }
+                    if (app.locating || app.namingLocation) Text("Päivitetään ilmoitusten sijaintia…", style = MaterialTheme.typography.bodySmall)
+                    app.locationError?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                     TextButton(onClick = { settingsOpen = !settingsOpen }) { Text(if (settingsOpen) "Sulje ilmoitusasetukset ↑" else "Ilmoitusasetukset · ${state.intervalMinutes} min ↓") }
                     if (settingsOpen) {
                     Text("Taustatarkistus", style = MaterialTheme.typography.labelLarge)
@@ -101,7 +104,10 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                     if (!state.allowed) {
                         Text("Puhelimen ilmoituslupa tai ilmoituskanava on pois päältä.")
                         TextButton(onClick = onSettings) { Text("Avaa ilmoitusasetukset") }
-                    } else if (state.enabled) TextButton(onClick = onTest) { Text("Testaa ilmoitus") }
+                    } else if (state.enabled) {
+                        TextButton(onClick = onTest, enabled = !state.testPending) { Text("Testaa ilmoitus 10 s kuluttua") }
+                        if (state.testPending) Text("Lukitse puhelin nyt ja odota ilmoitusta kelloon.", style = MaterialTheme.typography.bodySmall)
+                    }
                     }
                 }
             }

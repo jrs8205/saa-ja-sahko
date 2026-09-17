@@ -32,7 +32,14 @@ import java.time.temporal.ChronoUnit
 
 @Composable
 fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit, onSettings: () -> Unit,
-                  onLocationSettings: () -> Unit, scroll: LazyListState) {
+                  onLocationSettings: () -> Unit, scroll: LazyListState,
+                  onPlaceSearch: (String) -> Unit = {}, onPlaceSelect: (PlaceResult) -> Unit = {},
+                  onPlaceFavorite: (PlaceResult) -> Unit = {}, onCurrentLocation: () -> Unit = {}) {
+    var pickerOpen by rememberSaveable { mutableStateOf(false) }
+    if (pickerOpen) {
+        PlacePicker(state, onPlaceSearch, onPlaceSelect, onPlaceFavorite) { pickerOpen = false }
+        return
+    }
     var expandedHours by rememberSaveable { mutableStateOf(false) }
     var expandedDay by rememberSaveable { mutableStateOf<String?>(null) }
     var rainSource by rememberSaveable { mutableIntStateOf(0) }
@@ -47,8 +54,28 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
     LazyColumn(state = scroll, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Column {
-                Text(if (state.locating) "PAIKANNETAAN…" else "SIJAINTISI", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                Text(if (state.selectedPlace != null) "VALITTU PAIKKA" else if (state.locating) "PAIKANNETAAN…" else "SIJAINTISI", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 Text(state.place?.name ?: "Sää lähelläsi", style = MaterialTheme.typography.headlineLarge)
+                state.place?.nearbyName?.let { name ->
+                    Text(name, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                    Text("Lähin paikannimi · Maanmittauslaitos", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (state.selectedPlace == null) {
+                    if (state.namingLocation) Text("Haetaan paikannimeä…", style = MaterialTheme.typography.bodySmall)
+                    state.place?.nearbyDistanceMeters?.takeIf { it > 750 }?.let {
+                        Text("Nimipiste ${decimal(it / 1000)} km päässä", style = MaterialTheme.typography.bodySmall)
+                    }
+                    state.place?.accuracyMeters?.takeIf { it > 200 }?.let {
+                        Text("Likimääräinen sijainti · tarkkuus noin ${decimal(it.toDouble(), 0)} m", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { pickerOpen = true }, modifier = Modifier.testTag("open-place-search")) { Text("Hae paikka / suosikit") }
+                    if (state.selectedPlace != null) TextButton(onClick = {
+                        onCurrentLocation(); if (!permitted) onPermission()
+                    }) { Text("Nykyinen sijainti") }
+                }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.padding(top = 4.dp)) {
                     Text(today.format(DateTimeFormatter.ofPattern("EEEE d. MMMM", FINNISH)).replaceFirstChar { it.titlecase(FINNISH) },
@@ -58,14 +85,14 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
                 }
             }
         }
-        if (!permitted) item {
+        if (!permitted && state.selectedPlace == null) item {
             Notice("Salli sijainti, niin saat oman alueesi ennusteet. Sijaintia käytetään vain sovelluksen ollessa auki.", "Salli sijainti", onPermission)
             TextButton(onClick = onSettings) { Text("Avaa sovelluksen asetukset") }
         }
-        state.locationError?.let { error -> item {
+        state.locationError?.takeIf { state.selectedPlace == null }?.let { error -> item {
             Notice(error, "Sijaintiasetukset", onLocationSettings)
         } }
-        if (state.place != null && (!permitted || state.locationError != null)) item {
+        if (state.selectedPlace == null && state.place != null && (!permitted || state.locationError != null)) item {
             Text("Viimeisin sijainti · ${updatedLabel(state.place.locatedAt)}", style = MaterialTheme.typography.bodySmall)
         }
         item {
@@ -183,8 +210,13 @@ private fun CurrentCard(source: WeatherSource, state: SourceState, now: Instant,
             if (source == WeatherSource.OPEN_METEO) Metric("UV, päivän maks.", decimal(uv))
             if (observed != null) {
                 HorizontalDivider(Modifier.padding(vertical = 10.dp), color = colors.accent.copy(alpha = 0.25f))
-                Text("Lähiaseman havainto", style = MaterialTheme.typography.labelSmall)
-                Text("${temperature(observed.temperature)} · ${clockLabel(observed.time, zone)}", style = MaterialTheme.typography.bodyMedium)
+                Text("Lähimmän FMI-aseman havainto", style = MaterialTheme.typography.labelSmall)
+                forecast.observationStation?.let { station ->
+                    Text(station.name, style = MaterialTheme.typography.bodyMedium)
+                    Text("${decimal(station.distanceMeters / 1000)} km valitusta paikasta", style = MaterialTheme.typography.bodySmall)
+                }
+                Text("${temperature(observed.temperature)} · ${clockLabel(observed.time, zone)}", style = MaterialTheme.typography.titleLarge)
+                Text("Tuuli ${decimal(observed.wind)} m/s", style = MaterialTheme.typography.bodySmall)
             }
             Spacer(Modifier.weight(1f))
             Text((if (stale) "Vanha ennuste · " else "Päivitetty ") + updatedLabel(forecast?.fetchedAt),

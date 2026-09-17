@@ -20,11 +20,15 @@ import fi.omasaasahko.R
 import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.time.Clock
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-data class PriceAlertState(val enabled: Boolean = false, val allowed: Boolean = false)
+data class PriceAlertState(val enabled: Boolean = false, val allowed: Boolean = false, val testPending: Boolean = false)
+
+/** Background requests may start only during 14:00 <= time < 16:00 in Finland. */
+internal fun priceBackgroundCheckAllowed(now: Instant): Boolean = now.atZone(HELSINKI).hour in 14..15
 
 /** Notification only after every quarter of the Finnish next day is available (92/96/100). */
 fun tomorrowPriceMessage(data: PriceData, now: Instant, includeVat: Boolean): String? {
@@ -52,19 +56,23 @@ class PriceAlerts(context: Context) {
         prefs.edit { putBoolean("enabled",value) }
         if (value) {
             channel()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK,ExistingPeriodicWorkPolicy.KEEP,
-                PeriodicWorkRequestBuilder<PriceAlertWorker>(30,TimeUnit.MINUTES)
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK,ExistingPeriodicWorkPolicy.UPDATE,
+                PeriodicWorkRequestBuilder<PriceAlertWorker>(15,TimeUnit.MINUTES)
                     .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build())
         } else {
             WorkManager.getInstance(context).cancelUniqueWork(WORK)
             NotificationManagerCompat.from(context).cancel("tomorrow-prices",3)
+            NotificationManagerCompat.from(context).cancel("price-test",4)
         }
     }
-    suspend fun check() {
-        if (!needsCheck(Instant.now())) return
+    suspend fun check(clock: Clock = Clock.systemUTC(),
+                      loadPrices: suspend (Instant) -> PriceData = { Repository(context, cachePrices=false).prices(it) }) {
+        val now = clock.instant()
+        // Check the actual execution time: Android may defer a worker or its retry overnight.
+        if (!priceBackgroundCheckAllowed(now) || !needsCheck(now)) return
         // No cache write here: foreground Repository owns its price-cache file.
-        val prices = Repository(context,cachePrices=false).prices(Instant.now())
-        consider(prices,Instant.now())
+        val prices = loadPrices(now)
+        consider(prices,clock.instant())
     }
     @android.annotation.SuppressLint("MissingPermission")
     fun consider(prices: PriceData, now: Instant) = synchronized(notificationLock) {
@@ -72,19 +80,33 @@ class PriceAlerts(context: Context) {
         val vat = context.getSharedPreferences("preferences",Context.MODE_PRIVATE).getBoolean("includeVat",true)
         val text = tomorrowPriceMessage(prices,now,vat) ?: return@synchronized
         if (!needsCheck(now)) return@synchronized
-        channel()
-        val intent = Intent(context,MainActivity::class.java).putExtra("showPrices",true).putExtra("priceDate",tomorrow(now))
-            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        val pending = PendingIntent.getActivity(context,11,intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val expiry = now.atZone(HELSINKI).toLocalDate().plusDays(2).atStartOfDay(HELSINKI).toInstant()
-        val notification = NotificationCompat.Builder(context,CHANNEL).setSmallIcon(R.drawable.ic_electricity_notification)
-            .setContentTitle("Huomisen sähköhinnat julkaistu").setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text)).setContentIntent(pending)
-            .setAutoCancel(true).setTimeoutAfter(expiry.toEpochMilli()-now.toEpochMilli()).build()
+        val notification = notification("Huomisen sähköhinnat julkaistu", text, tomorrow(now))
+            .setTimeoutAfter(expiry.toEpochMilli()-now.toEpochMilli()).build()
         NotificationManagerCompat.from(context).notify("tomorrow-prices",3,notification)
         prefs.edit(commit=true) { putString("lastDay",tomorrow(now)) }
     }
-    private fun channel() {
+    @android.annotation.SuppressLint("MissingPermission")
+    fun testNotification() {
+        if (!allowed()) return
+        NotificationManagerCompat.from(context).notify("price-test",4,
+            notification("Sähköhintojen testi", "Tämä on testi, ei hintatieto. Jos näet tämän kellossa, sähköhintakanavan välitys toimii.")
+                .setTimeoutAfter(60_000).build())
+    }
+    private fun notification(title: String, text: String, day: String? = null): NotificationCompat.Builder {
+        channel()
+        val intent = Intent(context,MainActivity::class.java).putExtra("showPrices",true)
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        if (day != null) intent.putExtra("priceDate",day)
+        // The test must not overwrite a real notification's delivery day or consume lastDay.
+        val pending = PendingIntent.getActivity(context,if (day == null) 12 else 11,intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        return NotificationCompat.Builder(context,CHANNEL).setSmallIcon(R.drawable.ic_electricity_notification)
+            .setContentTitle(title).setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(pending).setAutoCancel(true).setLocalOnly(false)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+    }
+    fun channel() {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL,"Huomisen sähköhinnat",NotificationManager.IMPORTANCE_DEFAULT))
     }
@@ -103,8 +125,13 @@ class PriceAlertViewModel(application: Application) : AndroidViewModel(applicati
     private val service = PriceAlerts(application)
     private val mutable = MutableStateFlow(PriceAlertState(service.enabled,service.allowed()))
     val state = mutable.asStateFlow()
-    fun resume() { mutable.value=PriceAlertState(service.enabled,service.allowed()); if (service.enabled) service.setEnabled(true) }
+    private val notificationTest = DelayedNotificationTest(viewModelScope,
+        { pending -> mutable.update { it.copy(testPending = pending) } },
+        { if (service.enabled) service.testNotification() })
+    fun test() = notificationTest.start()
+    fun resume() { mutable.update { it.copy(enabled=service.enabled,allowed=service.allowed()) }; if (service.enabled) service.setEnabled(true) }
     fun enable(value: Boolean) {
+        if (!value) notificationTest.cancel()
         service.setEnabled(value); resume()
         if (value) viewModelScope.launch { try { service.check() } catch (e: CancellationException) { throw e } catch (_: Exception) { /* Scheduled worker retries. */ } }
     }

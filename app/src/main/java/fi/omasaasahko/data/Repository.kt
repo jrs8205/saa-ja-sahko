@@ -2,6 +2,7 @@ package fi.omasaasahko.data
 
 import android.content.Context
 import android.util.AtomicFile
+import androidx.core.content.edit
 import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
 import okhttp3.*
@@ -19,9 +20,12 @@ interface DataRepository {
     suspend fun cached(): CachedData
     suspend fun weather(source: WeatherSource, place: Place, now: Instant): Forecast
     suspend fun prices(now: Instant): PriceData
+    fun rememberPlaceName(place: Place) {}
 }
 
 class Repository(context: Context, private val cachePrices: Boolean = true) : DataRepository {
+    private val names = context.getSharedPreferences("weather-place-name", Context.MODE_PRIVATE)
+    override fun rememberPlaceName(place: Place) { names.edit { putString("place", place.toJson().toString()) } }
     private val cache = File(context.filesDir, "forecast-cache").apply { mkdirs() }
     private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(25, TimeUnit.SECONDS).callTimeout(35, TimeUnit.SECONDS).build()
@@ -30,11 +34,17 @@ class Repository(context: Context, private val cachePrices: Boolean = true) : Da
         val weather = WeatherSource.entries.mapNotNull { source ->
             read(source.name)?.let { stored -> runCatching {
                 val p = stored.getJSONObject("place")
-                val place = Place(p.getDouble("lat"), p.getDouble("lon"), p.getString("name"), Instant.parse(p.getString("at")))
+                val storedPlace = placeFromJson(p)
+                val named = runCatching { placeFromJson(JSONObject(names.getString("place", "")!!)) }.getOrNull()
+                val place = named?.takeIf { storedPlace.name == "Nykyinen sijainti" &&
+                    it.latitude == storedPlace.latitude && it.longitude == storedPlace.longitude && it.locatedAt == storedPlace.locatedAt } ?: storedPlace
                 val at = Instant.parse(stored.getString("fetched"))
                 val body = stored.getString("body")
+                val observationBody = stored.optString("observation").takeIf(String::isNotBlank)
+                val observation = observationBody?.let { FmiObservations.parse(it, place, at) }
                 val result = if (source == WeatherSource.FMI) Parsers.fmi(body, place, at).copy(
-                    observation = stored.optString("observation").takeIf { it.isNotBlank() }?.let { Parsers.observation(it, place) }
+                    observation = observation?.weather ?: observationBody?.let { Parsers.observation(it, place) },
+                    observationStation = observation?.station
                 ) else Parsers.openMeteo(body, place, at)
                 source to result
             }.getOrNull() }
@@ -51,7 +61,7 @@ class Repository(context: Context, private val cachePrices: Boolean = true) : Da
         val body: String
         if (source == WeatherSource.FMI) {
             val observation = async {
-                try { get(fmiUrl(place, now, observations = true)) }
+                try { withTimeoutOrNull(15_000) { observationBody(place, now) } }
                 catch (e: CancellationException) { throw e }
                 catch (_: Exception) { null }
             }
@@ -69,11 +79,10 @@ class Repository(context: Context, private val cachePrices: Boolean = true) : Da
                 .addQueryParameter("timeformat", "unixtime").addQueryParameter("forecast_days", "7").build())
             result = Parsers.openMeteo(body, place, now)
         }
-        val obs = observationBody?.let { runCatching { Parsers.observation(it, place) }.getOrNull() }
+        val obs = observationBody?.let { runCatching { FmiObservations.parse(it, place, now) }.getOrNull() }
         save(source.name, JSONObject().put("fetched", now.toString()).put("body", body)
-            .put("observation", observationBody).put("place", JSONObject()
-                .put("lat", place.latitude).put("lon", place.longitude).put("name", place.name).put("at", place.locatedAt.toString())))
-        result.copy(observation = obs)
+            .put("observation", observationBody).put("place", place.toJson()))
+        result.copy(observation = obs?.weather, observationStation = obs?.station)
     }
 
     override suspend fun prices(now: Instant): PriceData {
@@ -86,7 +95,17 @@ class Repository(context: Context, private val cachePrices: Boolean = true) : Da
         return parsed
     }
 
-    private fun fmiUrl(place: Place, now: Instant, observations: Boolean = false): HttpUrl {
+    private suspend fun observationBody(place: Place, now: Instant): String? {
+        for (radius in listOf(25, 100, 300)) {
+            val body = get(fmiUrl(place, now, observations = true, radiusKm = radius))
+            val observation = FmiObservations.parse(body, place, now)
+            // The containing circle ensures no closer station is hidden just outside the bbox.
+            if (observation != null && observation.station.distanceMeters <= radius * 1000) return body
+        }
+        return null
+    }
+
+    internal fun fmiUrl(place: Place, now: Instant, observations: Boolean = false, radiusKm: Int = 25): HttpUrl {
         // WFS rejects fractional seconds, even though they are valid ISO-8601 instants.
         val wholeSecond = now.truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
         val start = if (observations) wholeSecond.minusSeconds(90 * 60) else now.atZone(HELSINKI).toLocalDate().atStartOfDay(HELSINKI).toInstant()
@@ -94,17 +113,12 @@ class Repository(context: Context, private val cachePrices: Boolean = true) : Da
         val end = if (observations) wholeSecond else now.atZone(HELSINKI).toLocalDate().plusDays(7).atStartOfDay(HELSINKI).toInstant()
         val url = "https://opendata.fmi.fi/wfs".toHttpUrl().newBuilder()
             .addQueryParameter("service", "WFS").addQueryParameter("version", "2.0.0").addQueryParameter("request", "getFeature")
-            .addQueryParameter("storedquery_id", if (observations) "fmi::observations::weather::simple" else "fmi::forecast::edited::weather::scandinavia::point::simple")
+            .addQueryParameter("storedquery_id", if (observations) "fmi::observations::weather::multipointcoverage" else "fmi::forecast::edited::weather::scandinavia::point::simple")
             .addQueryParameter("parameters", if (observations) "t2m,ws_10min,wd_10min" else "Temperature,FeelsLike,WindSpeedMS,WindDirection,Precipitation1h,SmartSymbol,Sunrise,Sunset")
             .addQueryParameter("starttime", start.toString()).addQueryParameter("endtime", end.toString())
             .addQueryParameter("timestep", if (observations) "10" else "60")
-        if (observations) {
-            val west = (place.longitude - 0.6).coerceAtLeast(-180.0)
-            val east = (place.longitude + 0.6).coerceAtMost(180.0)
-            val south = (place.latitude - 0.3).coerceAtLeast(-90.0)
-            val north = (place.latitude + 0.3).coerceAtMost(90.0)
-            url.addQueryParameter("bbox", "$west,$south,$east,$north")
-        } else url.addQueryParameter("latlon", "${place.latitude},${place.longitude}")
+        if (observations) url.addQueryParameter("bbox", FmiObservations.bbox(place, radiusKm))
+        else url.addQueryParameter("latlon", "${place.latitude},${place.longitude}")
         return url.build()
     }
 

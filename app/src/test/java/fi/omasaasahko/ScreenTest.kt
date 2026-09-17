@@ -35,6 +35,26 @@ import java.time.temporal.ChronoUnit
 class ScreenTest {
     @get:Rule val compose = createComposeRule()
 
+    @Test fun `nearby name is separate from district and electricity test can be scheduled`() {
+        val state=PreviewData.state.copy(place=PreviewData.state.place!!.copy(nearbyName="Kaivopuisto"))
+        var pending by mutableStateOf(false)
+        compose.setContent {
+            AppTheme(dynamic=false) {
+                AppScreen(state,true,{},{},{},{},{},{},priceAlerts=PriceAlertState(true,true,pending),
+                    onPriceAlertsTest={ pending=true })
+            }
+        }
+        compose.onNodeWithText("Tikkurila, Vantaa").assertIsDisplayed()
+        compose.onNodeWithText("Kaivopuisto").assertIsDisplayed()
+        compose.onNodeWithText("Lähin paikannimi · Maanmittauslaitos").assertIsDisplayed()
+        screenshot("nearby-place")
+        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Testaa ilmoitus 10 s kuluttua"))
+        compose.onNodeWithText("Testaa ilmoitus 10 s kuluttua").performClick().assertIsNotEnabled()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Lukitse puhelin nyt ja odota ilmoitusta kelloon."))
+        compose.onNodeWithText("Lukitse puhelin nyt ja odota ilmoitusta kelloon.").assertIsDisplayed()
+    }
+
     @Test fun `light theme navigation and hourly switch work`() {
         var state by mutableStateOf(PreviewData.state)
         compose.setContent {
@@ -82,7 +102,8 @@ class ScreenTest {
         compose.onNodeWithText("Salli sijainti").assertIsDisplayed()
         compose.onNodeWithText("Pörssi-sähkö").performClick()
         compose.onNodeWithText("Sähkön hinta").assertIsDisplayed()
-        compose.onNodeWithText("Hintoja ei ole saatavilla. Päivitä näkymä tai tarkista verkkoyhteys.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Hintoja ei ole saatavilla. Päivitä näkymä tai tarkista verkkoyhteys."))
+        compose.onNodeWithText("Hintoja ei ole saatavilla. Päivitä näkymä tai tarkista verkkoyhteys.").assertIsDisplayed()
     }
 
     @Test fun `large font retains navigation and scrollable prices`() {
@@ -262,6 +283,36 @@ class ScreenTest {
         compose.runOnIdle { date="2026-09-16"; request++ }
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Keskiviikkona 16.9."))
         compose.onNodeWithText("Keskiviikkona 16.9.").assertIsDisplayed()
+    }
+
+    @Test fun `place search favorites and return to current location work without changing device place`() {
+        val current = PreviewData.state.place!!
+        val porvoo = PlaceResult("P_10125180", "Porvoo", "Porvoo", 60.3953719, 25.6665595, "Kunta")
+        var state by mutableStateOf(PreviewData.state.copy(devicePlace = current))
+        compose.setContent {
+            AppTheme(dark = false, dynamic = false) {
+                AppScreen(state, true, {}, {}, {}, {}, {}, {},
+                    onPlaceSearch = { state = state.copy(searchQuery = it, searchResults = if (it.length >= 2) listOf(porvoo) else emptyList()) },
+                    onPlaceSelect = { state = state.copy(selectedPlace = it, place = it.place(state.now)) },
+                    onPlaceFavorite = { state = state.copy(favorites = if (state.favorites.isEmpty()) listOf(it) else emptyList()) },
+                    onCurrentLocation = { state = state.copy(selectedPlace = null, place = current) })
+            }
+        }
+        compose.onNodeWithTag("open-place-search").performClick()
+        compose.onNodeWithTag("place-search").performTextInput("Porvoo")
+        compose.onNodeWithContentDescription("Lisää suosikiksi Porvoo").performClick()
+        assertEquals(listOf(porvoo), state.favorites)
+        screenshot("place-search")
+        compose.onAllNodesWithTag("place-choice-${porvoo.id}").onFirst().performClick()
+        compose.onNodeWithText("VALITTU PAIKKA").assertIsDisplayed()
+        assertEquals(current, state.devicePlace)
+        screenshot("selected-place")
+        compose.onNodeWithText("Nykyinen sijainti").performClick()
+        compose.onNodeWithText(current.name).assertIsDisplayed()
+        compose.onNodeWithTag("open-place-search").performClick()
+        compose.onNodeWithText("Suosikit").assertIsDisplayed()
+        compose.onAllNodesWithContentDescription("Poista suosikki Porvoo").onFirst().performClick()
+        assertEquals(emptyList<PlaceResult>(), state.favorites)
     }
 
     private fun screenshot(name: String) {

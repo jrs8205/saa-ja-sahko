@@ -74,6 +74,34 @@ class WarningsTest {
         assertEquals("Uusimaa",data.local(vantaa,now).single().localAreas(vantaa).single().name)
         assertTrue(data.local(tampere,now).isEmpty())
     }
+    @Test fun `location refresh blocks old-city notifications and existing text follows the new city quietly`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_COARSE_LOCATION)
+        app.getSharedPreferences("warnings", Context.MODE_PRIVATE).edit().clear().putBoolean("enabled", true).commit()
+        val service = WarningService(app)
+        val manager = app.getSystemService(NotificationManager::class.java)
+        val espoo = vantaa.copy(name = "Espoo")
+        val porvoo = vantaa.copy(latitude = 60.39, longitude = 25.66, name = "Porvoo")
+        val snapshot = WarningParser.parse(feed(alert()), now)
+        service.savePlace(espoo); service.beginLocationUpdate()
+        service.notifyNew(snapshot, now)
+        assertTrue(manager.activeNotifications.isEmpty())
+        service.savePlace(porvoo, ready = false)
+        service.notifyNew(snapshot, now)
+        assertTrue(manager.activeNotifications.isEmpty())
+        service.savePlace(porvoo)
+        service.notifyNew(snapshot, now)
+        assertTrue(manager.activeNotifications.single().notification.extras.getString(android.app.Notification.EXTRA_TEXT)!!.startsWith("Porvoo"))
+        service.savePlace(espoo)
+        service.notifyNew(snapshot, now)
+        val updated = manager.activeNotifications.single().notification
+        assertTrue(updated.extras.getString(android.app.Notification.EXTRA_TEXT)!!.startsWith("Espoo"))
+        assertTrue(updated.flags and android.app.Notification.FLAG_ONLY_ALERT_ONCE != 0)
+        manager.cancelAll()
+        service.savePlace(porvoo); service.notifyNew(snapshot, now)
+        assertTrue("A dismissed unchanged regional warning must stay dismissed", manager.activeNotifications.isEmpty())
+    }
+
     @Test fun `republication does not notify again and cancelled warnings leave notification tray`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS,Manifest.permission.ACCESS_COARSE_LOCATION)

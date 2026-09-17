@@ -31,6 +31,9 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Make both stable channels visible to Android and companion apps before the first alert.
+        WarningService(applicationContext).createChannel()
+        PriceAlerts(applicationContext).channel()
         if (intent.getBooleanExtra("showWarnings", false)) warningsRequest++
         if (intent.getBooleanExtra("showPrices", false)) { priceDateRequest=intent.getStringExtra("priceDate"); pricesRequest++ }
         enableEdgeToEdge()
@@ -44,6 +47,9 @@ class MainActivity : ComponentActivity() {
                 { resolution -> preferences.edit { putString("resolution", resolution.name) } },
                 initialVat = preferences.getBoolean("includeVat", true),
                 saveVat = { include -> preferences.edit { putBoolean("includeVat", include) } },
+                placeSearch = MmlPlaceNames(), favoriteStore = PlaceStorage(applicationContext),
+                onDeviceLocationStart = { WarningService(applicationContext).beginLocationUpdate() },
+                onDevicePlace = { place, ready -> WarningService(applicationContext).savePlace(place, ready) },
             ) as T
         }
         setContent {
@@ -54,7 +60,9 @@ class MainActivity : ComponentActivity() {
                 val priceAlerts by priceAlertModel.state.collectAsStateWithLifecycle()
                 val warnings by warningsModel.state.collectAsStateWithLifecycle()
                 val state by model.state.collectAsStateWithLifecycle()
-                LaunchedEffect(state.place) { warningsModel.place(state.place) }
+                LaunchedEffect(state.devicePlace, state.namingLocation) {
+                    if (!state.namingLocation) warningsModel.place(state.devicePlace)
+                }
                 LaunchedEffect(state.prices) { priceAlertModel.prices(state.prices) }
                 LaunchedEffect(pricesRequest) { if (pricesRequest > 0) model.refreshPrices() }
                 val priceNotificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> priceAlertModel.enable(granted) }
@@ -90,6 +98,9 @@ class MainActivity : ComponentActivity() {
                     }, onWarningsInterval = warningsModel::interval, onWarningsTest = warningsModel::test,
                     onNotificationSettings = { startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)) },
                     warningsRequest = warningsRequest, priceAlerts=priceAlerts, pricesRequest=pricesRequest, priceDateRequest=priceDateRequest,
+                    onPriceAlertsTest = priceAlertModel::test,
+                    onPlaceSearch = model::searchPlaces, onPlaceSelect = model::selectPlace,
+                    onPlaceFavorite = model::toggleFavorite, onCurrentLocation = model::useCurrentLocation,
                     onPriceAlerts = { enabled ->
                         if (!enabled) priceAlertModel.enable(false)
                         else if (PriceAlerts(applicationContext).allowed()) priceAlertModel.enable(true)

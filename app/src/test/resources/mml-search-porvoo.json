@@ -1,0 +1,403 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "P_10125180",
+      "properties": {
+        "placeId": 10125180,
+        "placeVersionId": 2,
+        "placeType": 4010125,
+        "placeTypeDescription": 4010125,
+        "placeTypeCategory": 4,
+        "placeTypeGroup": 401,
+        "placeTypeSubgroup": 40101,
+        "placeElevation": 16,
+        "tm35MapSheet": "L4321H3",
+        "gslsMapSheet": "302102D",
+        "rescueGridSquare": "19P1C1",
+        "municipality": "638",
+        "subregion": "015",
+        "region": "01",
+        "scaleRelevance": 4500000,
+        "placeCreationTime": "2008-12-05T22:00:00Z",
+        "placeModificationTime": "2015-02-05T09:42:41Z",
+        "placeDeletionTime": null,
+        "name": [
+          {
+            "placeNameId": 40125180,
+            "placeNameVersionId": 1,
+            "spelling": "Porvoo",
+            "language": "fin",
+            "languageOfficiality": 1,
+            "languageDominance": 1,
+            "placeNameSource": 1,
+            "placeNameStatus": 1,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2008-12-05T22:00:00Z",
+            "placeNameDeletionTime": null
+          },
+          {
+            "placeNameId": 40125179,
+            "placeNameVersionId": 1,
+            "spelling": "Borgå",
+            "language": "swe",
+            "languageOfficiality": 1,
+            "languageDominance": 2,
+            "placeNameSource": 1,
+            "placeNameStatus": 1,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2008-12-05T22:00:00Z",
+            "placeNameDeletionTime": null
+          }
+        ],
+        "source": "geographic-names",
+        "gid": "nlsfi:geographic-names#1",
+        "distance": null,
+        "rank": 1,
+        "country": "Suomi",
+        "country_gid": "whosonfirst:country:85633143",
+        "continent": "Eurooppa",
+        "continent_gid": "whosonfirst:continent:102191581",
+        "country_a": "FIN",
+        "label": "Porvoo",
+        "match_type": "exact",
+        "accuracy": "point",
+        "similarity": 1.0,
+        "confidence": 1.0,
+        "label:region": "Uusimaa",
+        "label:subregion": "Porvoo",
+        "label:municipality": "Porvoo",
+        "label:placeType": "Kunta",
+        "label:placeTypeDescription": "Määräalueen käsittävä itsehallinnollinen yhdyskunta, joka on valtion lainsäädännön alainen ja sen valvonnassa.",
+        "label:placeTypeCategory": "Hallinto ja julkiset palvelut",
+        "label:placeTypeGroup": "Hallintoyksiköt",
+        "label:placeTypeSubgroup": "Hallintoalueet"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.6665595,
+          60.3953719
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "P_12002335",
+      "properties": {
+        "placeId": 12002335,
+        "placeVersionId": 1,
+        "placeType": 3010105,
+        "placeTypeDescription": 3010105,
+        "placeTypeCategory": 3,
+        "placeTypeGroup": 301,
+        "placeTypeSubgroup": 30101,
+        "placeElevation": 16,
+        "tm35MapSheet": "L4321H3",
+        "gslsMapSheet": "302102D",
+        "rescueGridSquare": "19P1C1",
+        "municipality": "638",
+        "subregion": "015",
+        "region": "01",
+        "scaleRelevance": 0,
+        "placeCreationTime": "2016-06-30T09:16:32Z",
+        "placeModificationTime": "2016-06-30T09:16:32Z",
+        "placeDeletionTime": null,
+        "name": [
+          {
+            "placeNameId": 42002803,
+            "placeNameVersionId": 1,
+            "spelling": "Porvoo",
+            "language": "fin",
+            "languageOfficiality": 1,
+            "languageDominance": 1,
+            "placeNameSource": 1,
+            "placeNameStatus": 5,
+            "placeNameCreationTime": "2016-06-30T09:16:32Z",
+            "placeNameModificationTime": "2016-06-30T09:16:32Z",
+            "placeNameDeletionTime": null
+          },
+          {
+            "placeNameId": 42002802,
+            "placeNameVersionId": 1,
+            "spelling": "Borgå",
+            "language": "swe",
+            "languageOfficiality": 1,
+            "languageDominance": 2,
+            "placeNameSource": 1,
+            "placeNameStatus": 5,
+            "placeNameCreationTime": "2016-06-30T09:16:32Z",
+            "placeNameModificationTime": "2016-06-30T09:16:32Z",
+            "placeNameDeletionTime": null
+          }
+        ],
+        "source": "geographic-names",
+        "gid": "nlsfi:geographic-names#3",
+        "distance": null,
+        "rank": 3,
+        "country": "Suomi",
+        "country_gid": "whosonfirst:country:85633143",
+        "continent": "Eurooppa",
+        "continent_gid": "whosonfirst:continent:102191581",
+        "country_a": "FIN",
+        "label": "Porvoo",
+        "match_type": "exact",
+        "accuracy": "point",
+        "similarity": 1.0,
+        "confidence": 1.0,
+        "label:region": "Uusimaa",
+        "label:subregion": "Porvoo",
+        "label:municipality": "Porvoo",
+        "label:placeType": "Kaupunkialue tai taajama",
+        "label:placeTypeDescription": "Yleensä Suomen ympäristökeskuksen taajamarajaukseen sisältyvä asutuskeskittymä; keskustaajama.",
+        "label:placeTypeCategory": "Asutus",
+        "label:placeTypeGroup": "Taajamat ja kylät",
+        "label:placeTypeSubgroup": "Taajamat ja kylät"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.6665595,
+          60.3953719
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "P_12007644",
+      "properties": {
+        "placeId": 12007644,
+        "placeVersionId": 1,
+        "placeType": 6010205,
+        "placeTypeDescription": 6010205,
+        "placeTypeCategory": 6,
+        "placeTypeGroup": 601,
+        "placeTypeSubgroup": 60102,
+        "placeElevation": 2,
+        "tm35MapSheet": "L4321H3",
+        "gslsMapSheet": "302102D",
+        "rescueGridSquare": "19P1C1",
+        "municipality": "638",
+        "subregion": "015",
+        "region": "01",
+        "scaleRelevance": 50000,
+        "placeCreationTime": "2018-06-15T05:18:48Z",
+        "placeModificationTime": "2018-06-15T05:18:48Z",
+        "placeDeletionTime": null,
+        "name": [
+          {
+            "placeNameId": 42008916,
+            "placeNameVersionId": 1,
+            "spelling": "Borgå",
+            "language": "swe",
+            "languageOfficiality": 1,
+            "languageDominance": 2,
+            "placeNameSource": 1,
+            "placeNameStatus": 3,
+            "placeNameCreationTime": "2018-06-15T05:18:48Z",
+            "placeNameModificationTime": "2018-06-15T05:18:48Z",
+            "placeNameDeletionTime": null
+          },
+          {
+            "placeNameId": 42008917,
+            "placeNameVersionId": 1,
+            "spelling": "Porvoo",
+            "language": "fin",
+            "languageOfficiality": 1,
+            "languageDominance": 1,
+            "placeNameSource": 1,
+            "placeNameStatus": 3,
+            "placeNameCreationTime": "2018-06-15T05:18:48Z",
+            "placeNameModificationTime": "2018-06-15T05:18:48Z",
+            "placeNameDeletionTime": null
+          }
+        ],
+        "source": "geographic-names",
+        "gid": "nlsfi:geographic-names#5",
+        "distance": null,
+        "rank": 5,
+        "country": "Suomi",
+        "country_gid": "whosonfirst:country:85633143",
+        "continent": "Eurooppa",
+        "continent_gid": "whosonfirst:continent:102191581",
+        "country_a": "FIN",
+        "label": "Porvoo",
+        "match_type": "exact",
+        "accuracy": "point",
+        "similarity": 1.0,
+        "confidence": 1.0,
+        "label:region": "Uusimaa",
+        "label:subregion": "Porvoo",
+        "label:municipality": "Porvoo",
+        "label:placeType": "Rautatieasema tai seisake",
+        "label:placeTypeDescription": "Rautateiden liikennepaikka, jossa henkilöjunat pysähtyvät.",
+        "label:placeTypeCategory": "Liikenne",
+        "label:placeTypeGroup": "Liikennepaikat",
+        "label:placeTypeSubgroup": "Raideliikennepaikat"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.6481689,
+          60.3965945
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "P_12021082",
+      "properties": {
+        "placeId": 12021082,
+        "placeVersionId": 1,
+        "placeType": 3020105,
+        "placeTypeDescription": 3020105,
+        "placeTypeCategory": 3,
+        "placeTypeGroup": 302,
+        "placeTypeSubgroup": 30201,
+        "placeElevation": 11,
+        "tm35MapSheet": "L4321G4",
+        "gslsMapSheet": "302102D",
+        "rescueGridSquare": "19P1C1",
+        "municipality": "638",
+        "subregion": "015",
+        "region": "01",
+        "scaleRelevance": 50000,
+        "placeCreationTime": "2022-09-02T06:20:09Z",
+        "placeModificationTime": "2022-09-02T06:20:09Z",
+        "placeDeletionTime": null,
+        "name": [
+          {
+            "placeNameId": 42026052,
+            "placeNameVersionId": 2,
+            "spelling": "Porvoonportti",
+            "language": "fin",
+            "languageOfficiality": 1,
+            "languageDominance": 1,
+            "placeNameSource": 1,
+            "placeNameStatus": 3,
+            "placeNameCreationTime": "2022-09-02T06:20:09Z",
+            "placeNameModificationTime": "2022-09-07T06:26:05Z",
+            "placeNameDeletionTime": null
+          },
+          {
+            "placeNameId": 42026051,
+            "placeNameVersionId": 2,
+            "spelling": "Borgåporten",
+            "language": "swe",
+            "languageOfficiality": 1,
+            "languageDominance": 2,
+            "placeNameSource": 1,
+            "placeNameStatus": 3,
+            "placeNameCreationTime": "2022-09-02T06:20:09Z",
+            "placeNameModificationTime": "2022-09-07T06:26:05Z",
+            "placeNameDeletionTime": null
+          }
+        ],
+        "source": "geographic-names",
+        "gid": "nlsfi:geographic-names#11",
+        "distance": null,
+        "rank": 11,
+        "country": "Suomi",
+        "country_gid": "whosonfirst:country:85633143",
+        "continent": "Eurooppa",
+        "continent_gid": "whosonfirst:continent:102191581",
+        "country_a": "FIN",
+        "label": "Porvoonportti",
+        "match_type": "exact",
+        "accuracy": "point",
+        "similarity": 0.46153846153846156,
+        "confidence": 1.0,
+        "label:region": "Uusimaa",
+        "label:subregion": "Porvoo",
+        "label:municipality": "Porvoo",
+        "label:placeType": "Kaupunkialueen tai taajaman osa",
+        "label:placeTypeDescription": "Yleensä Suomen ympäristökeskuksen taajamarajaukseen sisältyvä asutuskeskittymän osa.",
+        "label:placeTypeCategory": "Asutus",
+        "label:placeTypeGroup": "Taajamanosat",
+        "label:placeTypeSubgroup": "Taajamanosat"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.6502634,
+          60.3900749
+        ]
+      }
+    }
+  ],
+  "geocoding": {
+    "status": "success",
+    "metadata": [
+      {
+        "rawTerm": "porvoo",
+        "searchTerm": "",
+        "searchTermParts": [],
+        "seartchTermPartCount": 0,
+        "matchedParts": [
+          "porvoo"
+        ],
+        "matchingCodelists": {
+          "municipality": {
+            "638": {
+              "value": "638",
+              "label": "Porvoo",
+              "status": "valid",
+              "lang": "eng",
+              "codelist": "municipality",
+              "codelistgroup": "geographic-names"
+            }
+          },
+          "subregion": {
+            "015": {
+              "value": "015",
+              "label": "Porvoo",
+              "status": "valid",
+              "lang": "eng",
+              "codelist": "subregion",
+              "codelistgroup": "geographic-names"
+            }
+          }
+        },
+        "similarTerms": [
+          {
+            "text": "Porvoo",
+            "similarity": 1.0,
+            "word_similarity": 1.0,
+            "count": 4
+          },
+          {
+            "text": "Pori",
+            "similarity": 0.3333333432674408,
+            "word_similarity": 0.6000000238418579,
+            "count": 4
+          }
+        ]
+      }
+    ],
+    "sources": {
+      "geographic-names": {
+        "status": "success",
+        "duration": 936,
+        "links": []
+      }
+    },
+    "query": {
+      "sources": "geographic-names",
+      "scaleDenominator": 5000,
+      "excludesMaps": {},
+      "text": "Porvoo",
+      "querySize": 20,
+      "crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+      "requestCrs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+    },
+    "version": "2",
+    "attribution": "https://www.maanmittauslaitos.fi/en/opendata-licence-cc40",
+    "engine": {
+      "name": "maanmittauslaitos.fi/geocoding",
+      "author": "National Land Survey of Finland",
+      "version": "2"
+    },
+    "timestamp": 1789658465052
+  }
+}

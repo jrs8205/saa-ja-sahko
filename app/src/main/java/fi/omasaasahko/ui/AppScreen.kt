@@ -14,6 +14,7 @@ import fi.omasaasahko.AppState
 import fi.omasaasahko.WarningsState
 import fi.omasaasahko.data.PriceAlertState
 import fi.omasaasahko.domain.Resolution
+import fi.omasaasahko.domain.PlaceResult
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +27,9 @@ fun AppScreen(
     onWarningsEnable: (Boolean) -> Unit = {}, onWarningsInterval: (Int) -> Unit = {},
     onWarningsTest: () -> Unit = {}, onNotificationSettings: () -> Unit = {}, warningsRequest: Int = 0,
     priceAlerts: PriceAlertState = PriceAlertState(), onPriceAlerts: (Boolean) -> Unit = {}, pricesRequest: Int = 0, priceDateRequest: String? = null,
+    onPriceAlertsTest: () -> Unit = {},
+    onPlaceSearch: (String) -> Unit = {}, onPlaceSelect: (PlaceResult) -> Unit = {},
+    onPlaceFavorite: (PlaceResult) -> Unit = {}, onCurrentLocation: () -> Unit = {},
 ) {
     // Restore the tab on rotation/process recreation; a new launch always starts with weather.
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -42,7 +46,7 @@ fun AppScreen(
                 Text("Sää & Sähkö", style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                 TextButton(onClick = refresh,
-                    enabled = !refreshing && (tab != 0 || permitted)) {
+                    enabled = !refreshing && (tab != 0 || permitted || state.selectedPlace != null)) {
                     Text("Päivitä")
                 }
             }
@@ -59,8 +63,9 @@ fun AppScreen(
             PullToRefreshBox(isRefreshing = refreshing,
                 onRefresh = refresh,
                 modifier = Modifier.widthIn(max = 720.dp).fillMaxSize()) {
-                if (tab == 0) WeatherScreen(state, permitted, onPermission, onSettings, onLocationSettings, weatherScroll)
-                else if (tab == 1) ElectricityScreen(state, onResolution, priceScroll, onVat, priceAlerts, onPriceAlerts, onNotificationSettings, pricesRequest, priceDateRequest)
+                if (tab == 0) WeatherScreen(state, permitted, onPermission, onSettings, onLocationSettings, weatherScroll,
+                    onPlaceSearch, onPlaceSelect, onPlaceFavorite, onCurrentLocation)
+                else if (tab == 1) ElectricityScreen(state, onResolution, priceScroll, onVat, priceAlerts, onPriceAlerts, onNotificationSettings, pricesRequest, priceDateRequest, onPriceAlertsTest)
                 else WarningsScreen(state, warnings, permitted, warningsScroll, onWarningsEnable, onWarningsInterval,
                     onWarningsTest, onNotificationSettings, onPermission)
             }

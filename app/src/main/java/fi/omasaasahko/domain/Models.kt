@@ -28,9 +28,20 @@ enum class Condition(val label: String) {
     RAIN("Vesisadetta"), SLEET("Räntää"), SNOW("Lumisadetta"),
     HAIL("Rakeita"), THUNDER("Ukkosta"), THUNDER_HAIL("Ukkosta ja rakeita"), FOG("Sumua"), UNKNOWN("Säätieto puuttuu")
 }
-data class Place(val latitude: Double, val longitude: Double, val name: String, val locatedAt: Instant) {
+data class Place(val latitude: Double, val longitude: Double, val name: String, val locatedAt: Instant,
+                 val nearbyName: String? = null, val accuracyMeters: Float? = null,
+                 val nearbyDistanceMeters: Double? = null) {
     init { require(latitude.isFinite() && latitude in -90.0..90.0); require(longitude.isFinite() && longitude in -180.0..180.0) }
 }
+data class PlaceResult(val id: String, val name: String, val municipality: String, val latitude: Double,
+                       val longitude: Double, val kind: String = "") {
+    val label: String get() = listOf(name, municipality).filter(String::isNotBlank).distinct().joinToString(", ")
+    fun place(at: Instant) = Place(latitude, longitude, label, at)
+}
+data class WeatherStation(val id: String, val name: String, val latitude: Double, val longitude: Double,
+                          val distanceMeters: Double)
+data class StationObservation(val station: WeatherStation, val weather: WeatherHour)
+
 data class WeatherHour(
     val time: Instant, val temperature: Double? = null, val feelsLike: Double? = null,
     val wind: Double? = null, val windDirection: Double? = null, val rain: Double? = null,
@@ -49,6 +60,7 @@ data class Forecast(
     val source: WeatherSource, val place: Place, val fetchedAt: Instant,
     val hours: List<WeatherHour>, val days: List<WeatherDay>,
     val observation: WeatherHour? = null,
+    val observationStation: WeatherStation? = null,
     val zone: ZoneId = HELSINKI,
 ) {
     fun current(now: Instant): WeatherHour? = hours.minByOrNull { kotlin.math.abs(Duration.between(it.time, now).seconds) }
