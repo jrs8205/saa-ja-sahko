@@ -1,4 +1,6 @@
-# Paikkahaku, FMI-asemat ja ilmoitusten sijainti — paikallinen 0.2.2
+# Paikkahaku, FMI-asemat ja ilmoitusten sijainti — 0.2.2
+
+Uusin korjaus- ja varmennustilanne: [REVIEW-0.2.2.md](REVIEW-0.2.2.md). Alla olevat aiemmat testimäärät ja APK-tiiviste kuvaavat niitä edeltäviä käännöksiä.
 
 17.9.2026. VersionName 0.2.2, versionCode 6. Toiminnalliset muutokset ovat commitissa `2073661`, joka sisältää myös aiemmat paikalliset 0.2.1-muutokset. Käyttäjä pyysi lähdekoodin ja dokumentaation commitoinnin sekä pushin GitHubin main-haaraan. Käyttäjä valitsi lähimmän FMI-aseman havainnot, katseltavan paikan koordinaattien ennusteet ja ilmoitusten seuraavan puhelimen sijaintia.
 
@@ -20,19 +22,19 @@ Hakulaatikko kattaa ensin 25 kilometrin ympyrän, tarvittaessa 100 ja 300 km. As
 
 ## Ilmoitukset
 
-Uuden paikannuksen alkaessa vanhan paikan uusien varoitusten lähettäminen estetään. Tuoreet koordinaatit tallennetaan heti; nimi valmistuu erikseen. Jos sovellus suljetaan nimen haun aikana, jo saadut tuoreet koordinaatit sallitaan taustavaroituksille. Jos tuoretta sijaintia ei saada lainkaan, käyttöliittymä pyytää uusimaan paikannuksen ja uusien varoitusten lähettäminen odottaa onnistunutta paikannusta. Jo näkyvää ilmoitusta ei peruta pelkän paikannuksen alkamisen takia.
+Uuden paikannuksen alkaessa vanhan paikan uusien varoitusten lähettäminen estetään. Tuoreet koordinaatit tallennetaan heti; nimi valmistuu erikseen. Jos sovellus suljetaan nimen haun aikana, jo saadut tuoreet koordinaatit sallitaan taustavaroituksille. Jos tuoretta sijaintia ei saada, käyttöliittymä näyttää paikannuksen virheen ja seuranta jatkuu viimeksi saaduille laitekoordinaateille. Odotus puretaan virheessä, peruutuksessa ja sulkemisessa; prosessin kuoleman varalta se vanhenee kahdessa minuutissa. Alkuperäisen 0.2.2:n pysyvä estolippu korjattiin katselmointikierroksella. Jo näkyvää ilmoitusta ei peruta pelkän paikannuksen alkamisen takia.
 
-Tuoreen sijainnin jälkeen viimeinen tuore CAP-snapshot arvioidaan uudelleen ja varoitussyöte päivitetään. Jo näkyvän, saman alueellisen varoituksen paikkateksti päivitetään hiljaisesti; käyttäjän jo poistamaa samansisältöistä varoitusta ei tuoda takaisin. Taustalla ei paikanneta, joten matkalla sovellus on avattava.
+Tuoreen sijainnin jälkeen viimeinen tuore CAP-snapshot arvioidaan uudelleen. Verkkosyöte haetaan sovelluksen käynnistys-/päivitysloopissa, ei erikseen jokaisesta paikan muutoksesta. Jo näkyvän, saman alueellisen varoituksen paikkateksti päivitetään hiljaisesti; käyttäjän jo poistamaa samansisältöistä varoitusta ei tuoda takaisin. Taustalla ei paikanneta, joten matkalla sovellus on avattava.
 
-Hintailmoituksen WorkManager-tarkistusväli lyhennettiin 30 minuutista 15 minuuttiin; olemassa oleva työ päivittyy sovelluksen avauksella. Käyttäjän lisäpyynnöstä taustaverkkopyyntö aloitetaan vain **klo 14.00 ≤ Suomen aika < 16.00**. Kellonaika tarkistetaan työn todellisella käynnistyshetkellä, myös Androidin viivästyttämässä uusintayrityksessä. Muina aikoina WorkManager-työ palautuu ilman hintaverkkopyyntöä tai Repositoryn alustamista. Ilmoituksen jälkeen ei haeta saman toimituspäivän hintoja uudelleen. Sovelluksen avaaminen ja Päivitä-painike toimivat kaikkina kellonaikoina, ja niiden jo hakema täydellinen hintatieto voi muodostaa ilmoituksen myös hakuikkunan jälkeen. Europe/Helsinki huomioi kesäajan automaattisesti. Säävaroitusten käyttäjän valitsema 15/30/60 minuutin väli säilyy. Laitteiden kello 14.55 / 15.03 ero voi syntyä itsenäisistä WorkManager-ajoista ja Androidin taustarajoituksista. Tarkkaa syytä ei vahvistettu laitelokeista. Samanaikaista tai minuutilleen täsmällistä toimitusta ei luvata.
+Hintailmoituksen WorkManager-tarkistusväli lyhennettiin 30 minuutista 15 minuuttiin; olemassa oleva työ päivittyy sovelluksen avauksella. Käyttäjän lisäpyynnöstä taustaverkkopyyntö aloitetaan vain **klo 14.00 ≤ Suomen aika < 16.00**. Kellonaika tarkistetaan työn todellisella käynnistyshetkellä, myös Androidin viivästyttämässä uusintayrityksessä. Muina aikoina mahdollinen viivästynyt WorkManager-työ palautuu ilman hintaverkkopyyntöä tai Repositoryn alustamista. Katselmointikorjaus asettaa seuraavan ajoajan suoraan klo 14:ään, joten työtä ei normaalisti ajeta vartin välein yön ja aamun aikana. Kytkimen käyttäjän käynnistämä tarkistus toimii aikaikkunan ulkopuolellakin. Ilmoituksen jälkeen ei haeta saman toimituspäivän hintoja uudelleen. Sovelluksen avaaminen ja Päivitä-painike toimivat kaikkina kellonaikoina, ja niiden jo hakema täydellinen hintatieto voi muodostaa ilmoituksen myös hakuikkunan jälkeen. Europe/Helsinki huomioi kesäajan automaattisesti. Säävaroitusten käyttäjän valitsema 15/30/60 minuutin väli säilyy. Laitteiden kello 14.55 / 15.03 ero voi syntyä itsenäisistä WorkManager-ajoista ja Androidin taustarajoituksista. Tarkkaa syytä ei vahvistettu laitelokeista. Samanaikaista tai minuutilleen täsmällistä toimitusta ei luvata.
 
-## Uusin varmennus: klo 14–16 -rajaus, 17.9.2026
+## Alkuperäisen klo 14–16 -rajauksen varmennus, 17.9.2026 (historia)
 
 Sama debug/release-, unit test- ja lint-komento ajettiin aikarajauksen jälkeen verkkovalinnoilla `SAA_LOCATION_CHECK=0`, `SAA_LIVE_API_TESTS=0`, `SAA_PRICE_CHECK=0`. **79 testiä: 73 läpi, 0 epäonnistunutta, 6 erillistä verkkotestiä ohitettu.** Molemmat APK:t kääntyivät, molemmat lint-ajot: 0 virhettä ja 4 aiempaa päivitysvaroitusta.
 
 Uudet testit kutsuvat varsinaista taustatarkistusta ja laskevat verkkohakukutsut ennen klo 14, tasan klo 14, klo 15.59.59, tasan klo 16 sekä yöllä. Mukana talvi, kesä, molemmat kellonsiirtopäivät ja puhelimen Suomen ajasta poikkeava aikavyöhyke. Ilmoituksen jälkeen haku pysähtyy ja sallitaan seuraavana päivänä vasta klo 14. Etualalla jo haetun tiedon ilmoitus toimii myös klo 18. Käyttöliittymän uusi ajoitusteksti varmennettiin testisarjassa.
 
-Ajastin voi edelleen suorittaa lyhyen paikallisen tarkistuksen aikaikkunan ulkopuolella; verkkopyyntö ohitetaan. Akunkulutuksen muutosta ei ole mitattu laitteilla.
+Tässä aiemmassa versiossa ajastin teki lyhyitä paikallisia tarkistuksia aikaikkunan ulkopuolellakin. Uudempi katselmointikorjaus siirtää seuraavan ajoajan klo 14:ään; ks. [katselmointiraportti](REVIEW-0.2.2.md). Akunkulutuksen muutosta ei ole mitattu laitteilla.
 
 ## Aiempi saman päivän varmennus ennen aikarajausta
 
