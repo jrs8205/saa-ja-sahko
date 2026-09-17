@@ -46,6 +46,7 @@ class AppViewModel(
     private val placeSearch: PlaceSearch? = null,
     private val favoriteStore: FavoritePlaces? = null,
     private val onDeviceLocationStart: () -> Unit = {},
+    private val onDeviceLocationEnd: () -> Unit = {},
     private val onDevicePlace: (Place, Boolean) -> Unit = { _, _ -> },
 ) : ViewModel() {
     private val mutable = MutableStateFlow(AppState(now = clock.instant(), resolution = initialResolution, includeVat = initialVat, favorites = favoriteStore?.load().orEmpty()))
@@ -66,11 +67,12 @@ class AppViewModel(
 
     private val cacheJob = viewModelScope.launch {
         val cache = repository.cached()
-        val place = cache.weather.values.maxByOrNull { it.fetchedAt }?.place
+        val place = cache.devicePlace?.takeIf { it.origin == PlaceOrigin.DEVICE }
+            ?: cache.weather.values.filter { it.place.origin == PlaceOrigin.DEVICE }.maxByOrNull { it.fetchedAt }?.place
         mutable.update { s -> if (s.place != null || s.selectedPlace != null) s.copy(prices = s.prices ?: cache.prices)
-            else s.copy(place = place, prices = cache.prices,
+            else s.copy(place = place, devicePlace = place, prices = cache.prices,
             weather = WeatherSource.entries.associateWith { source ->
-                SourceState(cache.weather[source]?.takeIf { place != null && samePlace(it.place, place) })
+                SourceState(cache.weather[source]?.takeIf { place != null && it.place.origin == PlaceOrigin.DEVICE && samePlace(it.place, place) })
             }) }
     }
 
@@ -100,6 +102,7 @@ class AppViewModel(
         // Coordinates are already fresh; closing during the optional name lookup must not
         // leave background warnings paused until the next foreground visit.
         if (mutable.value.namingLocation) mutable.value.devicePlace?.let { onDevicePlace(it, true) }
+        onDeviceLocationEnd()
         foregroundJob?.cancel(); foregroundJob = null
         weatherGeneration++; priceGeneration++; locationGeneration++; searchGeneration++
         locationJob?.cancel(); nameJob?.cancel(); searchJob?.cancel()
@@ -115,7 +118,7 @@ class AppViewModel(
         hasPermission = permitted
         if (permitted) refreshDeviceLocation()
         else {
-            locationGeneration++; locationJob?.cancel(); nameJob?.cancel()
+            locationGeneration++; locationJob?.cancel(); nameJob?.cancel(); onDeviceLocationEnd()
             if (mutable.value.selectedPlace == null) { weatherGeneration++; weatherJob?.cancel() }
             mutable.update { it.copy(locating = false, namingLocation = false,
                 weather = if (it.selectedPlace == null) it.weather.mapValues { (_, value) -> value.copy(loading = false) } else it.weather) }
@@ -147,12 +150,10 @@ class AppViewModel(
     }
 
     fun useCurrentLocation() {
-        mutable.update { it.copy(selectedPlace = null) }
+        weatherGeneration++; weatherJob?.cancel()
+        mutable.update { it.copy(selectedPlace = null, place = it.devicePlace,
+            weather = WeatherSource.entries.associateWith { SourceState() }) }
         if (hasPermission) refreshDeviceLocation()
-        else {
-            weatherGeneration++; weatherJob?.cancel()
-            mutable.update { it.copy(place = it.devicePlace, weather = WeatherSource.entries.associateWith { SourceState() }) }
-        }
     }
 
     fun toggleFavorite(place: PlaceResult) {
@@ -183,33 +184,45 @@ class AppViewModel(
         onDeviceLocationStart()
         mutable.update { it.copy(locating = true, namingLocation = false, locationError = null) }
         locationJob = viewModelScope.launch {
-            cacheJob.join()
+            var namingStarted = false
             try {
-                val place = location.locate()
+                cacheJob.join()
+                val fix = location.locate()
                 ensureActive()
                 if (generation != locationGeneration) return@launch
-                // Persist coordinates before UI effects, forecasts or name-service requests can run.
+                val place = retainDeviceName(fix, mutable.value.devicePlace)
                 onDevicePlace(place, false)
+                repository.rememberDevicePlace(place)
                 mutable.update { it.copy(devicePlace = place, locating = false, namingLocation = true) }
                 if (mutable.value.selectedPlace == null) loadWeather(place)
-                nameJob = viewModelScope.launch {
-                    val named = try { location.describe(place) }
-                        catch (e: CancellationException) { throw e }
-                        catch (_: Exception) { place }
-                    ensureActive()
-                    if (generation != locationGeneration) return@launch
-                    onDevicePlace(named, true)
-                    repository.rememberPlaceName(named)
-                    mutable.update { s -> s.copy(devicePlace = named, namingLocation = false,
-                        place = if (s.selectedPlace == null) named else s.place,
-                        weather = if (s.selectedPlace == null) s.weather.mapValues { (_, old) ->
-                            old.copy(forecast = old.forecast?.let { if (samePlace(it.place, named)) it.copy(place = named) else it })
-                        } else s.weather) }
+                namingStarted = true
+                nameJob = viewModelScope.launch naming@ {
+                    try {
+                        val result = try { location.describe(fix) }
+                            catch (e: CancellationException) { throw e }
+                            catch (_: Exception) { fix }
+                        ensureActive()
+                        if (generation != locationGeneration) return@naming
+                        val named = retainDeviceName(result, place)
+                        onDevicePlace(named, true)
+                        repository.rememberDevicePlace(named)
+                        mutable.update { s -> s.copy(devicePlace = named, namingLocation = false,
+                            place = if (s.selectedPlace == null) named else s.place,
+                            weather = if (s.selectedPlace == null) s.weather.mapValues { (_, old) ->
+                                old.copy(forecast = old.forecast?.let { if (samePlace(it.place, named)) it.copy(place = named) else it })
+                            } else s.weather) }
+                    } finally { if (generation == locationGeneration) onDeviceLocationEnd() }
                 }
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { if (generation == locationGeneration) mutable.update { it.copy(locating = false,
-                namingLocation = false, locationError = "Tuoretta sijaintia ei saatu. Päivitä sijainti säävaroitusilmoituksia varten.") } }
+            catch (e: Exception) { if (generation == locationGeneration) mutable.update { it.copy(locating = false,
+                namingLocation = false, locationError = (e as? LocationFailure)?.message
+                    ?: "Tuoretta sijaintia ei saatu. Yritä uudelleen.") } }
+            finally { if (generation == locationGeneration && !namingStarted) onDeviceLocationEnd() }
         }
+    }
+
+    override fun onCleared() {
+        onDeviceLocationEnd()
     }
 
     private fun loadWeather(place: Place) {

@@ -8,7 +8,6 @@ import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.json.JSONObject
 import java.io.IOException
-import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -75,19 +74,6 @@ internal object PlaceNames {
             .filter { it.distanceMeters <= radius }
             .sortedWith(compareBy<NearbyName> { it.distanceMeters }.thenBy { it.municipality }.thenBy { it.name }).toList()
 
-    fun parse(body: String, latitude: Double, longitude: Double): NearbyName? =
-        runCatching { nearby(points(body), latitude, longitude).firstOrNull() }.getOrNull()
-
-    fun resolve(latitude: Double, longitude: Double, at: Instant, address: AddressName?, nearby: NearbyName?): Place =
-        resolve(latitude, longitude, at, address, listOfNotNull(nearby))
-
-    fun resolve(latitude: Double, longitude: Double, at: Instant, address: AddressName?, candidates: List<NearbyName>): Place {
-        val label = address?.label ?: candidates.firstOrNull()?.municipality ?: "Nykyinen sijainti"
-        val matching = candidates.firstOrNull { (address == null || it.municipality.equals(address.municipality, true)) &&
-            label.split(',').none { part -> part.trim().equals(it.name, true) } }
-        return Place(latitude, longitude, label, at, matching?.name)
-    }
-
     fun searchResults(body: String, query: String): List<PlaceResult> = points(body)
         .filter { it.category in 1..3 || it.group == 401 }.sortedWith(
             compareBy<NamedPoint> { if (it.place.name.equals(query, true)) 0 else 1 }
@@ -109,11 +95,7 @@ class MmlPlaceNames(private val apiKey: String = BuildConfig.MML_API_KEY, privat
         PlaceNames.searchResults(download(url("search").addQueryParameter("text", text).build()), text)
     }
 
-    internal suspend fun reverse(latitude: Double, longitude: Double): NearbyName? = try {
-        reverseCandidates(latitude, longitude, PlaceNames.RADIUS_METERS).firstOrNull()
-    } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
-
-    internal suspend fun reverseCandidates(latitude: Double, longitude: Double, radius: Int): List<NearbyName> = withContext(Dispatchers.IO) {
+    internal suspend fun reverseCandidates(latitude: Double, longitude: Double, radius: Int = PlaceNames.FALLBACK_RADIUS_METERS): List<NearbyName> = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) return@withContext emptyList()
         val body = download(url("reverse").addQueryParameter("point.lat", latitude.toString())
             .addQueryParameter("point.lon", longitude.toString()).addQueryParameter("boundary.circle.radius", radius.toString()).build())

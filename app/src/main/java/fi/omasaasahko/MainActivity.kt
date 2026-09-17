@@ -38,18 +38,21 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra("showPrices", false)) { priceDateRequest=intent.getStringExtra("priceDate"); pricesRequest++ }
         enableEdgeToEdge()
         val preferences = getSharedPreferences("preferences", MODE_PRIVATE)
-        val locator = DeviceLocation(applicationContext)
+        val appContext = applicationContext
+        val locator = DeviceLocation(appContext)
+        val warningService = WarningService(appContext)
         val factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(
-                Repository(applicationContext), locator,
+                Repository(appContext), locator,
                 runCatching { Resolution.valueOf(preferences.getString("resolution", "QUARTER")!!) }.getOrDefault(Resolution.QUARTER),
                 { resolution -> preferences.edit { putString("resolution", resolution.name) } },
                 initialVat = preferences.getBoolean("includeVat", true),
                 saveVat = { include -> preferences.edit { putBoolean("includeVat", include) } },
-                placeSearch = MmlPlaceNames(), favoriteStore = PlaceStorage(applicationContext),
-                onDeviceLocationStart = { WarningService(applicationContext).beginLocationUpdate() },
-                onDevicePlace = { place, ready -> WarningService(applicationContext).savePlace(place, ready) },
+                placeSearch = MmlPlaceNames(), favoriteStore = PlaceStorage(appContext),
+                onDeviceLocationStart = warningService::beginLocationUpdate,
+                onDeviceLocationEnd = warningService::endLocationUpdate,
+                onDevicePlace = warningService::savePlace,
             ) as T
         }
         setContent {

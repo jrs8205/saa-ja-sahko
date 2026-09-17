@@ -33,13 +33,7 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit, onSettings: () -> Unit,
                   onLocationSettings: () -> Unit, scroll: LazyListState,
-                  onPlaceSearch: (String) -> Unit = {}, onPlaceSelect: (PlaceResult) -> Unit = {},
-                  onPlaceFavorite: (PlaceResult) -> Unit = {}, onCurrentLocation: () -> Unit = {}) {
-    var pickerOpen by rememberSaveable { mutableStateOf(false) }
-    if (pickerOpen) {
-        PlacePicker(state, onPlaceSearch, onPlaceSelect, onPlaceFavorite) { pickerOpen = false }
-        return
-    }
+                  onOpenPlacePicker: () -> Unit = {}, onCurrentLocation: () -> Unit = {}) {
     var expandedHours by rememberSaveable { mutableStateOf(false) }
     var expandedDay by rememberSaveable { mutableStateOf<String?>(null) }
     var rainSource by rememberSaveable { mutableIntStateOf(0) }
@@ -63,7 +57,7 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
                 }
                 if (state.selectedPlace == null) {
                     if (state.namingLocation) Text("Haetaan paikannimeä…", style = MaterialTheme.typography.bodySmall)
-                    state.place?.nearbyDistanceMeters?.takeIf { it > 750 }?.let {
+                    state.place?.nearbyDistanceMeters?.takeIf { it > fi.omasaasahko.data.PlaceNames.RADIUS_METERS }?.let {
                         Text("Nimipiste ${decimal(it / 1000)} km päässä", style = MaterialTheme.typography.bodySmall)
                     }
                     state.place?.accuracyMeters?.takeIf { it > 200 }?.let {
@@ -71,7 +65,7 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
                     }
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { pickerOpen = true }, modifier = Modifier.testTag("open-place-search")) { Text("Hae paikka / suosikit") }
+                    OutlinedButton(onClick = onOpenPlacePicker, modifier = Modifier.testTag("open-place-search")) { Text("Hae paikka / suosikit") }
                     if (state.selectedPlace != null) TextButton(onClick = {
                         onCurrentLocation(); if (!permitted) onPermission()
                     }) { Text("Nykyinen sijainti") }

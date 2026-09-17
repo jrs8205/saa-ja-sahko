@@ -124,4 +124,21 @@ class WarningsTest {
         service.notifyNew(WarningParser.parse(feed(alert(id="elsewhere")),now),now)
         assertEquals(0,manager.activeNotifications.size)
     }
+
+    @Test fun `expired location lease allows cancellation processing again after process death`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_COARSE_LOCATION)
+        app.getSharedPreferences("warnings", Context.MODE_PRIVATE).edit().clear().putBoolean("enabled", true).commit()
+        val clock = java.time.Clock.fixed(now, java.time.ZoneOffset.UTC)
+        val service = WarningService(app, clock)
+        service.savePlace(vantaa)
+        service.notifyNew(WarningParser.parse(feed(alert()), now), now)
+        val manager = app.getSystemService(NotificationManager::class.java)
+        assertEquals(1, manager.activeNotifications.size)
+        service.beginLocationUpdate()
+        val later = now.plusSeconds(180)
+        WarningService(app, java.time.Clock.fixed(later, java.time.ZoneOffset.UTC))
+            .notifyNew(WarningParser.parse(feed(), later), later)
+        assertTrue(manager.activeNotifications.isEmpty())
+    }
 }

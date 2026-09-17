@@ -10,11 +10,15 @@ import java.time.Instant
 internal fun Place.toJson(): JSONObject = JSONObject().put("lat", latitude).put("lon", longitude)
     .put("name", name).put("at", locatedAt.toString()).put("nearbyName", nearbyName)
     .put("accuracy", accuracyMeters).put("nearbyDistance", nearbyDistanceMeters)
+    .put("origin", origin.name).put("nameResolved", nameResolved)
 
-internal fun placeFromJson(p: JSONObject) = Place(p.getDouble("lat"), p.getDouble("lon"), p.getString("name"),
+internal fun placeFromJson(p: JSONObject, defaultOrigin: PlaceOrigin = PlaceOrigin.UNKNOWN) = Place(p.getDouble("lat"), p.getDouble("lon"), p.getString("name"),
     Instant.parse(p.getString("at")), p.optString("nearbyName").takeIf(String::isNotBlank),
     p.optDouble("accuracy").takeIf { it.isFinite() && it >= 0 }?.toFloat(),
-    p.optDouble("nearbyDistance").takeIf { it.isFinite() && it >= 0 })
+    p.optDouble("nearbyDistance").takeIf { it.isFinite() && it >= 0 },
+    runCatching { PlaceOrigin.valueOf(p.getString("origin")) }.getOrDefault(defaultOrigin),
+    // Migration of 0.2.2 caches only. Runtime behavior uses the explicit flag.
+    p.optBoolean("nameResolved", p.getString("name") != CURRENT_LOCATION_NAME))
 
 interface FavoritePlaces {
     fun load(): List<PlaceResult>

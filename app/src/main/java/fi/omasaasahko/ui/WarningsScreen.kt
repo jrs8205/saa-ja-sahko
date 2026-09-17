@@ -29,7 +29,7 @@ import java.time.format.DateTimeFormatter
 fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scroll: LazyListState,
     onEnable: (Boolean) -> Unit, onInterval: (Int) -> Unit, onTest: () -> Unit, onSettings: () -> Unit, onPermission: () -> Unit) {
     val place = app.place
-    val notificationPlace = app.devicePlace ?: app.place?.takeIf { app.selectedPlace == null }
+    val notificationPlace = app.devicePlace
     val snapshot = state.snapshot
     val local = if (permitted || app.selectedPlace != null) snapshot?.local(place, app.now).orEmpty() else emptyList()
     val uri = LocalUriHandler.current
@@ -116,7 +116,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         if (stale) item { Text("Varoitustietoja ei ole tarkistettu äskettäin. Päivitä näkymä.", color = MaterialTheme.colorScheme.error) }
         if (snapshot?.partial == true) item { Text("Kaikkia varoituksia ei voitu tulkita. Tarkista myös FMI:n varoitussivu.", color = MaterialTheme.colorScheme.error) }
         if (snapshot == null && !state.loading) item { Text("Varoitustietoja ei ole vielä saatavilla.") }
-        if (snapshot != null && permitted && place != null && local.isEmpty() && selectedDay == "all") item {
+        if (snapshot != null && (permitted || app.selectedPlace != null) && place != null && local.isEmpty() && selectedDay == "all") item {
             Card { Text(if (stale || state.error != null || snapshot.partial) "Tallennetuissa tiedoissa ei ole alueelle kohdistuvia varoituksia."
                 else "FMI:n viimeisimmässä syötteessä ei ole tälle sijainnille voimassa olevia tai tulevia varoituksia.", Modifier.padding(20.dp)) }
         }
@@ -124,7 +124,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         dates.forEach { date ->
             item(key = "date-$date") { Text(when (date) { today -> "Tänään"; today.plusDays(1) -> "Huomenna"; else -> date.format(DateTimeFormatter.ofPattern("EEEE d.M.", FINNISH)) },
                 style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
-            if (snapshot != null && permitted && place != null && forDay(date).isEmpty()) item {
+            if (snapshot != null && (permitted || app.selectedPlace != null) && place != null && forDay(date).isEmpty()) item {
                 Card { Text(if (stale || state.error != null || snapshot.partial) "Tallennetuissa tiedoissa ei ole tälle päivälle alueesi varoituksia. Päivitä tiedot."
                     else "Tälle päivälle ei ole julkaistu alueesi varoituksia.", Modifier.padding(20.dp)) }
             }

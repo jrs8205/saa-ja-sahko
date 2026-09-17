@@ -315,6 +315,39 @@ class ScreenTest {
         assertEquals(emptyList<PlaceResult>(), state.favorites)
     }
 
+    @Test fun `search drag does not refresh weather and closing preserves the expanded day`() {
+        var refreshes = 0
+        compose.setContent {
+            AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, { refreshes++ }, {}, {}) }
+        }
+        val day = "day-2026-09-16"
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag(day))
+        compose.onNodeWithTag(day).performClick()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("open-place-search"))
+        compose.onNodeWithTag("open-place-search").performClick()
+        compose.onNodeWithTag("place-results").performTouchInput { swipeDown() }
+        assertEquals(0, refreshes)
+        compose.onNodeWithText("Sulje").performClick()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag(day))
+        compose.onNodeWithTag(day).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Avattu"))
+    }
+
+    @Test fun `selected place without location permission has both empty warning states`() {
+        val place = PlaceResult("porvoo", "Porvoo", "Porvoo", 60.39, 25.66)
+        val state = PreviewData.state.copy(selectedPlace = place, place = place.place(PreviewData.now))
+        compose.setContent {
+            AppTheme(dynamic = false) { AppScreen(state, false, {}, {}, {}, {}, {}, {},
+                warnings = WarningsState(snapshot = WarningSnapshot(state.now, state.now, emptyList()))) }
+        }
+        compose.onNodeWithText("Varoitukset").performClick()
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("FMI:n viimeisimmässä syötteessä ei ole tälle sijainnille voimassa olevia tai tulevia varoituksia."))
+        compose.onNodeWithText("FMI:n viimeisimmässä syötteessä ei ole tälle sijainnille voimassa olevia tai tulevia varoituksia.").assertIsDisplayed()
+        compose.onNodeWithTag("warnings-scroll").performScrollToIndex(1)
+        compose.onNodeWithTag("warning-day-2026-09-16").performClick()
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Tälle päivälle ei ole julkaistu alueesi varoituksia."))
+        compose.onNodeWithText("Tälle päivälle ei ole julkaistu alueesi varoituksia.").assertIsDisplayed()
+    }
+
     private fun screenshot(name: String) {
         compose.waitForIdle()
         val image = compose.onRoot().captureToImage().asAndroidBitmap()

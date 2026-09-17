@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import fi.omasaasahko.AppState
@@ -33,6 +34,8 @@ fun AppScreen(
 ) {
     // Restore the tab on rotation/process recreation; a new launch always starts with weather.
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var pickerOpen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(tab) { if (tab != 0) pickerOpen = false }
     LaunchedEffect(warningsRequest) { if (warningsRequest > 0) tab = 2 }
     LaunchedEffect(pricesRequest) { if (pricesRequest > 0) tab = 1 }
     val weatherScroll = rememberLazyListState()
@@ -46,7 +49,7 @@ fun AppScreen(
                 Text("Sää & Sähkö", style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                 TextButton(onClick = refresh,
-                    enabled = !refreshing && (tab != 0 || permitted || state.selectedPlace != null)) {
+                    enabled = !pickerOpen && !refreshing && (tab != 0 || permitted || state.selectedPlace != null)) {
                     Text("Päivitä")
                 }
             }
@@ -61,13 +64,19 @@ fun AppScreen(
     }) { padding ->
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             PullToRefreshBox(isRefreshing = refreshing,
-                onRefresh = refresh,
-                modifier = Modifier.widthIn(max = 720.dp).fillMaxSize()) {
+                onRefresh = { if (!pickerOpen) refresh() },
+                modifier = Modifier.widthIn(max = 720.dp).fillMaxSize()
+                    .then(if (pickerOpen) Modifier.clearAndSetSemantics {} else Modifier)) {
                 if (tab == 0) WeatherScreen(state, permitted, onPermission, onSettings, onLocationSettings, weatherScroll,
-                    onPlaceSearch, onPlaceSelect, onPlaceFavorite, onCurrentLocation)
+                    { pickerOpen = true }, onCurrentLocation)
                 else if (tab == 1) ElectricityScreen(state, onResolution, priceScroll, onVat, priceAlerts, onPriceAlerts, onNotificationSettings, pricesRequest, priceDateRequest, onPriceAlertsTest)
                 else WarningsScreen(state, warnings, permitted, warningsScroll, onWarningsEnable, onWarningsInterval,
                     onWarningsTest, onNotificationSettings, onPermission)
+            }
+            // A sibling overlay keeps weather's remembered state and scroll position alive,
+            // while the search list is outside the pull-to-refresh gesture hierarchy.
+            if (pickerOpen && tab == 0) Box(Modifier.widthIn(max = 720.dp).fillMaxSize()) {
+                PlacePicker(state, onPlaceSearch, onPlaceSelect, onPlaceFavorite) { pickerOpen = false }
             }
         }
     }

@@ -25,11 +25,18 @@ import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.time.Instant
+import java.time.Clock
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class WarningService(context: Context) {
+interface WarningFeed {
+    suspend fun cached(): WarningSnapshot?
+    suspend fun refresh(): WarningSnapshot
+    suspend fun reevaluate()
+}
+
+class WarningService(context: Context, private val clock: Clock = Clock.systemUTC()) : WarningFeed {
     private val context = context.applicationContext
     private val prefs = this.context.getSharedPreferences("warnings", Context.MODE_PRIVATE)
     private val file = AtomicFile(File(this.context.filesDir, "warnings.json"))
@@ -43,20 +50,34 @@ class WarningService(context: Context) {
     fun allowed(): Boolean = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED &&
         NotificationManagerCompat.from(context).areNotificationsEnabled() &&
         context.getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL)?.importance != NotificationManager.IMPORTANCE_NONE
-    val locationPending: Boolean get() = prefs.getBoolean("locationPending", false)
+    val locationPending: Boolean get() = synchronized(placeLock) {
+        val since = prefs.getLong("pendingSince", 0)
+        val age = clock.millis() - since
+        val active = prefs.getBoolean("locationPending", false) && since > 0 && age in 0 until LOCATION_PENDING_TTL_MS
+        if (!active && prefs.getBoolean("locationPending", false)) endLocationUpdate()
+        active
+    }
     fun place(): Place? = synchronized(placeLock) { runCatching {
-        placeFromJson(JSONObject(requireNotNull(prefs.getString("place", null))))
+        placeFromJson(JSONObject(requireNotNull(prefs.getString("place", null))), PlaceOrigin.DEVICE)
     }.getOrNull() }
     fun beginLocationUpdate() = synchronized(placeLock) {
-        prefs.edit(commit = true) { putBoolean("locationPending", true) }
+        prefs.edit(commit = true) { putBoolean("locationPending", true); putLong("pendingSince", clock.millis()) }
+    }
+    fun endLocationUpdate() = synchronized(placeLock) {
+        prefs.edit(commit = true) { putBoolean("locationPending", false); remove("pendingSince") }
     }
     fun savePlace(place: Place, ready: Boolean = true) = synchronized(placeLock) {
-        prefs.edit(commit = true) { putString("place", place.toJson().toString()); putBoolean("locationPending", !ready) }
+        require(place.origin == PlaceOrigin.DEVICE)
+        prefs.edit(commit = true) {
+            putString("place", place.toJson().toString()); putBoolean("locationPending", !ready)
+            if (ready) remove("pendingSince") else putLong("pendingSince", clock.millis())
+        }
     }
-    suspend fun reevaluate() {
-        val now = Instant.now()
+    override suspend fun reevaluate() = withContext(Dispatchers.IO) {
+        val now = clock.instant()
         cached()?.takeIf { java.time.Duration.between(it.fetchedAt, now).seconds in 0..900 }
-            ?.let { notifyNew(it, now) }
+            ?.let { try { notifyNew(it, now) } catch (_: SecurityException) { /* Permission revoked during evaluation. */ } }
+        Unit
     }
     fun setEnabled(value: Boolean) {
         prefs.edit { putBoolean("enabled", value) }
@@ -71,13 +92,13 @@ class WarningService(context: Context) {
             manager.activeNotifications.filter { it.notification.channelId == CHANNEL }.forEach { manager.cancel(it.tag,it.id) }
         }
     }
-    suspend fun cached(): WarningSnapshot? = withContext(Dispatchers.IO) { mutex.withLock {
+    override suspend fun cached(): WarningSnapshot? = withContext(Dispatchers.IO) { mutex.withLock {
         runCatching {
             val data = JSONObject(file.openRead().bufferedReader().use { it.readText() })
             WarningParser.parse(data.getString("body"), Instant.parse(data.getString("fetched")))
         }.getOrNull()
     } }
-    suspend fun refresh(): WarningSnapshot = mutex.withLock {
+    override suspend fun refresh(): WarningSnapshot = mutex.withLock {
         val body = download()
         val now = Instant.now()
         val snapshot = withContext(Dispatchers.IO) { WarningParser.parse(body, now) }
@@ -169,6 +190,7 @@ class WarningService(context: Context) {
         const val FEED = "https://alerts.fmi.fi/cap/feed/atom_fi-FI.xml"
         const val CHANNEL = "weather-warnings"
         const val WORK = "weather-warning-check"
+        internal const val LOCATION_PENDING_TTL_MS = 2 * 60_000L
         private val placeLock = Any()
         private val mutex = Mutex()
         private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS).readTimeout(25, TimeUnit.SECONDS).callTimeout(40, TimeUnit.SECONDS).build()

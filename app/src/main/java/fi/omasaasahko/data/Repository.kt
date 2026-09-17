@@ -15,28 +15,31 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-data class CachedData(val weather: Map<WeatherSource, Forecast>, val prices: PriceData?)
+data class CachedData(val weather: Map<WeatherSource, Forecast>, val prices: PriceData?, val devicePlace: Place? = null)
 interface DataRepository {
     suspend fun cached(): CachedData
     suspend fun weather(source: WeatherSource, place: Place, now: Instant): Forecast
     suspend fun prices(now: Instant): PriceData
-    fun rememberPlaceName(place: Place) {}
+    fun rememberDevicePlace(place: Place) {}
 }
 
 class Repository(context: Context, private val cachePrices: Boolean = true) : DataRepository {
     private val names = context.getSharedPreferences("weather-place-name", Context.MODE_PRIVATE)
-    override fun rememberPlaceName(place: Place) { names.edit { putString("place", place.toJson().toString()) } }
+    override fun rememberDevicePlace(place: Place) {
+        require(place.origin == PlaceOrigin.DEVICE)
+        names.edit { putString("place", place.toJson().toString()) }
+    }
     private val cache = File(context.filesDir, "forecast-cache").apply { mkdirs() }
     private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(25, TimeUnit.SECONDS).callTimeout(35, TimeUnit.SECONDS).build()
 
     override suspend fun cached(): CachedData = withContext(Dispatchers.IO) {
+        val devicePlace = runCatching { placeFromJson(JSONObject(names.getString("place", "")!!), PlaceOrigin.DEVICE) }.getOrNull()
         val weather = WeatherSource.entries.mapNotNull { source ->
             read(source.name)?.let { stored -> runCatching {
                 val p = stored.getJSONObject("place")
                 val storedPlace = placeFromJson(p)
-                val named = runCatching { placeFromJson(JSONObject(names.getString("place", "")!!)) }.getOrNull()
-                val place = named?.takeIf { storedPlace.name == "Nykyinen sijainti" &&
+                val place = devicePlace?.takeIf { storedPlace.origin == PlaceOrigin.DEVICE && !storedPlace.nameResolved &&
                     it.latitude == storedPlace.latitude && it.longitude == storedPlace.longitude && it.locatedAt == storedPlace.locatedAt } ?: storedPlace
                 val at = Instant.parse(stored.getString("fetched"))
                 val body = stored.getString("body")
@@ -52,7 +55,7 @@ class Repository(context: Context, private val cachePrices: Boolean = true) : Da
         val prices = read("prices")?.let { runCatching {
             Parsers.prices(it.getString("body"), Instant.parse(it.getString("fetched")))
         }.getOrNull() }
-        CachedData(weather, prices)
+        CachedData(weather, prices, devicePlace)
     }
 
     override suspend fun weather(source: WeatherSource, place: Place, now: Instant): Forecast = coroutineScope {

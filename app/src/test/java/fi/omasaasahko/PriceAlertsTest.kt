@@ -20,6 +20,31 @@ import java.time.*
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[35])
 class PriceAlertsTest {
+    @Test fun `next background run sleeps until Finnish afternoon across daylight saving transitions`() {
+        for (date in listOf("2026-03-28", "2026-10-24", "2026-09-17")) {
+            val day = LocalDate.parse(date)
+            fun at(hour: Int, minute: Int = 0) = day.atTime(hour, minute).atZone(HELSINKI).toInstant()
+            val nextAfternoon = day.plusDays(1).atTime(14, 0).atZone(HELSINKI).toInstant()
+            assertEquals(at(14), nextPriceCheck(at(2), needed = true))
+            assertEquals(at(14, 15), nextPriceCheck(at(14), needed = true, afterAttempt = true))
+            assertEquals(nextAfternoon, nextPriceCheck(at(15, 50), needed = true, afterAttempt = true))
+            assertEquals(nextAfternoon, nextPriceCheck(at(18), needed = true))
+            assertEquals(nextAfternoon, nextPriceCheck(at(14, 30), needed = false))
+        }
+    }
+
+    @Test fun `enabling price notifications can fetch and notify at eighteen`() = runBlocking {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        app.getSharedPreferences("price-alerts", Context.MODE_PRIVATE).edit().clear().putBoolean("enabled", true).commit()
+        val day = LocalDate.of(2026, 9, 17)
+        val now = day.atTime(18, 0).atZone(HELSINKI).toInstant()
+        var requests = 0
+        PriceAlerts(app).check(Clock.fixed(now, ZoneOffset.UTC)) { requests++; data(day.plusDays(1)) }
+        assertEquals(1, requests)
+        assertEquals(1, app.getSystemService(NotificationManager::class.java).activeNotifications.size)
+    }
+
     @Test fun `background network requests stay inside Finnish afternoon in winter summer and DST transitions`() = runBlocking {
         val app = ApplicationProvider.getApplicationContext<Application>()
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
@@ -32,7 +57,7 @@ class PriceAlertsTest {
                 val now = local.atZone(HELSINKI).toInstant()
                 val before = requests.size
                 // The injected clock's zone is deliberately foreign; Finland always governs the window.
-                service.check(Clock.fixed(now, ZoneId.of("America/New_York"))) { at ->
+                service.checkBackground(Clock.fixed(now, ZoneId.of("America/New_York"))) { at ->
                     requests += at
                     PriceData(at, emptyList())
                 }
@@ -51,7 +76,7 @@ class PriceAlertsTest {
         var requests = 0
         suspend fun check(day: LocalDate, hour: Int, minute: Int = 0) {
             val now = day.atTime(hour, minute).atZone(HELSINKI).toInstant()
-            service.check(Clock.fixed(now, ZoneOffset.UTC)) { requests++; data(day.plusDays(1)) }
+            service.checkBackground(Clock.fixed(now, ZoneOffset.UTC)) { requests++; data(day.plusDays(1)) }
         }
         check(today, 14); assertEquals(1, requests)
         check(today, 14, 15); check(today, 15, 45); check(today, 16)

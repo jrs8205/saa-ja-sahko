@@ -24,12 +24,12 @@ class DeviceLocation(private val context: Context) : LocationProvider {
 
     @android.annotation.SuppressLint("MissingPermission")
     override suspend fun locate(): Place = coroutineScope {
-        check(permitted()) { "Salli sijainti, jotta näet lähialueesi sään." }
+        if (!permitted()) throw LocationFailure("Salli sijainti, jotta näet lähialueesi sään.")
         val manager = context.getSystemService(LocationManager::class.java)
-        check(manager.isLocationEnabled) { "Ota puhelimen sijainti käyttöön." }
+        if (!manager.isLocationEnabled) throw LocationFailure("Ota puhelimen sijainti käyttöön.")
         val providers = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER)
             .filter { manager.isProviderEnabled(it) }
-        check(providers.isNotEmpty()) { "Paikannus ei ole käytettävissä." }
+        if (providers.isEmpty()) throw LocationFailure("Paikannus ei ole käytettävissä.")
         val replies = Channel<Location?>(providers.size)
         val jobs = providers.map { provider -> launch {
             val location = try { current(manager, provider) }
@@ -47,30 +47,17 @@ class DeviceLocation(private val context: Context) : LocationProvider {
                 }
             }
         } finally { jobs.forEach { it.cancel() }; replies.close() }
-        val fix = checkNotNull(location) { "Tuoretta sijaintia ei saatu. Yritä uudelleen." }
+        val fix = location ?: throw LocationFailure("Tuoretta sijaintia ei saatu. Yritä uudelleen.")
         val ageMillis = ((SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos) / 1_000_000).coerceAtLeast(0)
-        Place(fix.latitude, fix.longitude, "Nykyinen sijainti", java.time.Instant.now().minusMillis(ageMillis),
-            accuracyMeters = fix.accuracy)
+        Place(fix.latitude, fix.longitude, CURRENT_LOCATION_NAME, java.time.Instant.now().minusMillis(ageMillis),
+            accuracyMeters = fix.accuracy, nameResolved = false)
     }
 
-    override suspend fun describe(place: Place): Place = coroutineScope {
-        val android = async { withTimeoutOrNull(4_000) {
-            placeName(Location("name").apply { latitude = place.latitude; longitude = place.longitude })
-        } }
-        val names = try {
-            withTimeoutOrNull(6_000) { MmlPlaceNames().reverseCandidates(place.latitude, place.longitude, PlaceNames.FALLBACK_RADIUS_METERS) }.orEmpty()
-        } catch (e: CancellationException) { throw e } catch (_: Exception) { emptyList() }
-        if (names.isNotEmpty()) {
-            android.cancel()
-            val city = names.first().municipality
-            val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-            val detail = names.firstOrNull { it.municipality == city && !it.name.equals(city, true) }
-                ?.takeIf { fine && place.accuracyMeters != null && place.accuracyMeters <= 200f }
-            place.copy(name = city, nearbyName = detail?.name, nearbyDistanceMeters = detail?.distanceMeters)
-        } else {
-            place.copy(name = android.await()?.label ?: "Nykyinen sijainti")
-        }
-    }
+    override suspend fun describe(place: Place): Place = DevicePlaceName(
+        reverse = { MmlPlaceNames().reverseCandidates(it.latitude, it.longitude, PlaceNames.FALLBACK_RADIUS_METERS) },
+        address = { placeName(Location("name").apply { latitude = it.latitude; longitude = it.longitude }) },
+        finePermission = { ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED },
+    ).describe(place)
 
     @android.annotation.SuppressLint("MissingPermission")
     private suspend fun current(manager: LocationManager, provider: String): Location? = suspendCancellableCoroutine { c ->
@@ -84,7 +71,7 @@ class DeviceLocation(private val context: Context) : LocationProvider {
     private suspend fun placeName(location: Location): AddressName? = suspendCancellableCoroutine { c ->
         if (!Geocoder.isPresent()) { c.resume(null); return@suspendCancellableCoroutine }
         try {
-            Geocoder(context, FINNISH).getFromLocation(location.latitude, location.longitude, 5, object : Geocoder.GeocodeListener {
+            Geocoder(context, FINNISH).getFromLocation(location.latitude, location.longitude, 1, object : Geocoder.GeocodeListener {
                 override fun onGeocode(addresses: MutableList<android.location.Address>) {
                     val name = addressName(addresses)
                     if (c.isActive) c.resume(name)
