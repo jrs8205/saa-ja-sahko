@@ -20,31 +20,27 @@ import java.time.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class WarningRecoveryTest {
     private val now = Instant.parse("2026-09-17T12:00:00Z")
-    private val place = Place(60.27, 24.75, "Espoo", now)
+    private val place = Place(60.27, 24.75, "Espoo", now, origin = PlaceOrigin.DEVICE)
 
-    @Test fun `pending lease expires after process restart and handles legacy flag and clock rollback`() {
+    @Test fun `pending state has an owner uses no preference writes and ignores legacy disk flags`() = runTest {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        var time = now
-        val clock = object : Clock() {
-            override fun getZone() = ZoneOffset.UTC
-            override fun withZone(zone: ZoneId) = this
-            override fun instant() = time
-        }
-        val service = WarningService(app, clock)
-        service.savePlace(place); service.beginLocationUpdate()
-        assertTrue(WarningService(app, clock).locationPending)
-        time = time.plusMillis(WarningService.LOCATION_PENDING_TTL_MS)
-        val restarted = WarningService(app, clock)
-        assertFalse(restarted.locationPending)
-        assertEquals(place, restarted.place())
-        restarted.beginLocationUpdate(); time = time.minusSeconds(1)
-        assertFalse(restarted.locationPending)
-        app.getSharedPreferences("warnings", Context.MODE_PRIVATE).edit().putBoolean("locationPending", true).remove("pendingSince").commit()
-        assertFalse(WarningService(app, clock).locationPending)
+        val prefs = app.getSharedPreferences("warnings", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("locationPending", true).putLong("pendingSince", now.toEpochMilli()).commit()
+        val before = prefs.all
+        val first = WarningService(app, evaluationScope = backgroundScope)
+        val second = WarningService(app, evaluationScope = backgroundScope)
+        assertFalse(first.locationPending)
+        first.beginLocationUpdate(); assertTrue(second.locationPending)
+        second.beginLocationUpdate()
+        first.endLocationUpdate(); assertTrue(second.locationPending)
+        first.savePlace(place); assertNull(second.place())
+        second.endLocationUpdate(); assertFalse(first.locationPending)
+        first.endLocationUpdate(); second.endLocationUpdate()
+        assertEquals(before, prefs.all)
     }
 
     @Test fun `place JSON stores origin and resolved state independently of the visible text`() {
-        val renamed = place.copy(name = "Oma paikka", nameResolved = false)
+        val renamed = place.copy(name = "Oma paikka", nameResolved = false, nameAnchor = NameAnchor(60.27, 24.75, 10f))
         assertEquals(renamed, placeFromJson(renamed.toJson()))
         val selected = renamed.copy(origin = PlaceOrigin.SELECTED)
         assertEquals(selected, placeFromJson(selected.toJson()))
@@ -58,10 +54,10 @@ class WarningRecoveryTest {
         try {
             val app = ApplicationProvider.getApplicationContext<Application>()
             var fetches = 0; var evaluations = 0; var fail = false
-            val feed = object : WarningFeed {
+            val feed = object : FakeWarningFeed() {
                 override suspend fun cached(): WarningSnapshot? = null
                 override suspend fun refresh(): WarningSnapshot { fetches++; delay(100); return WarningSnapshot(now, now, emptyList()) }
-                override suspend fun reevaluate() { evaluations++; if (fail) throw SecurityException("revoked") }
+                override suspend fun reevaluate(): Boolean { evaluations++; if (fail) throw SecurityException("revoked"); return true }
             }
             val model = WarningsViewModel(app, feed)
             model.start(); runCurrent(); model.place(place); runCurrent()
@@ -71,9 +67,53 @@ class WarningRecoveryTest {
             assertEquals(2, evaluations)
             fail = true; model.place(place); runCurrent()
             assertNotNull(model.state.value.error)
+            fail = false; model.place(place); runCurrent()
+            assertNull(model.state.value.error)
             advanceTimeBy(15 * 60_000L); runCurrent()
             assertEquals(2, fetches)
             model.stop(); runCurrent()
         } finally { Dispatchers.resetMain() }
     }
+
+    @Test fun `stale feed retries after location completes and all controls use only the injected backend`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler); Dispatchers.setMain(dispatcher)
+        try {
+            val app = ApplicationProvider.getApplicationContext<Application>()
+            var fetches = 0; var fresh = false; var interval = 0; var enabledCalls = 0; var tests = 0
+            val feed = object : FakeWarningFeed() {
+                override val enabled = true
+                override suspend fun refresh(): WarningSnapshot {
+                    fetches++; if (fetches == 1) error("offline")
+                    delay(100); fresh = true; return WarningSnapshot(now, now, emptyList())
+                }
+                override suspend fun reevaluate() = fresh
+                override fun setEnabled(value: Boolean) { enabledCalls++ }
+                override fun interval(minutes: Int) { interval = minutes }
+                override fun testNotification() { tests++ }
+            }
+            val model = WarningsViewModel(app, feed)
+            model.start(); runCurrent(); assertNotNull(model.state.value.error)
+            model.place(place); model.place(place); runCurrent()
+            assertEquals(2, fetches)
+            advanceTimeBy(101); runCurrent(); assertNull(model.state.value.error)
+            model.place(place); runCurrent(); assertEquals(2, fetches)
+            model.interval(60); model.enable(false); model.test()
+            advanceTimeBy(10_001); runCurrent()
+            assertEquals(60, interval); assertEquals(2, enabledCalls); assertEquals(1, tests)
+            assertTrue(app.getSharedPreferences("warnings", Context.MODE_PRIVATE).all.isEmpty())
+            model.stop()
+        } finally { Dispatchers.resetMain() }
+    }
+}
+
+internal open class FakeWarningFeed : WarningFeed {
+    override val enabled = false
+    override val intervalMinutes = 30
+    override fun allowed() = true
+    override fun setEnabled(value: Boolean) {}
+    override fun interval(minutes: Int) {}
+    override fun testNotification() {}
+    override suspend fun cached(): WarningSnapshot? = null
+    override suspend fun refresh() = WarningSnapshot(Instant.EPOCH, Instant.EPOCH, emptyList())
+    override suspend fun reevaluate() = true
 }

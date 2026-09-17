@@ -50,7 +50,7 @@ class DeviceLocation(private val context: Context) : LocationProvider {
         val fix = location ?: throw LocationFailure("Tuoretta sijaintia ei saatu. Yritä uudelleen.")
         val ageMillis = ((SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos) / 1_000_000).coerceAtLeast(0)
         Place(fix.latitude, fix.longitude, CURRENT_LOCATION_NAME, java.time.Instant.now().minusMillis(ageMillis),
-            accuracyMeters = fix.accuracy, nameResolved = false)
+            accuracyMeters = fix.accuracy, origin = PlaceOrigin.DEVICE, nameResolved = false)
     }
 
     override suspend fun describe(place: Place): Place = DevicePlaceName(

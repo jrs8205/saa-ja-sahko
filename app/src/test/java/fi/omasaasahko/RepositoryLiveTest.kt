@@ -22,7 +22,7 @@ class RepositoryLiveTest {
         runBlocking {
             val now = Instant.now()
             val repo = Repository(ApplicationProvider.getApplicationContext<Context>())
-            val place = Place(60.29, 24.84, "Tikkurila, Vantaa", now)
+            val place = Place(60.29, 24.84, "Tikkurila, Vantaa", now, origin = PlaceOrigin.DEVICE)
             val fmi = async { repo.weather(WeatherSource.FMI, place, now) }
             val meteo = async { repo.weather(WeatherSource.OPEN_METEO, place, now) }
             val prices = async { repo.prices(now) }

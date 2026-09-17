@@ -10,7 +10,19 @@ import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DevicePlaceNameTest {
-    private val fix = Place(60.27, 24.75, CURRENT_LOCATION_NAME, Instant.EPOCH, accuracyMeters = 10f, nameResolved = false)
+    private val fix = Place(60.27, 24.75, CURRENT_LOCATION_NAME, Instant.EPOCH, accuracyMeters = 10f, nameResolved = false, origin = PlaceOrigin.DEVICE)
+
+    @Test fun `retained names stay anchored to their original fix through successive small movements`() {
+        val original = fix.copy(name = "Espoo", nearbyName = "Nikunmäki", nameResolved = true)
+        val first = retainDeviceName(fix.copy(latitude = fix.latitude + 0.0003), original)
+        assertTrue(first.nameResolved)
+        val stored = first
+        assertEquals(original.latitude, stored.nameAnchor!!.latitude, 0.0)
+        val second = retainDeviceName(fix.copy(latitude = fix.latitude + 0.0006), stored)
+        assertFalse("Two short steps must not carry the name beyond 50 metres", second.nameResolved)
+        assertFalse(retainDeviceName(fix, original.copy(accuracyMeters = 500f)).nameResolved)
+        assertFalse(retainDeviceName(fix, original.copy(accuracyMeters = null)).nameResolved)
+    }
 
     @Test fun `production naming uses MML independently of Android district and skips duplicate candidates`() = runTest {
         val names = listOf(NearbyName("Espoo", "Espoo", 10.0), NearbyName("Across border", "Vantaa", 15.0), NearbyName("Nikunmäki", "Espoo", 20.0))

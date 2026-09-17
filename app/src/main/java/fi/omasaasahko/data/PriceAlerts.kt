@@ -20,6 +20,8 @@ import fi.omasaasahko.R
 import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Clock
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -32,6 +34,8 @@ data class PriceAlertState(val enabled: Boolean = false, val allowed: Boolean = 
 internal fun priceBackgroundCheckAllowed(now: Instant): Boolean = now.atZone(HELSINKI).hour in 14..15
 
 internal fun nextPriceCheck(now: Instant, needed: Boolean, afterAttempt: Boolean = false): Instant {
+    val today = now.atZone(HELSINKI)
+    if (today.hour < 14) return today.toLocalDate().atTime(14, 0).atZone(HELSINKI).toInstant()
     val candidate = if (afterAttempt) now.plusSeconds(15 * 60) else now
     val local = candidate.atZone(HELSINKI)
     if (needed && local.toLocalDate() == now.atZone(HELSINKI).toLocalDate()) {
@@ -60,7 +64,7 @@ fun tomorrowPriceMessage(data: PriceData, now: Instant, includeVat: Boolean): St
         "Kallein tunti ${interval(highest)}: ${Prices.format(highest.centsPerKwh)} snt/kWh"
 }
 
-class PriceAlerts(context: Context) {
+class PriceAlerts(context: Context, private val scheduleClock: Clock = Clock.systemUTC()) {
     private val context = context.applicationContext
     private val prefs = this.context.getSharedPreferences("price-alerts",Context.MODE_PRIVATE)
     val enabled: Boolean get() = prefs.getBoolean("enabled",false)
@@ -73,18 +77,26 @@ class PriceAlerts(context: Context) {
         prefs.edit { putBoolean("enabled",value) }
         if (value) {
             channel()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK,ExistingPeriodicWorkPolicy.UPDATE,
-                priceWork(nextPriceCheck(Instant.now(), needsCheck(Instant.now()))))
+            schedule(ExistingPeriodicWorkPolicy.UPDATE)
         } else {
             WorkManager.getInstance(context).cancelUniqueWork(WORK)
             NotificationManagerCompat.from(context).cancel("tomorrow-prices",3)
             NotificationManagerCompat.from(context).cancel("price-test",4)
         }
     }
+    fun ensureScheduled() { if (enabled) { channel(); schedule(ExistingPeriodicWorkPolicy.KEEP) } }
+    private fun schedule(policy: ExistingPeriodicWorkPolicy) {
+        val now = scheduleClock.instant()
+        // Foreground already checks prices. Give it time to finish before the next worker.
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK, policy,
+            priceWork(nextPriceCheck(now, needsCheck(now), afterAttempt = true)))
+    }
     suspend fun check(clock: Clock = Clock.systemUTC(),
-                      loadPrices: suspend (Instant) -> PriceData = { Repository(context, cachePrices=false).prices(it) }) {
+                      loadPrices: suspend (Instant) -> PriceData = { Repository(context, cachePrices=false).prices(it) }) = check(false, clock, loadPrices)
+    private suspend fun check(background: Boolean, clock: Clock, loadPrices: suspend (Instant) -> PriceData) = checkLock.withLock {
         val now = clock.instant()
-        if (!needsCheck(now)) return
+        if (background && !priceBackgroundCheckAllowed(now)) return@withLock
+        if (!needsCheck(now)) return@withLock
         // No cache write here: foreground Repository owns its price-cache file.
         val prices = loadPrices(now)
         consider(prices,clock.instant())
@@ -92,7 +104,7 @@ class PriceAlerts(context: Context) {
     suspend fun checkBackground(clock: Clock = Clock.systemUTC(),
                                 loadPrices: suspend (Instant) -> PriceData = { Repository(context, cachePrices=false).prices(it) }) {
         // A delayed worker must not turn an afternoon request into a nighttime request.
-        if (priceBackgroundCheckAllowed(clock.instant())) check(clock, loadPrices)
+        check(true, clock, loadPrices)
     }
     @android.annotation.SuppressLint("MissingPermission")
     fun consider(prices: PriceData, now: Instant) = synchronized(notificationLock) {
@@ -134,6 +146,7 @@ class PriceAlerts(context: Context) {
         const val CHANNEL = "tomorrow-electricity"
         const val WORK = "tomorrow-electricity-check"
         private val notificationLock = Any()
+        private val checkLock = Mutex()
     }
 }
 class PriceAlertWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context,parameters) {
@@ -160,14 +173,19 @@ class PriceAlertViewModel(application: Application) : AndroidViewModel(applicati
     private val notificationTest = DelayedNotificationTest(viewModelScope,
         { pending -> mutable.update { it.copy(testPending = pending) } },
         { if (service.enabled) service.testNotification() })
+    private var latestPrices: PriceData? = null
     fun test() = notificationTest.start()
-    fun resume() { mutable.update { it.copy(enabled=service.enabled,allowed=service.allowed()) }; if (service.enabled) service.setEnabled(true) }
+    fun resume() { mutable.update { it.copy(enabled=service.enabled,allowed=service.allowed()) }; service.ensureScheduled() }
     fun enable(value: Boolean) {
         if (!value) notificationTest.cancel()
-        service.setEnabled(value); resume()
-        if (value) viewModelScope.launch { try { service.check() } catch (e: CancellationException) { throw e } catch (_: Exception) { /* Scheduled worker retries. */ } }
+        service.setEnabled(value)
+        mutable.update { it.copy(enabled=service.enabled,allowed=service.allowed()) }
+        if (value) viewModelScope.launch { try {
+            latestPrices?.let { service.consider(it, Instant.now()) }
+            service.check()
+        } catch (e: CancellationException) { throw e } catch (_: Exception) { /* Scheduled worker retries. */ } }
     }
-    fun prices(data: PriceData?) { if (data != null) viewModelScope.launch(Dispatchers.IO) {
+    fun prices(data: PriceData?) { latestPrices = data; if (data != null) viewModelScope.launch(Dispatchers.IO) {
         try { service.consider(data,Instant.now()) } catch (_: SecurityException) { /* Permission changed while posting; do not consume the date. */ }
     } }
 }

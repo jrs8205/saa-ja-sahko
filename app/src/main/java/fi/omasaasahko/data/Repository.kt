@@ -2,7 +2,6 @@ package fi.omasaasahko.data
 
 import android.content.Context
 import android.util.AtomicFile
-import androidx.core.content.edit
 import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
 import okhttp3.*
@@ -20,25 +19,26 @@ interface DataRepository {
     suspend fun cached(): CachedData
     suspend fun weather(source: WeatherSource, place: Place, now: Instant): Forecast
     suspend fun prices(now: Instant): PriceData
-    fun rememberDevicePlace(place: Place) {}
 }
 
-class Repository(context: Context, private val cachePrices: Boolean = true) : DataRepository {
-    private val names = context.getSharedPreferences("weather-place-name", Context.MODE_PRIVATE)
-    override fun rememberDevicePlace(place: Place) {
-        require(place.origin == PlaceOrigin.DEVICE)
-        names.edit { putString("place", place.toJson().toString()) }
-    }
+class Repository(context: Context, private val cachePrices: Boolean = true,
+                 private val http: OkHttpClient = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS)
+                     .readTimeout(25, TimeUnit.SECONDS).callTimeout(35, TimeUnit.SECONDS).build()) : DataRepository {
+    private val locations = WarningService(context)
     private val cache = File(context.filesDir, "forecast-cache").apply { mkdirs() }
-    private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(25, TimeUnit.SECONDS).callTimeout(35, TimeUnit.SECONDS).build()
 
     override suspend fun cached(): CachedData = withContext(Dispatchers.IO) {
-        val devicePlace = runCatching { placeFromJson(JSONObject(names.getString("place", "")!!), PlaceOrigin.DEVICE) }.getOrNull()
+        val devicePlace = locations.place()
         val weather = WeatherSource.entries.mapNotNull { source ->
-            read(source.name)?.let { stored -> runCatching {
+            val stored = read("${source.name}-DEVICE") ?: read(source.name)
+            stored?.let { runCatching {
                 val p = stored.getJSONObject("place")
-                val storedPlace = placeFromJson(p)
+                var storedPlace = placeFromJson(p)
+                // Untyped legacy data is safe only when the saved device fix proves its identity.
+                if (storedPlace.origin == PlaceOrigin.UNKNOWN && devicePlace != null &&
+                    storedPlace.latitude == devicePlace.latitude && storedPlace.longitude == devicePlace.longitude &&
+                    storedPlace.locatedAt == devicePlace.locatedAt) storedPlace = storedPlace.copy(origin = PlaceOrigin.DEVICE)
+                require(storedPlace.origin == PlaceOrigin.DEVICE)
                 val place = devicePlace?.takeIf { storedPlace.origin == PlaceOrigin.DEVICE && !storedPlace.nameResolved &&
                     it.latitude == storedPlace.latitude && it.longitude == storedPlace.longitude && it.locatedAt == storedPlace.locatedAt } ?: storedPlace
                 val at = Instant.parse(stored.getString("fetched"))
@@ -83,7 +83,7 @@ class Repository(context: Context, private val cachePrices: Boolean = true) : Da
             result = Parsers.openMeteo(body, place, now)
         }
         val obs = observationBody?.let { runCatching { FmiObservations.parse(it, place, now) }.getOrNull() }
-        save(source.name, JSONObject().put("fetched", now.toString()).put("body", body)
+        save("${source.name}-${place.origin.name}", JSONObject().put("fetched", now.toString()).put("body", body)
             .put("observation", observationBody).put("place", place.toJson()))
         result.copy(observation = obs?.weather, observationStation = obs?.station)
     }

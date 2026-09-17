@@ -25,11 +25,11 @@ class WeatherProviderLiveTest {
         runBlocking {
             val context = ApplicationProvider.getApplicationContext<Context>()
             val repo = Repository(context); val now = Instant.now()
-            val place = Place(60.29,24.84,"Tikkurila, Vantaa",now)
+            val place = Place(60.29,24.84,"Tikkurila, Vantaa",now, origin = PlaceOrigin.DEVICE)
             val a = async { repo.weather(WeatherSource.FMI,place,now) }
             val b = async { repo.weather(WeatherSource.OPEN_METEO,place,now) }
             val fmi = a.await(); val om = b.await()
-            fun body(source: WeatherSource) = JSONObject(File(context.filesDir,"forecast-cache/${source.name}.json").readText()).getString("body")
+            fun body(source: WeatherSource) = JSONObject(File(context.filesDir,"forecast-cache/${source.name}-DEVICE.json").readText()).getString("body")
             val raw = JSONObject(body(WeatherSource.OPEN_METEO)); val hourly = raw.getJSONObject("hourly"); val daily = raw.getJSONObject("daily")
             val units = raw.getJSONObject("hourly_units")
             assertEquals("°C",units.getString("temperature_2m")); assertEquals("m/s",units.getString("wind_speed_10m")); assertEquals("mm",units.getString("precipitation"))

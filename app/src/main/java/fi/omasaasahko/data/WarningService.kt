@@ -31,55 +31,72 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 interface WarningFeed {
+    val enabled: Boolean
+    val intervalMinutes: Int
+    fun allowed(): Boolean
+    fun setEnabled(value: Boolean)
+    fun interval(minutes: Int)
+    fun testNotification()
     suspend fun cached(): WarningSnapshot?
     suspend fun refresh(): WarningSnapshot
-    suspend fun reevaluate()
+    suspend fun reevaluate(): Boolean
 }
 
-class WarningService(context: Context, private val clock: Clock = Clock.systemUTC()) : WarningFeed {
+class WarningService(context: Context, private val clock: Clock = Clock.systemUTC(),
+                     private val evaluationScope: CoroutineScope = notificationScope) : WarningFeed {
     private val context = context.applicationContext
     private val prefs = this.context.getSharedPreferences("warnings", Context.MODE_PRIVATE)
     private val file = AtomicFile(File(this.context.filesDir, "warnings.json"))
-    val enabled: Boolean get() = prefs.getBoolean("enabled", false)
-    val intervalMinutes: Int get() = prefs.getInt("interval", 30).takeIf { it in setOf(15, 30, 60) } ?: 30
-    fun interval(minutes: Int) {
+    private val locationOwner = Any()
+    override val enabled: Boolean get() = prefs.getBoolean("enabled", false)
+    override val intervalMinutes: Int get() = prefs.getInt("interval", 30).takeIf { it in setOf(15, 30, 60) } ?: 30
+    override fun interval(minutes: Int) {
         require(minutes in setOf(15, 30, 60))
         prefs.edit { putInt("interval", minutes) }
         if (enabled) setEnabled(true)
     }
-    fun allowed(): Boolean = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED &&
+    override fun allowed(): Boolean = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED &&
         NotificationManagerCompat.from(context).areNotificationsEnabled() &&
         context.getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL)?.importance != NotificationManager.IMPORTANCE_NONE
-    val locationPending: Boolean get() = synchronized(placeLock) {
-        val since = prefs.getLong("pendingSince", 0)
-        val age = clock.millis() - since
-        val active = prefs.getBoolean("locationPending", false) && since > 0 && age in 0 until LOCATION_PENDING_TTL_MS
-        if (!active && prefs.getBoolean("locationPending", false)) endLocationUpdate()
-        active
-    }
+    val locationPending: Boolean get() = synchronized(placeLock) { pendingOwner != null }
     fun place(): Place? = synchronized(placeLock) { runCatching {
-        placeFromJson(JSONObject(requireNotNull(prefs.getString("place", null))), PlaceOrigin.DEVICE)
+        // The notification store is authoritative. Import the older UI-only store only if absent.
+        val value = prefs.getString("place", null) ?: context.getSharedPreferences("weather-place-name", Context.MODE_PRIVATE)
+            .getString("place", null)?.also { legacy -> prefs.edit(commit = true) { putString("place", legacy) } }
+        placeFromJson(JSONObject(requireNotNull(value)), PlaceOrigin.DEVICE).takeIf { it.origin == PlaceOrigin.DEVICE }
     }.getOrNull() }
     fun beginLocationUpdate() = synchronized(placeLock) {
-        prefs.edit(commit = true) { putBoolean("locationPending", true); putLong("pendingSince", clock.millis()) }
+        pendingOwner = locationOwner
     }
-    fun endLocationUpdate() = synchronized(placeLock) {
-        prefs.edit(commit = true) { putBoolean("locationPending", false); remove("pendingSince") }
-    }
-    fun savePlace(place: Place, ready: Boolean = true) = synchronized(placeLock) {
-        require(place.origin == PlaceOrigin.DEVICE)
-        prefs.edit(commit = true) {
-            putString("place", place.toJson().toString()); putBoolean("locationPending", !ready)
-            if (ready) remove("pendingSince") else putLong("pendingSince", clock.millis())
+    fun endLocationUpdate() {
+        val ended = synchronized(placeLock) {
+            if (pendingOwner !== locationOwner) false else { pendingOwner = null; true }
+        }
+        // Outlive the closing Activity/ViewModel, but never outlive the process. No network request.
+        if (ended) evaluationScope.launch {
+            try { reevaluate() }
+            catch (e: CancellationException) { throw e }
+            catch (_: Exception) { /* A later worker can retry the cached notification update. */ }
         }
     }
-    override suspend fun reevaluate() = withContext(Dispatchers.IO) {
-        val now = clock.instant()
-        cached()?.takeIf { java.time.Duration.between(it.fetchedAt, now).seconds in 0..900 }
-            ?.let { try { notifyNew(it, now) } catch (_: SecurityException) { /* Permission revoked during evaluation. */ } }
-        Unit
+    fun savePlace(place: Place, ready: Boolean = true) {
+        synchronized(placeLock) {
+            require(place.origin == PlaceOrigin.DEVICE)
+            if (pendingOwner != null && pendingOwner !== locationOwner) return
+            val value = place.toJson().toString()
+            if (prefs.getString("place", null) != value) prefs.edit(commit = true) { putString("place", value) }
+            if (!ready) pendingOwner = locationOwner
+        }
+        if (ready) endLocationUpdate()
     }
-    fun setEnabled(value: Boolean) {
+    override suspend fun reevaluate(): Boolean = withContext(Dispatchers.IO) {
+        val now = clock.instant()
+        val snapshot = cached()?.takeIf { java.time.Duration.between(it.fetchedAt, now).seconds in 0..900 }
+            ?: return@withContext false
+        notifyNew(snapshot, now)
+        true
+    }
+    override fun setEnabled(value: Boolean) {
         prefs.edit { putBoolean("enabled", value) }
         if (value) {
             createChannel()
@@ -164,7 +181,7 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
         prefs.edit(commit = true) { putString("seen", kept.toString()); putStringSet("posted", active.keys) }
     } }
     @android.annotation.SuppressLint("MissingPermission")
-    fun testNotification() {
+    override fun testNotification() {
         if (!allowed()) return
         createChannel()
         NotificationManagerCompat.from(context).notify("test", 2,
@@ -190,7 +207,8 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
         const val FEED = "https://alerts.fmi.fi/cap/feed/atom_fi-FI.xml"
         const val CHANNEL = "weather-warnings"
         const val WORK = "weather-warning-check"
-        internal const val LOCATION_PENDING_TTL_MS = 2 * 60_000L
+        private var pendingOwner: Any? = null
+        private val notificationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         private val placeLock = Any()
         private val mutex = Mutex()
         private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS).readTimeout(25, TimeUnit.SECONDS).callTimeout(40, TimeUnit.SECONDS).build()

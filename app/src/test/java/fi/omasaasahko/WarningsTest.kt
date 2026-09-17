@@ -14,13 +14,16 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.Instant
+import kotlinx.coroutines.*
+import org.json.JSONObject
+import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class WarningsTest {
     private val now = Instant.parse("2026-09-16T09:00:00Z")
-    private val vantaa = Place(60.29,24.84,"Tikkurila, Vantaa",now)
-    private val tampere = Place(61.5,23.76,"Tampere",now)
+    private val vantaa = Place(60.29,24.84,"Tikkurila, Vantaa",now, origin = PlaceOrigin.DEVICE)
+    private val tampere = Place(61.5,23.76,"Tampere",now, origin = PlaceOrigin.DEVICE)
     private fun feed(vararg alerts: String) = """<feed xmlns="http://www.w3.org/2005/Atom"><updated>$now</updated>${alerts.joinToString("") { "<entry><content>$it</content></entry>" }}</feed>"""
     private fun alert(id: String = "a", type: String = "Alert", references: String = "", severity: String = "Moderate",
         onset: String = "2026-09-18T12:00:00+03:00", expires: String = "2026-09-19T00:00:00+03:00", status: String = "Actual",
@@ -125,20 +128,25 @@ class WarningsTest {
         assertEquals(0,manager.activeNotifications.size)
     }
 
-    @Test fun `expired location lease allows cancellation processing again after process death`() {
+    @Test fun `ending location update evaluates newly cached warnings and cancellations immediately`() = runBlocking {
         val app = ApplicationProvider.getApplicationContext<Application>()
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_COARSE_LOCATION)
         app.getSharedPreferences("warnings", Context.MODE_PRIVATE).edit().clear().putBoolean("enabled", true).commit()
-        val clock = java.time.Clock.fixed(now, java.time.ZoneOffset.UTC)
-        val service = WarningService(app, clock)
-        service.savePlace(vantaa)
-        service.notifyNew(WarningParser.parse(feed(alert()), now), now)
-        val manager = app.getSystemService(NotificationManager::class.java)
-        assertEquals(1, manager.activeNotifications.size)
-        service.beginLocationUpdate()
-        val later = now.plusSeconds(180)
-        WarningService(app, java.time.Clock.fixed(later, java.time.ZoneOffset.UTC))
-            .notifyNew(WarningParser.parse(feed(), later), later)
-        assertTrue(manager.activeNotifications.isEmpty())
+        val evaluationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            val service = WarningService(app, java.time.Clock.fixed(now, java.time.ZoneOffset.UTC), evaluationScope)
+            service.savePlace(vantaa)
+            val manager = app.getSystemService(NotificationManager::class.java)
+            for (body in listOf(feed(alert()), feed())) {
+                service.beginLocationUpdate()
+                File(app.filesDir, "warnings.json").writeText(JSONObject().put("fetched", now.toString()).put("body", body).toString())
+                val before = manager.activeNotifications.size
+                service.notifyNew(WarningParser.parse(body, now), now)
+                assertEquals(before, manager.activeNotifications.size)
+                service.endLocationUpdate()
+                evaluationScope.coroutineContext.job.children.toList().joinAll()
+                assertEquals(1 - before, manager.activeNotifications.size)
+            }
+        } finally { evaluationScope.cancel() }
     }
 }

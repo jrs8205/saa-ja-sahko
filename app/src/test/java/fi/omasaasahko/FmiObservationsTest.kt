@@ -2,6 +2,7 @@ package fi.omasaasahko
 
 import fi.omasaasahko.data.FmiObservations
 import fi.omasaasahko.domain.Place
+import fi.omasaasahko.domain.PlaceOrigin
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -13,7 +14,7 @@ import java.time.Instant
 @Config(sdk = [35])
 class FmiObservationsTest {
     private val now = Instant.parse("2026-09-17T12:00:00Z")
-    private val place = Place(60.39, 25.66, "Porvoo", now)
+    private val place = Place(60.39, 25.66, "Porvoo", now, origin = PlaceOrigin.DEVICE)
     private fun body(nearValues: String = "14 NaN 200", extra: String = "", extraValues: String = "") = """
         <root xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xlink="http://www.w3.org/1999/xlink">
           <Location><gml:identifier codeSpace="id/fmisid">far</gml:identifier><gml:name codeSpace="id/name">Kauempi</gml:name><representativePoint xlink:href="#p-far"/></Location>

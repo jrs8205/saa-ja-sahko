@@ -7,7 +7,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import fi.omasaasahko.data.*
 import fi.omasaasahko.domain.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,12 +20,49 @@ import java.time.*
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[35])
 class PriceAlertsTest {
+    @Test fun `a background check waiting for another request rechecks the time window before downloading`() = runBlocking {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        app.getSharedPreferences("price-alerts", Context.MODE_PRIVATE).edit().clear().putBoolean("enabled", true).commit()
+        val day = LocalDate.of(2026, 9, 17)
+        var time = day.atTime(15, 59).atZone(HELSINKI).toInstant()
+        val clock = object : Clock() {
+            override fun getZone() = ZoneOffset.UTC
+            override fun withZone(zone: ZoneId) = this
+            override fun instant() = time
+        }
+        val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
+        val manual = async { PriceAlerts(app).check(clock) { entered.complete(Unit); release.await(); PriceData(time, emptyList()) } }
+        entered.await()
+        var backgroundRequests = 0
+        val worker = async { PriceAlerts(app).checkBackground(clock) { backgroundRequests++; data(day.plusDays(1)) } }
+        yield()
+        time = day.atTime(16, 0).atZone(HELSINKI).toInstant()
+        release.complete(Unit); manual.await(); worker.await()
+        assertEquals(0, backgroundRequests)
+    }
+    @Test fun `concurrent notification checks share the completion guard before downloading again`() = runBlocking {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        app.getSharedPreferences("price-alerts", Context.MODE_PRIVATE).edit().clear().putBoolean("enabled", true).commit()
+        val day = LocalDate.of(2026, 9, 17)
+        val clock = Clock.fixed(day.atTime(14, 30).atZone(HELSINKI).toInstant(), ZoneOffset.UTC)
+        var requests = 0
+        listOf(PriceAlerts(app), PriceAlerts(app)).map { service -> async {
+            service.check(clock) { requests++; delay(20); data(day.plusDays(1)) }
+        } }.awaitAll()
+        assertEquals(1, requests)
+        assertEquals(1, app.getSystemService(NotificationManager::class.java).activeNotifications.size)
+    }
     @Test fun `next background run sleeps until Finnish afternoon across daylight saving transitions`() {
         for (date in listOf("2026-03-28", "2026-10-24", "2026-09-17")) {
             val day = LocalDate.parse(date)
             fun at(hour: Int, minute: Int = 0) = day.atTime(hour, minute).atZone(HELSINKI).toInstant()
             val nextAfternoon = day.plusDays(1).atTime(14, 0).atZone(HELSINKI).toInstant()
             assertEquals(at(14), nextPriceCheck(at(2), needed = true))
+            assertEquals(at(14), nextPriceCheck(at(9), needed = false))
+            assertEquals(at(14), nextPriceCheck(at(13, 59), needed = true, afterAttempt = true))
+            assertEquals(at(14), nextPriceCheck(at(13, 45), needed = false, afterAttempt = true))
             assertEquals(at(14, 15), nextPriceCheck(at(14), needed = true, afterAttempt = true))
             assertEquals(nextAfternoon, nextPriceCheck(at(15, 50), needed = true, afterAttempt = true))
             assertEquals(nextAfternoon, nextPriceCheck(at(18), needed = true))

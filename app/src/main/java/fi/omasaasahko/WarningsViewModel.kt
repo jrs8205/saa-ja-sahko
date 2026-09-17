@@ -15,41 +15,54 @@ data class WarningsState(val snapshot: WarningSnapshot? = null, val loading: Boo
 
 class WarningsViewModel(application: Application, private val feed: WarningFeed) : AndroidViewModel(application) {
     constructor(application: Application) : this(application, WarningService(application))
-    private val service = WarningService(application)
-    private val mutable = MutableStateFlow(WarningsState(enabled = service.enabled, allowed = service.allowed(), intervalMinutes = service.intervalMinutes))
+    private val mutable = MutableStateFlow(WarningsState(enabled = feed.enabled, allowed = feed.allowed(), intervalMinutes = feed.intervalMinutes))
     val state = mutable.asStateFlow()
     private val notificationTest = DelayedNotificationTest(viewModelScope,
         { pending -> mutable.update { it.copy(testPending = pending) } },
-        { if (service.enabled) service.testNotification() })
+        { if (feed.enabled) feed.testNotification() })
     private var loop: Job? = null
     private var fetch: Job? = null
+    private var refreshError: String? = null
+    private var evaluationError: String? = null
     init { viewModelScope.launch { val cache = feed.cached(); mutable.update { it.copy(snapshot = it.snapshot ?: cache) } } }
     fun place(place: Place?) {
         if (place == null) return
         // AppViewModel persists the device position synchronously, independently of the browsed place.
         viewModelScope.launch {
-            try { feed.reevaluate() }
+            try {
+                val fresh = feed.reevaluate()
+                evaluationError = null
+                mutable.update { it.copy(error = refreshError) }
+                if (!fresh) refresh()
+            }
             catch (e: CancellationException) { throw e }
-            catch (_: Exception) { mutable.update { it.copy(error = "Varoitusten kohdistus epäonnistui. Yritä päivittää uudelleen.") } }
+            catch (_: Exception) {
+                evaluationError = "Varoitusten kohdistus epäonnistui. Yritä päivittää uudelleen."
+                mutable.update { it.copy(error = refreshError ?: evaluationError) }
+            }
         }
     }
     fun start() {
-        mutable.update { it.copy(enabled = service.enabled, allowed = service.allowed()) }
-        if (service.enabled) service.setEnabled(true)
+        mutable.update { it.copy(enabled = feed.enabled, allowed = feed.allowed()) }
+        if (feed.enabled) feed.setEnabled(true)
         if (loop?.isActive == true) return
         loop = viewModelScope.launch { while (isActive) { refresh(); delay(15 * 60_000L) } }
     }
     fun stop() { loop?.cancel(); loop = null; fetch?.cancel(); mutable.update { it.copy(loading = false) } }
-    fun enable(value: Boolean) { if (!value) notificationTest.cancel(); service.setEnabled(value); mutable.update { it.copy(enabled = service.enabled, allowed = service.allowed()) }; if (value) refresh() }
+    fun enable(value: Boolean) { if (!value) notificationTest.cancel(); feed.setEnabled(value); mutable.update { it.copy(enabled = feed.enabled, allowed = feed.allowed()) }; if (value) refresh() }
     fun test() = notificationTest.start()
-    fun interval(minutes: Int) { service.interval(minutes); mutable.update { it.copy(intervalMinutes = minutes) } }
+    fun interval(minutes: Int) { feed.interval(minutes); mutable.update { it.copy(intervalMinutes = minutes) } }
     fun refresh() {
         if (fetch?.isActive == true) return
         fetch = viewModelScope.launch {
-            mutable.update { it.copy(loading = true, error = null) }
-            try { val data = feed.refresh(); ensureActive(); mutable.update { it.copy(snapshot = data, loading = false) } }
+            refreshError = null
+            mutable.update { it.copy(loading = true, error = evaluationError) }
+            try { val data = feed.refresh(); ensureActive(); evaluationError = null; mutable.update { it.copy(snapshot = data, loading = false, error = null) } }
             catch (e: CancellationException) { throw e }
-            catch (_: Exception) { mutable.update { it.copy(loading = false, error = "Varoitusten päivitys epäonnistui. Aiemmat tiedot voivat olla vanhentuneita.") } }
+            catch (_: Exception) {
+                refreshError = "Varoitusten päivitys epäonnistui. Aiemmat tiedot voivat olla vanhentuneita."
+                mutable.update { it.copy(loading = false, error = refreshError) }
+            }
         }
     }
 }

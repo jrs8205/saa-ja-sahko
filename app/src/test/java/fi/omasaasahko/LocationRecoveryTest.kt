@@ -11,7 +11,7 @@ import java.time.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class LocationRecoveryTest {
     private val now = Instant.parse("2026-09-17T12:00:00Z")
-    private val device = Place(60.27, 24.75, "Espoo", now, "Nikunmäki", 10f)
+    private val device = Place(60.27, 24.75, "Espoo", now, "Nikunmäki", 10f, origin = PlaceOrigin.DEVICE)
     private val selected = PlaceResult("porvoo", "Porvoo", "Porvoo", 60.39, 25.66)
     private open class Repo(private val cache: CachedData = CachedData(emptyMap(), null)) : DataRepository {
         override suspend fun cached() = cache
@@ -49,11 +49,12 @@ class LocationRecoveryTest {
             model.start(true); runCurrent(); model.selectPlace(selected); runCurrent()
             fail = true; model.useCurrentLocation()
             assertEquals(device, model.state.value.place)
-            assertTrue(model.state.value.weather.values.all { it.forecast == null })
+            assertTrue(model.state.value.weather.values.all { it.forecast?.place == device })
             runCurrent()
             assertEquals("Ota puhelimen sijainti käyttöön.", model.state.value.locationError)
             assertEquals(device, model.state.value.place)
             assertFalse(pending)
+            assertTrue(model.state.value.weather.values.all { it.forecast?.place == device })
             model.stop()
         } finally { Dispatchers.resetMain() }
     }
@@ -71,6 +72,23 @@ class LocationRecoveryTest {
                 advanceTimeBy(13_000); runCurrent(); assertFalse(pending)
                 assertNull(model.state.value.devicePlace)
             }
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test fun `offline return without permission restores device forecasts without copying favorite weather`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler); Dispatchers.setMain(dispatcher)
+        try {
+            val cached = Forecast(WeatherSource.FMI, device, now, listOf(WeatherHour(now, 14.0)), emptyList())
+            val repo = object : Repo(CachedData(mapOf(WeatherSource.FMI to cached), null, device)) {
+                override suspend fun weather(source: WeatherSource, place: Place, now: Instant): Forecast = error("offline")
+            }
+            val model = AppViewModel(repo, object : LocationProvider { override suspend fun locate(): Place = error("No permission") }, ioDispatcher = dispatcher)
+            runCurrent(); model.start(false); model.selectPlace(selected); runCurrent()
+            model.useCurrentLocation(); runCurrent()
+            assertEquals(device, model.state.value.place)
+            assertEquals(cached, model.state.value.weather.getValue(WeatherSource.FMI).forecast)
+            assertNotNull(model.state.value.weather.getValue(WeatherSource.FMI).error)
+            model.stop()
         } finally { Dispatchers.resetMain() }
     }
 

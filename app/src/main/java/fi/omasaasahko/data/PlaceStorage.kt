@@ -11,6 +11,7 @@ internal fun Place.toJson(): JSONObject = JSONObject().put("lat", latitude).put(
     .put("name", name).put("at", locatedAt.toString()).put("nearbyName", nearbyName)
     .put("accuracy", accuracyMeters).put("nearbyDistance", nearbyDistanceMeters)
     .put("origin", origin.name).put("nameResolved", nameResolved)
+    .put("nameAnchor", nameAnchor?.let { JSONObject().put("lat", it.latitude).put("lon", it.longitude).put("accuracy", it.accuracyMeters) })
 
 internal fun placeFromJson(p: JSONObject, defaultOrigin: PlaceOrigin = PlaceOrigin.UNKNOWN) = Place(p.getDouble("lat"), p.getDouble("lon"), p.getString("name"),
     Instant.parse(p.getString("at")), p.optString("nearbyName").takeIf(String::isNotBlank),
@@ -18,7 +19,8 @@ internal fun placeFromJson(p: JSONObject, defaultOrigin: PlaceOrigin = PlaceOrig
     p.optDouble("nearbyDistance").takeIf { it.isFinite() && it >= 0 },
     runCatching { PlaceOrigin.valueOf(p.getString("origin")) }.getOrDefault(defaultOrigin),
     // Migration of 0.2.2 caches only. Runtime behavior uses the explicit flag.
-    p.optBoolean("nameResolved", p.getString("name") != CURRENT_LOCATION_NAME))
+    p.optBoolean("nameResolved", p.getString("name") != CURRENT_LOCATION_NAME),
+    p.optJSONObject("nameAnchor")?.let { runCatching { NameAnchor(it.getDouble("lat"), it.getDouble("lon"), it.getDouble("accuracy").toFloat()) }.getOrNull() })
 
 interface FavoritePlaces {
     fun load(): List<PlaceResult>

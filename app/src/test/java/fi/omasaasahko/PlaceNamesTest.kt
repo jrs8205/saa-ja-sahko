@@ -30,7 +30,7 @@ class PlaceNamesTest {
 
     @Test fun `official MML point runs through production naming and warning storage`() = runBlocking {
         val names = PlaceNames.nearby(PlaceNames.points(fixture()), lat, lon, PlaceNames.FALLBACK_RADIUS_METERS)
-        val fix = Place(lat, lon, CURRENT_LOCATION_NAME, Instant.EPOCH, accuracyMeters = 10f, nameResolved = false)
+        val fix = Place(lat, lon, CURRENT_LOCATION_NAME, Instant.EPOCH, accuracyMeters = 10f, nameResolved = false, origin = PlaceOrigin.DEVICE)
         val place = DevicePlaceName({ names }, { AddressName("Vantaa", "Tikkurila") }, { true }).describe(fix)
         assertEquals("Vantaa", place.name)
         assertEquals("Kaivopuisto", place.nearbyName)

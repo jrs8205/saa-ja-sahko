@@ -11,8 +11,8 @@ import java.time.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class LocationFlowTest {
     private val now = Instant.parse("2026-09-17T12:00:00Z")
-    private val espoo = Place(60.27, 24.75, "Espoo", now)
-    private val porvoo = Place(60.39, 25.66, "Porvoo", now.plusSeconds(60))
+    private val espoo = Place(60.27, 24.75, "Espoo", now, origin = PlaceOrigin.DEVICE)
+    private val porvoo = Place(60.39, 25.66, "Porvoo", now.plusSeconds(60), origin = PlaceOrigin.DEVICE)
     private val favorite = PlaceResult("porvoo", "Porvoo", "Porvoo", 60.39, 25.66)
     private class Repo : DataRepository {
         val places = mutableListOf<Place>()

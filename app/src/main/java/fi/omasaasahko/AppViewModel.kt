@@ -64,11 +64,14 @@ class AppViewModel(
     private var weatherGeneration = 0
     private var priceGeneration = 0
     private var hasPermission = false
+    private val deviceWeather = mutableMapOf<WeatherSource, Forecast>()
 
     private val cacheJob = viewModelScope.launch {
         val cache = repository.cached()
+        cache.weather.filterValues { it.place.origin == PlaceOrigin.DEVICE }.forEach { (source, forecast) ->
+            deviceWeather.putIfAbsent(source, forecast)
+        }
         val place = cache.devicePlace?.takeIf { it.origin == PlaceOrigin.DEVICE }
-            ?: cache.weather.values.filter { it.place.origin == PlaceOrigin.DEVICE }.maxByOrNull { it.fetchedAt }?.place
         mutable.update { s -> if (s.place != null || s.selectedPlace != null) s.copy(prices = s.prices ?: cache.prices)
             else s.copy(place = place, devicePlace = place, prices = cache.prices,
             weather = WeatherSource.entries.associateWith { source ->
@@ -152,8 +155,11 @@ class AppViewModel(
     fun useCurrentLocation() {
         weatherGeneration++; weatherJob?.cancel()
         mutable.update { it.copy(selectedPlace = null, place = it.devicePlace,
-            weather = WeatherSource.entries.associateWith { SourceState() }) }
+            weather = WeatherSource.entries.associateWith { source -> SourceState(deviceWeather[source]?.takeIf { forecast ->
+                it.devicePlace?.let { device -> samePlace(device, forecast.place) } == true
+            }) }) }
         if (hasPermission) refreshDeviceLocation()
+        else mutable.value.devicePlace?.let(::loadWeather)
     }
 
     fun toggleFavorite(place: PlaceResult) {
@@ -175,6 +181,7 @@ class AppViewModel(
         val selected = mutable.value.selectedPlace
         if (selected != null) loadWeather(selected.place(clock.instant()))
         else if (hasPermission) refreshDeviceLocation()
+        else mutable.value.devicePlace?.let(::loadWeather)
     }
 
     private fun refreshDeviceLocation() {
@@ -192,7 +199,6 @@ class AppViewModel(
                 if (generation != locationGeneration) return@launch
                 val place = retainDeviceName(fix, mutable.value.devicePlace)
                 onDevicePlace(place, false)
-                repository.rememberDevicePlace(place)
                 mutable.update { it.copy(devicePlace = place, locating = false, namingLocation = true) }
                 if (mutable.value.selectedPlace == null) loadWeather(place)
                 namingStarted = true
@@ -205,7 +211,6 @@ class AppViewModel(
                         if (generation != locationGeneration) return@naming
                         val named = retainDeviceName(result, place)
                         onDevicePlace(named, true)
-                        repository.rememberDevicePlace(named)
                         mutable.update { s -> s.copy(devicePlace = named, namingLocation = false,
                             place = if (s.selectedPlace == null) named else s.place,
                             weather = if (s.selectedPlace == null) s.weather.mapValues { (_, old) ->
@@ -214,9 +219,12 @@ class AppViewModel(
                     } finally { if (generation == locationGeneration) onDeviceLocationEnd() }
                 }
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { if (generation == locationGeneration) mutable.update { it.copy(locating = false,
+            catch (e: Exception) { if (generation == locationGeneration) {
+                mutable.update { it.copy(locating = false,
                 namingLocation = false, locationError = (e as? LocationFailure)?.message
-                    ?: "Tuoretta sijaintia ei saatu. Yritä uudelleen.") } }
+                    ?: "Tuoretta sijaintia ei saatu. Yritä uudelleen.") }
+                if (mutable.value.selectedPlace == null) mutable.value.devicePlace?.let(::loadWeather)
+            } }
             finally { if (generation == locationGeneration && !namingStarted) onDeviceLocationEnd() }
         }
     }
@@ -230,8 +238,9 @@ class AppViewModel(
         val generation = ++weatherGeneration
         val now = clock.instant()
         lastWeatherAttempt = now
-        mutable.update { s -> s.copy(place = place, weather = s.weather.mapValues { (_, old) ->
-            old.copy(forecast = old.forecast?.takeIf { samePlace(it.place, place) }, loading = true, error = null)
+        mutable.update { s -> s.copy(place = place, weather = s.weather.mapValues { (source, old) ->
+            old.copy(forecast = (old.forecast?.takeIf { it.place.origin == place.origin && samePlace(it.place, place) }
+                ?: deviceWeather[source]?.takeIf { place.origin == PlaceOrigin.DEVICE && samePlace(it.place, place) }), loading = true, error = null)
         }) }
         weatherJob = viewModelScope.launch {
             cacheJob.join()
@@ -240,6 +249,7 @@ class AppViewModel(
                     try {
                         val forecast = withContext(ioDispatcher) { repository.weather(source, place, now) }
                         ensureActive()
+                        if (generation == weatherGeneration && place.origin == PlaceOrigin.DEVICE) deviceWeather[source] = forecast
                         if (generation == weatherGeneration) mutable.update { s ->
                             val label = s.place?.takeIf { samePlace(it, place) } ?: place
                             s.copy(weather = s.weather + (source to SourceState(forecast.copy(place = label))))

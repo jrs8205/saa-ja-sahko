@@ -32,14 +32,20 @@ const val CURRENT_LOCATION_NAME = "Nykyinen sijainti"
 enum class PlaceOrigin { DEVICE, SELECTED, UNKNOWN }
 data class Place(val latitude: Double, val longitude: Double, val name: String, val locatedAt: Instant,
                  val nearbyName: String? = null, val accuracyMeters: Float? = null,
-                 val nearbyDistanceMeters: Double? = null, val origin: PlaceOrigin = PlaceOrigin.DEVICE,
-                 val nameResolved: Boolean = true) {
+                 val nearbyDistanceMeters: Double? = null, val origin: PlaceOrigin = PlaceOrigin.UNKNOWN,
+                 val nameResolved: Boolean = true, val nameAnchor: NameAnchor? = null) {
     init { require(latitude.isFinite() && latitude in -90.0..90.0); require(longitude.isFinite() && longitude in -180.0..180.0) }
 }
 data class PlaceResult(val id: String, val name: String, val municipality: String, val latitude: Double,
                        val longitude: Double, val kind: String = "") {
     val label: String get() = listOf(name, municipality).filter(String::isNotBlank).distinct().joinToString(", ")
     fun place(at: Instant) = Place(latitude, longitude, label, at, origin = PlaceOrigin.SELECTED)
+}
+data class NameAnchor(val latitude: Double, val longitude: Double, val accuracyMeters: Float) {
+    init {
+        require(latitude.isFinite() && latitude in -90.0..90.0 && longitude.isFinite() && longitude in -180.0..180.0)
+        require(accuracyMeters.isFinite() && accuracyMeters >= 0)
+    }
 }
 data class WeatherStation(val id: String, val name: String, val latitude: Double, val longitude: Double,
                           val distanceMeters: Double)

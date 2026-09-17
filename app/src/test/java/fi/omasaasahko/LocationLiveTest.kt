@@ -37,7 +37,7 @@ class LocationLiveTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val now = Instant.now()
         // Public municipality reference points, not private phone coordinates.
-        listOf(Place(60.3953719, 25.6665595, "Porvoo", now), Place(68.90, 27.03, "Inari", now)).forEach { place ->
+        listOf(Place(60.3953719, 25.6665595, "Porvoo", now, origin = PlaceOrigin.DEVICE), Place(68.90, 27.03, "Inari", now, origin = PlaceOrigin.DEVICE)).forEach { place ->
             // Independent disk round trips: java.io.File.renameTo cannot replace an existing
             // AtomicFile target under the Windows host JVM as it does on Android/Linux.
             val repo = Repository(object : ContextWrapper(context) {
