@@ -4,9 +4,11 @@ Henkilökohtainen, suomenkielinen Android-sovellus. Säävertailu ja Suomen pör
 
 ## Käyttö
 
+- Paikallinen **0.2.2** hakee tuoreen sijainnin aina sovellukseen palattaessa. MML:n lähin paikannimi haetaan erikseen, joten nimen odottaminen ei estä ennustehakua. Nimet ovat nimipisteitä, eivät hallinnollisia aluerajoja. Tarkempi nimi vaatii tarkan luvan ja enintään 200 metrin paikannusepävarmuuden. Haku ulottuu 5 kilometriin; yli 750 metrin päässä olevan nimipisteen etäisyys näytetään. [Muutokset ja varmennus](docs/LOCATION-0.2.2.md).
+- **Hae paikka / suosikit** hakee kunnat ja paikannimet Maanmittauslaitoksen palvelusta. Tähti lisää tai poistaa suosikin (enintään 50). Paikan valinta näyttää sen sään ja varoitukset, ja **Nykyinen sijainti** palaa puhelimen paikkaan. Suosikit säilyvät sovelluksen sulkemisen jälkeen.
 - Sovellus avautuu Sää-välilehdelle. Yläpalkin **Sää | Pörssi-sähkö | Varoitukset** vaihtaa näkymää.
 - Sää käyttää nykyistä sijaintia vain sovelluksen ollessa käytössä. Myös likimääräinen sijaintilupa riittää. Lupaa pyydetään käyttäjän painaessa **Salli sijainti**.
-- Ilmatieteen laitos ja Open-Meteo näkyvät rinnakkain: nykyhetken ennuste, 24 tunnin vertailu, sademääräkaavio ja avattava viikon ennuste. FMI:n lähialueen havainto esitetään erillisenä, kun se on saatavilla.
+- Ilmatieteen laitos ja Open-Meteo näkyvät rinnakkain: nykyhetken ennuste, 24 tunnin vertailu, sademääräkaavio ja avattava viikon ennuste. FMI:n lähimmän tuoreen lämpötilahavainnon palauttavan virallisen aseman nimi, etäisyys ja havainto esitetään erikseen. Ennusteet haetaan aina katseltavan paikan koordinaateille.
 - Sääkortit ovat aina yhtä korkeat myös puuttuvilla tiedoilla. FMI:n sininen ja Open-Meteon turkoosi kortti sekä moniväriset sääsymbolit mukautuvat tummaan/vaaleaan teemaan. Viikon päivät avautuvat nuolesta. Jokaisen viikkokortin sarakkeissa näkyvät nimet Ilmatieteen laitos ja Open-Meteo.
 - Sijainnin ja päivämäärän vieressä näkyy **Nyt HH.mm**. Korttien **Ennuste HH.mm** kertoo erikseen ennusteen ajankohdan. Auringonnousu ja -lasku tulevat ensisijaisesti FMI:ltä, tarvittaessa Open-Meteolta; lähde näkyy aurinkokortissa.
 - Sähkösivulla ovat tämä päivä ja huominen, vartit ja tuntikeskiarvot, päivän tilastot, vaakasuunnassa vieritettävä kaavio sekä täydellinen aikaluettelo. Kaavion pylväät ovat 44 dp leveät (kosketusalue vähintään 52 dp), hinta-asteikko pysyy vasemmalla ja kellonajat vierivät pylväiden mukana.
@@ -22,7 +24,7 @@ Henkilökohtainen, suomenkielinen Android-sovellus. Säävertailu ja Suomen pör
 
 Sovelluksen Varoitukset-välilehti näyttää koordinaatteihin osuvat keltaiset, oranssit ja punaiset varoitukset, myös kaikki syötteessä julkaistut tulevat päivät. Päiväriviltä voi valita Kaikki tai yksittäisen päivän FMI:n viiden vuorokauden jaksolta. Alue ratkaistaan virallisista CAP-polygoneista: Tikkurila kuuluu Uudenmaan varoitusalueeseen, mutta pienempi varoitusalue ei automaattisesti laajene koko maakuntaan.
 
-Ilmoitukset otetaan käyttöön sivun kytkimellä ja Androidin ilmoitusluvalla. Oletustarkistusväli on 30 minuuttia, vaihtoehdot 15/30/60 minuuttia. Android voi viivästyttää taustahakua. Kyse on paikallisista ilmoituksista taustahaun jälkeen, ei palvelimen välittömästä pushista. GPS:ää ei käytetä taustalla. Matkalla sovellus pitää avata, jotta paikka vaihtuu; paikka ja hakuaika näkyvät sivulla. Sama samansisältöinen varoitus ei ilmoita jatkuvasti uudelleen.
+Ilmoitukset otetaan käyttöön sivun kytkimellä ja Androidin ilmoitusluvalla. Oletustarkistusväli on 30 minuuttia, vaihtoehdot 15/30/60 minuuttia. Android voi viivästyttää taustahakua. Kyse on paikallisista ilmoituksista taustahaun jälkeen, ei palvelimen välittömästä pushista. GPS:ää ei käytetä taustalla. Ilmoitukset seuraavat puhelimesta viimeksi saatua tuoretta sijaintia, vaikka katsoisit hakutulosta tai suosikkia. Matkalla sovellus pitää avata, jotta paikka vaihtuu; seurattava paikka ja hakuaika näkyvät sivulla. Uuden sijainnin haun aikana ei lähetetä vanhan paikan uusia varoituksia. Sama samansisältöinen varoitus ei ilmoita jatkuvasti uudelleen.
 
 [Sään ja varoitusten virallisten lähteiden varmennus](docs/WEATHER-VERIFICATION.md) sisältää korjatut sääsymbolit, sadejaksojen aikarajat, FMI:n CAP-sopimuksen sekä testit.
 
@@ -30,9 +32,11 @@ Ilmoitukset otetaan käyttöön sivun kytkimellä ja Androidin ilmoitusluvalla. 
 
 Sähkösivun **Ilmoita huomisen hinnat** -kytkin ottaa ilmoituksen käyttöön. Ilmoitus lähetetään kerran toimituspäivää kohti vasta, kun kaikki Suomen seuraavan päivän vartit ovat saatavilla (92/96/100). Siinä näkyvät päivän keskihinta ja halvin/kallein tunti kolmella desimaalilla, ALV-valintasi mukaisesti. Ilmoituksen painaminen avaa oikean toimituspäivän hinnat.
 
-Taustatarkistus 30 minuutin välein, ei sijaintilupavaatimusta. Android voi viivästyttää tarkistusta. Kun ilmoitus on lähetetty, tämän toiminnon verkkohakuja ei enää tehdä samalle päivälle. Julkaisu tunnistetaan datasta, ei kiinteästä kellonlyömästä. Säävaroituksilla ja sähköhinnoilla on erilliset kytkimet ja ilmoituskanavat.
+Automaattinen taustahaku vain **klo 14.00–16.00 Suomen aikaa**, 15 minuutin tarkistusvälillä. Klo 16 alkaen ja ennen klo 14 ei aloiteta taustaverkkohakuja; myös kesäaika huomioidaan. Sovelluksen avaaminen ja Päivitä-painike hakevat hinnat edelleen kellonajasta riippumatta. Ei sijaintilupavaatimusta. Android voi viivästyttää tarkistusta. Kun ilmoitus on lähetetty, tämän toiminnon verkkohakuja ei enää tehdä samalle päivälle. Julkaisu tunnistetaan datasta, ei kiinteästä kellonlyömästä. Säävaroituksilla ja sähköhinnoilla on erilliset kytkimet ja ilmoituskanavat.
 
 ## Kääntäminen ja testaus
+
+Paikallinen lähdekoodi on 0.2.2 (`versionCode=6`); viimeksi julkaistu versio on edelleen 0.2.0. MML-avain luetaan Gitin ulkopuolisesta `local.properties`-tiedostosta (`MML_API_KEY`) tai samannimisestä ympäristömuuttujasta. Avainta ei tulosteta eikä tallenneta versionhallintaan. Se sisältyy käännettyyn APK:hon, joten kyse on henkilökohtaisen sovelluksen kokoonpanosta. Tyhjä paikallinen avain sallii ympäristömuuttujan käytön. Ilman avainta nykyisen sijainnin nimi saadaan Androidilta; MML-paikkahaku ilmoittaa virheestä.
 
 Tarvitaan JDK 21, Android SDK 37 ja Android build tools. Määritä `ANDROID_HOME` tai paikallinen, versionhallinnasta ohitettu `local.properties` (`sdk.dir=...`).
 
@@ -40,7 +44,7 @@ Tarvitaan JDK 21, Android SDK 37 ja Android build tools. Määritä `ANDROID_HOM
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --console=plain
 ```
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`. Sovellustunnus `fi.omasaasahko`, versio 0.2.0 (`versionCode=4`). Debug käyttää paikallista debug-allekirjoitusta. Pysyvästi allekirjoitettu release löytyy projektin juuresta: `Saa-Sahko-0.2.0-release.apk`. [Release ja Googlen rekisteröintitiedot](RELEASE.md).
+APK: `app/build/outputs/apk/debug/app-debug.apk`. Sovellustunnus `fi.omasaasahko`. Debug käyttää paikallista debug-allekirjoitusta. Julkaistu 0.2.0-paketti säilyy projektin juuressa: `Saa-Sahko-0.2.0-release.apk`. [Julkaistun version ja Googlen rekisteröintitiedot](RELEASE.md).
 
 Erikseen ajettava integraatiotesti tekee oikeat verkkopyynnöt Vantaan julkiselle vertailusijainnille ja tarkistaa sovelluksen omien parsereiden sekä välimuistin toiminnan:
 
@@ -74,17 +78,18 @@ Eleringin veroton €/MWh-hinta muunnetaan snt/kWh-hinnaksi jakamalla kymmenell�
 
 Sähkön aikajaksot muodostetaan UTC-aikaleimoista ja Suomen aikavyöhykkeen päivänrajoista. Kevään päivässä on 92 varttia / 23 tuntia ja syksyn päivässä 100 varttia / 25 tuntia. Toistuvat kellonajat erotetaan UTC-poikkeamalla. Sähkö käyttää aina Suomen aikaa; sää näyttää ennustepaikan aikavyöhykkeen, kun Open-Meteon vastaus on saatavilla.
 
-FMI:n havaintoja haetaan rajatulta alueelta, ja niistä valitaan paikan lähin lämpötilahavainnon palauttava asema. Asemien arvoja ei yhdistetä. Yli 90 minuuttia vanhaa havaintoa ei näytetä nykyhavaintona. FMI:n `FeelsLike` tulee suoraan ennusteesta. FMI:n puuttuvaa sadeprosenttia tai UV-arvoa ei täytetä Open-Meteon tiedoilla. Osittainen ennustepäivä merkitään, eikä puuttuvista tunneista lasketa sadepäiväsummaa.
+FMI:n havaintoja haetaan laajenevalta alueelta (25, 100 ja tarvittaessa 300 km), ja niistä valitaan paikan lähin tuoreen lämpötilahavainnon palauttava asema. Aseman tunniste, nimi ja koordinaatit luetaan samasta FMI-vastauksesta kuin havainto. Asemien arvoja ei yhdistetä. Yli 90 minuuttia vanhaa havaintoa ei näytetä nykyhavaintona. FMI:n `FeelsLike` tulee suoraan ennusteesta. FMI:n puuttuvaa sadeprosenttia tai UV-arvoa ei täytetä Open-Meteon tiedoilla. Osittainen ennustepäivä merkitään, eikä puuttuvista tunneista lasketa sadepäiväsummaa.
 
-Paikkatieto lähetetään ennustehakua varten FMI:lle ja Open-Meteolle. Paikannimen selvittää Androidin Geocoder. Ei käyttäjätiliä, analytiikkaa, taustapaikannusta eikä omaa palvelinta. Valinnaiset varoitusilmoitukset tarkistetaan taustalla viimeksi haetulle sijainnille. Sijaintia sisältävä välimuisti jää sovelluksen omaan tallennustilaan; varmuuskopiointi ja laitesiirto on estetty.
+Paikkatieto lähetetään ennustehakua varten FMI:lle ja Open-Meteolle. Nykyisen sijainnin koordinaatit lähetetään myös MML:lle paikannimeä varten; Androidin Geocoder toimii varalla. Haun teksti lähetetään MML:lle. Suosikit tallennetaan vain sovelluksen omaan tallennustilaan. Ei käyttäjätiliä, analytiikkaa, taustapaikannusta eikä omaa palvelinta. Valinnaiset varoitusilmoitukset tarkistetaan taustalla puhelimesta viimeksi paikannetulle sijainnille. Sijaintia sisältävä välimuisti jää sovelluksen omaan tallennustilaan; varmuuskopiointi ja laitesiirto on estetty.
 
 ## Tietolähteet
 
 Verkkohakujen ja tietojen muunnosten lähtökohtana luettiin käyttäjän nykyistä projektia `aiempi-projekti` (Samsung-kansion handoff ohjaa sinne). Seuraavien palveluiden käyttö on toteutettu itsenäiseen uuteen sovellukseen; vanhaa projektia ei ole muutettu.
 
-- [Ilmatieteen laitoksen avoin data](https://www.ilmatieteenlaitos.fi/avoin-data), WFS `fmi::forecast::edited::weather::scandinavia::point::simple` ja `fmi::observations::weather::simple`.
+- [Ilmatieteen laitoksen avoin data](https://www.ilmatieteenlaitos.fi/avoin-data), WFS `fmi::forecast::edited::weather::scandinavia::point::simple` ja `fmi::observations::weather::multipointcoverage`.
 - [FMI:n sääsymbolit](https://en.ilmatieteenlaitos.fi/weather-symbols): SmartSymbol, erillinen yövariantti.
 - [FMI:n aika- ja aurinkoparametrit](https://github.com/fmidev/smartmet-plugin-timeseries/blob/master/docs/Using-the-Timeseries-API.md) ja [auringon nousu- ja laskuajat](https://www.ilmatieteenlaitos.fi/aurinko-ja-kuu). WFS-haun `Sunrise`/`Sunset`-arvot varmennettiin oikealla verkkopyynnöllä. UTC-ajat kohdistetaan aurinkotapahtuman omaan Suomen päivämäärään, ei WFS-näytteen päivään.
+- [Maanmittauslaitoksen geokoodauspalvelu](https://www.maanmittauslaitos.fi/kartat-ja-paikkatieto/aineistot-ja-rajapinnat/paikkatietojen-rajapintapalvelut/geokoodauspalvelu), paikannimirekisteri / geographic-names, Maanmittauslaitos 2026, CC BY 4.0.
 - [Open-Meteo Forecast API](https://open-meteo.com/en/docs), henkilökohtainen käyttö, tunti- ja vuorokausiennusteet.
 - [Eleringin rajapinta](https://dashboard.elering.ee/assets/swagger-ui/index.html), `nps/price`, Suomen `data.fi`.
 - [Compose-teemat](https://developer.android.com/develop/ui/compose/designsystems/material3) ja [Android 17](https://developer.android.com/about/versions/17/setup-sdk).
