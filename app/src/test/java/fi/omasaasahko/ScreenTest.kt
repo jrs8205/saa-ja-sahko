@@ -15,10 +15,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import fi.omasaasahko.domain.*
 import fi.omasaasahko.data.PriceAlertState
 import fi.omasaasahko.ui.*
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,6 +38,32 @@ import java.time.temporal.ChronoUnit
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ScreenTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test
+    @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
+    fun `narrow price summaries retain every digit at different font scales`() {
+        val preview = PreviewData.state
+        val state = preview.copy(includeVat = false, prices = preview.prices!!.copy(
+            quarters = preview.prices.quarters.map { it.copy(euroPerMwh = BigDecimal("-1234.56")) }))
+        var fontScale by mutableFloatStateOf(1.25f)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                AppTheme(dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {}, {}) }
+            }
+        }
+        compose.onNodeWithTag("tab-prices").performClick()
+        for (scale in listOf(1.25f, 1f, 1.6f)) {
+            compose.runOnIdle { fontScale = scale }
+            for (label in listOf("Halvin", "Keskihinta", "Kallein")) {
+                compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText(label))
+                compose.onNode(hasText("-123,456") and
+                    hasAnySibling(hasText(label) or hasAnyDescendant(hasText(label))), useUnmergedTree = true)
+                    .assertTextFits()
+            }
+            screenshot("electricity-summary-320-$scale")
+        }
+    }
 
     @Test fun `nearby name is separate from district and electricity test can be scheduled`() {
         val state=PreviewData.state.copy(place=PreviewData.state.place!!.copy(nearbyName="Kaivopuisto"))
@@ -383,6 +413,23 @@ class ScreenTest {
         compose.onNodeWithTag("tab-weather").assertDoesNotExist()
         compose.onNodeWithText("Sulje").performClick()
         compose.onNodeWithTag("tab-weather").assertIsDisplayed()
+    }
+
+    private fun SemanticsNodeInteraction.assertTextFits() {
+        assertIsDisplayed()
+        val layouts = mutableListOf<TextLayoutResult>()
+        performSemanticsAction(SemanticsActions.GetTextLayoutResult) { assertTrue(it(layouts)) }
+        assertTrue("Text must expose its actual layout", layouts.isNotEmpty())
+        layouts.forEach { layout ->
+            val text = layout.layoutInput.text.text
+            assertEquals("Keep the text on one line: $text", 1, layout.lineCount)
+            assertFalse("Ellipsized text: $text", layout.isLineEllipsized(0))
+            assertEquals("All characters must be drawn: $text", text.length,
+                layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
+            // Compare the drawn line, not the paragraph's possibly wider cached constraints.
+            assertTrue("Clipped right edge: $text", layout.getLineRight(0) <= layout.size.width + 1f)
+            assertTrue("Clipped left edge: $text", layout.getLineLeft(0) >= -1f)
+        }
     }
 
     private fun screenshot(name: String) {

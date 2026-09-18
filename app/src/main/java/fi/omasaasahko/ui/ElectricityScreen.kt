@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,17 +105,26 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
         } else {
             if (available.size < rows.size) item { Notice("Päivän hinnoista puuttuu tietoja. Minimi ja maksimi koskevat saatavilla olevia hintoja. Päivän keskihinta näytetään vasta, kun kaikki hinnat ovat saatavilla.") }
             item {
-                if (largeFont) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
-                        PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.fillMaxWidth(), true)
-                        PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val measurer = rememberTextMeasurer()
+                    val minimumPriceWidth = listOf(minimum?.centsPerKwh, Prices.average(rows), maximum?.centsPerKwh).maxOf {
+                        measurer.measure(Prices.format(it), MaterialTheme.typography.titleLarge.copy(fontSize = 14.sp),
+                            softWrap = false, maxLines = 1).size.width
                     }
-                } else {
-                    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
-                        PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.weight(1f).fillMaxHeight())
-                        PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
+                    // Allow for the two gaps and each tile's horizontal padding before autosizing.
+                    val priceWidth = with(LocalDensity.current) { ((maxWidth - 20.dp) / 3 - 28.dp).roundToPx() }
+                    if (largeFont || priceWidth < minimumPriceWidth) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
+                            PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.fillMaxWidth(), true)
+                            PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
+                        }
+                    } else {
+                        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
+                            PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.weight(1f).fillMaxHeight())
+                            PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
+                        }
                     }
                 }
             }
