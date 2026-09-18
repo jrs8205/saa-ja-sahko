@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import fi.omasaasahko.domain.HELSINKI
+import fi.omasaasahko.domain.Prices
 import fi.omasaasahko.domain.updatedLabel
 import fi.omasaasahko.AppState
 import fi.omasaasahko.WarningsState
@@ -45,7 +47,14 @@ fun AppScreen(
     val refresh = when (tab) { 0 -> onWeatherRefresh; 1 -> onPricesRefresh; else -> onWarningsRefresh }
     val current = AppTab.entries[tab]
     val scheme = MaterialTheme.colorScheme
-    val tint = if (isDarkTheme()) NavTint(scheme.primary, scheme.onPrimary) else NavTint(scheme.primaryContainer, scheme.onPrimaryContainer)
+    val currentBand = remember(state.prices, state.now, state.resolution, state.includeVat) {
+        priceBand(Prices.slots(state.prices?.quarters.orEmpty(), state.now.atZone(HELSINKI).toLocalDate(), state.resolution, state.includeVat)
+            .firstOrNull { it.contains(state.now) }?.centsPerKwh)
+    }
+    val topLevel = remember(warnings.snapshot, state.place, state.now, permitted, state.selectedPlace) {
+        if (permitted || state.selectedPlace != null) warnings.snapshot?.local(state.place, state.now).orEmpty().maxByOrNull { it.level.rank }?.level else null
+    }
+    val tint = navTint(current, currentBand, topLevel)
     Scaffold(containerColor = scheme.background, topBar = {
         Box(Modifier.fillMaxWidth().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
             Row(Modifier.widthIn(max = 720.dp).fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),

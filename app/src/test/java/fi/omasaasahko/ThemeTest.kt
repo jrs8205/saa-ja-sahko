@@ -13,7 +13,12 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import fi.omasaasahko.domain.WarningLevel
+import fi.omasaasahko.ui.AppTab
 import fi.omasaasahko.ui.AppTheme
+import fi.omasaasahko.ui.NavTint
+import fi.omasaasahko.ui.PriceBand
+import fi.omasaasahko.ui.navTint
 import fi.omasaasahko.ui.BodyFont
 import fi.omasaasahko.ui.ChoiceRow
 import fi.omasaasahko.ui.DisplayFont
@@ -52,6 +57,26 @@ class ThemeTest {
             assertEquals(Color(0xFF18221D), light.inverseSurface)
             assertEquals(Color(0xFFE0EBE1), dark.inverseSurface)
             assertEquals(Color(0xFF313D34), dark.surfaceContainerHighest)
+        }
+    }
+
+    @Test fun `navigation tint follows price band and warning level`() {
+        val tints = mutableMapOf<String, NavTint>()
+        compose.setContent {
+            AppTheme(dark = false, dynamic = false) {
+                tints["weather"] = navTint(AppTab.WEATHER, null, null)
+                tints["extreme"] = navTint(AppTab.PRICES, PriceBand.EXTREME, null)
+                tints["orange"] = navTint(AppTab.WARNINGS, null, WarningLevel.ORANGE)
+                tints["calm"] = navTint(AppTab.WARNINGS, null, null)
+                tints["ignored"] = navTint(AppTab.WEATHER, PriceBand.EXTREME, WarningLevel.RED)
+            }
+        }
+        compose.runOnIdle {
+            assertEquals(Color(0xFFC8F0DF), tints.getValue("weather").container)
+            assertEquals(Color(0xFFEADBFF), tints.getValue("extreme").container)
+            assertEquals(Color(0xFFFFDEC2), tints.getValue("orange").container)
+            assertEquals(tints.getValue("weather"), tints.getValue("calm"))
+            assertEquals(tints.getValue("weather"), tints.getValue("ignored"))
         }
     }
 
