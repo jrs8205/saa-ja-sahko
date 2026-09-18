@@ -49,7 +49,6 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
         item {
             Column {
                 Text(if (state.selectedPlace != null) "VALITTU PAIKKA" else if (state.locating) "PAIKANNETAAN…" else "SIJAINTISI", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                Text(state.place?.name ?: "Sää lähelläsi", style = MaterialTheme.typography.headlineLarge)
                 state.place?.nearbyName?.let { name ->
                     Text(name, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                     Text("Lähin paikannimi · Maanmittauslaitos", style = MaterialTheme.typography.bodySmall,
@@ -64,12 +63,9 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
                         Text("Likimääräinen sijainti · tarkkuus noin ${decimal(it.toDouble(), 0)} m", style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onOpenPlacePicker, modifier = Modifier.testTag("open-place-search")) { Text("Hae paikka / suosikit") }
-                    if (state.selectedPlace != null) TextButton(onClick = {
-                        onCurrentLocation(); if (!permitted) onPermission()
-                    }) { Text("Nykyinen sijainti") }
-                }
+                if (state.selectedPlace != null) TextButton(onClick = {
+                    onCurrentLocation(); if (!permitted) onPermission()
+                }) { Text("Nykyinen sijainti") }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.padding(top = 4.dp)) {
                     Text(today.format(DateTimeFormatter.ofPattern("EEEE d. MMMM", FINNISH)).replaceFirstChar { it.titlecase(FINNISH) },

@@ -48,7 +48,7 @@ class ScreenTest {
         compose.onNodeWithText("Kaivopuisto").assertIsDisplayed()
         compose.onNodeWithText("Lähin paikannimi · Maanmittauslaitos").assertIsDisplayed()
         screenshot("nearby-place")
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Testaa ilmoitus 10 s kuluttua"))
         compose.onNodeWithText("Testaa ilmoitus 10 s kuluttua").performClick().assertIsNotEnabled()
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Lukitse puhelin nyt ja odota ilmoitusta kelloon."))
@@ -65,7 +65,7 @@ class ScreenTest {
         compose.onNodeWithText("Tikkurila, Vantaa").assertIsDisplayed()
         screenshot("weather-light")
         launcherIconPreview()
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithText("NYKYINEN VARTTI").assertIsDisplayed()
         screenshot("electricity-light")
         compose.onNodeWithText("Tunti").performClick()
@@ -74,7 +74,7 @@ class ScreenTest {
         compose.onNodeWithText("Huomenna").performClick()
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Tuntikeskiarvot · 24 tuntia"))
         compose.onNodeWithText("Tuntikeskiarvot · 24 tuntia").assertIsDisplayed()
-        compose.onNodeWithText("Sää", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("tab-weather").performClick()
         compose.onNodeWithText("Tikkurila, Vantaa").assertIsDisplayed()
     }
 
@@ -84,7 +84,7 @@ class ScreenTest {
             AppTheme(dark = dark, dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) }
         }
         screenshot("weather-dark")
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         screenshot("electricity-dark")
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Hintavärit · snt/kWh"))
         compose.onNodeWithText("Hintavärit · snt/kWh").assertIsDisplayed()
@@ -100,7 +100,7 @@ class ScreenTest {
             AppTheme(dynamic = false) { AppScreen(AppState(now = PreviewData.now), false, {}, {}, {}, {}, {}, {}) }
         }
         compose.onNodeWithText("Salli sijainti").assertIsDisplayed()
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithText("Sähkön hinta").assertIsDisplayed()
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Hintoja ei ole saatavilla. Päivitä näkymä tai tarkista verkkoyhteys."))
         compose.onNodeWithText("Hintoja ei ole saatavilla. Päivitä näkymä tai tarkista verkkoyhteys.").assertIsDisplayed()
@@ -113,7 +113,7 @@ class ScreenTest {
                 AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) }
             }
         }
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Tunti"))
         compose.onNodeWithText("Tunti").assertIsDisplayed()
         screenshot("electricity-large-font")
@@ -128,7 +128,7 @@ class ScreenTest {
             AppTheme(dark = true, dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {},
                 onResolution = { state = state.copy(resolution = it) }) }
         }
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("price-timeline"))
         compose.onNodeWithTag("price-timeline").performScrollTo()
         val axisBefore = compose.onNodeWithTag("price-axis").getUnclippedBoundsInRoot()
@@ -202,7 +202,7 @@ class ScreenTest {
             AppTheme(dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {},
                 onResolution = { state = state.copy(resolution = it) }, onVat = { state = state.copy(includeVat = it) }) }
         }
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("current-price-level").assertTextEquals("Melko kallista")
         compose.onNodeWithTag("vat-switch").assertIsOn().performClick().assertIsOff()
         compose.onNodeWithTag("current-price-level").assertTextEquals("Kohtuullista")
@@ -215,8 +215,8 @@ class ScreenTest {
         compose.onNodeWithTag("current-price-level").assertTextEquals("Todella kallista")
         val hourly = Prices.slots(state.prices!!.quarters, date, Resolution.HOUR, false).first { it.contains(state.now) }
         compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(hourly.centsPerKwh))
-        compose.onNodeWithText("Sää", useUnmergedTree = true).performClick()
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-weather").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("vat-switch").assertIsOff().performClick().assertIsOn()
         compose.onNodeWithTag("current-price-level").assertTextEquals("Poikkeuksellisen kallista")
         val gross = Prices.slots(state.prices!!.quarters, date, Resolution.HOUR, true).first { it.contains(state.now) }
@@ -239,7 +239,7 @@ class ScreenTest {
                     onWarningsInterval={ warnings=warnings.copy(intervalMinutes=it) }) }
             }
         }
-        compose.onNodeWithText("Varoitukset").performClick()
+        compose.onNodeWithTag("tab-warnings").performClick()
         screenshot("warnings-dark")
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Sadevaroitus"))
         compose.onNodeWithText("Sadevaroitus").assertIsDisplayed()
@@ -274,7 +274,7 @@ class ScreenTest {
         var date by mutableStateOf("2026-09-17")
         compose.setContent { AppTheme(dynamic=false) { AppScreen(PreviewData.state,true,{},{},{},{},{},{},
             priceAlerts=alerts,onPriceAlerts={ alerts=alerts.copy(enabled=it) },pricesRequest=request,priceDateRequest=date) } }
-        compose.onNodeWithText("Pörssi-sähkö").performClick()
+        compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("price-alert-switch").assertIsOff().performClick().assertIsOn()
         compose.runOnIdle { request++ }
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Torstaina 17.9."))
@@ -323,7 +323,6 @@ class ScreenTest {
         val day = "day-2026-09-16"
         compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag(day))
         compose.onNodeWithTag(day).performClick()
-        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("open-place-search"))
         compose.onNodeWithTag("open-place-search").performClick()
         compose.onNodeWithTag("place-results").performTouchInput { swipeDown() }
         assertEquals(0, refreshes)
@@ -339,13 +338,28 @@ class ScreenTest {
             AppTheme(dynamic = false) { AppScreen(state, false, {}, {}, {}, {}, {}, {},
                 warnings = WarningsState(snapshot = WarningSnapshot(state.now, state.now, emptyList()))) }
         }
-        compose.onNodeWithText("Varoitukset").performClick()
+        compose.onNodeWithTag("tab-warnings").performClick()
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("FMI:n viimeisimmässä syötteessä ei ole tälle sijainnille voimassa olevia tai tulevia varoituksia."))
         compose.onNodeWithText("FMI:n viimeisimmässä syötteessä ei ole tälle sijainnille voimassa olevia tai tulevia varoituksia.").assertIsDisplayed()
         compose.onNodeWithTag("warnings-scroll").performScrollToIndex(1)
         compose.onNodeWithTag("warning-day-2026-09-16").performClick()
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Tälle päivälle ei ole julkaistu alueesi varoituksia."))
         compose.onNodeWithText("Tälle päivälle ei ole julkaistu alueesi varoituksia.").assertIsDisplayed()
+    }
+
+    @Test fun `floating navigation selects tabs and hides while place search is open`() {
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
+        compose.onNodeWithTag("tab-weather").assertIsSelected().assertHeightIsAtLeast(56.dp)
+        compose.onNodeWithTag("tab-prices").assertIsNotSelected().performClick().assertIsSelected()
+        compose.onNodeWithText("Sähkön hinta").assertIsDisplayed()
+        compose.onNodeWithTag("open-place-search").assertDoesNotExist()
+        compose.onNodeWithTag("tab-warnings").performClick().assertIsSelected()
+        compose.onNodeWithText("Tikkurila, Vantaa").assertIsDisplayed().assertHasNoClickAction()
+        compose.onNodeWithTag("tab-weather").performClick()
+        compose.onNodeWithTag("open-place-search").performClick()
+        compose.onNodeWithTag("tab-weather").assertDoesNotExist()
+        compose.onNodeWithText("Sulje").performClick()
+        compose.onNodeWithTag("tab-weather").assertIsDisplayed()
     }
 
     private fun screenshot(name: String) {

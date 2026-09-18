@@ -9,8 +9,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import fi.omasaasahko.domain.updatedLabel
 import fi.omasaasahko.AppState
 import fi.omasaasahko.WarningsState
 import fi.omasaasahko.data.PriceAlertState
@@ -43,23 +43,28 @@ fun AppScreen(
     val warningsScroll = rememberLazyListState()
     val refreshing = when (tab) { 0 -> state.weatherLoading; 1 -> state.pricesLoading; else -> warnings.loading }
     val refresh = when (tab) { 0 -> onWeatherRefresh; 1 -> onPricesRefresh; else -> onWarningsRefresh }
-    Scaffold(containerColor = MaterialTheme.colorScheme.background, topBar = {
-        Column(Modifier.statusBarsPadding()) {
-            Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Sää & Sähkö", style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                TextButton(onClick = refresh,
-                    enabled = !pickerOpen && !refreshing && (tab != 0 || permitted || state.selectedPlace != null)) {
-                    Text("Päivitä")
-                }
+    val current = AppTab.entries[tab]
+    val scheme = MaterialTheme.colorScheme
+    val tint = if (isDarkTheme()) NavTint(scheme.primary, scheme.onPrimary) else NavTint(scheme.primaryContainer, scheme.onPrimaryContainer)
+    Scaffold(containerColor = scheme.background, topBar = {
+        Box(Modifier.fillMaxWidth().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
+            Row(Modifier.widthIn(max = 720.dp).fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (current == AppTab.PRICES) Column(Modifier.weight(1f).padding(start = 4.dp)) {
+                    Text("Sähkön hinta", style = MaterialTheme.typography.headlineLarge)
+                    Text("Suomi · haettu ${updatedLabel(state.prices?.fetchedAt)} · Elering",
+                        style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
+                } else LocationPill(
+                    name = state.place?.name ?: if (current == AppTab.WEATHER) "Sää lähelläsi" else "Oman alueen varoitukset",
+                    onClick = if (current == AppTab.WEATHER && !pickerOpen) ({ pickerOpen = true }) else null,
+                    modifier = Modifier.weight(1f))
+                RefreshButton(enabled = !pickerOpen && !refreshing && (tab != 0 || permitted || state.selectedPlace != null), onClick = refresh)
             }
-            PrimaryTabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background) {
-                listOf("Sää", "Pörssi-sähkö", "Varoitukset").forEachIndexed { i, label ->
-                    Tab(selected = tab == i, onClick = { tab = i }, text = {
-                        Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = if (tab == i) FontWeight.Bold else FontWeight.Normal)
-                    })
-                }
-            }
+        }
+    }, bottomBar = {
+        if (!pickerOpen) Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center) {
+            FloatingNavBar(current, tint, { tab = it.ordinal }, Modifier.widthIn(max = 480.dp))
         }
     }) { padding ->
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {

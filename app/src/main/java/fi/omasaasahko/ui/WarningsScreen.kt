@@ -53,7 +53,6 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(place?.name ?: "Oman alueen varoitukset", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text("Nyt ${updatedLabel(app.now)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Ilmatieteen laitos · ${local.size} ${if (local.size == 1) "varoitus" else "varoitusta"}", style = MaterialTheme.typography.titleMedium)
                 snapshot?.let { Text("Tarkistettu ${updatedLabel(it.fetchedAt)} · FMI julkaisi ${updatedLabel(it.publishedAt)}",

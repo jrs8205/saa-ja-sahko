@@ -55,15 +55,6 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
     val largeFont = LocalDensity.current.fontScale > 1.25f
     LazyColumn(state = scroll, modifier = Modifier.testTag("electricity-scroll"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
-            Column {
-                Text("SUOMEN HINTA-ALUE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                Text("Sähkön hinta", style = MaterialTheme.typography.headlineLarge)
-                Text(if (state.includeVat) "Sisältää ALV 25,5 %" else "Veroton hinta · ALV 0 %", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Haettu ${updatedLabel(state.prices?.fetchedAt)} · Elering", style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
-            }
-        }
-        item {
             val band = priceBand(current?.centsPerKwh)
             val colors = priceColors(band)
             Surface(shape = RoundedCornerShape(30.dp), color = Color.Transparent, contentColor = colors.ink,
@@ -76,6 +67,7 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
                         Text("snt/kWh", style = MaterialTheme.typography.titleMedium)
                         Text(current?.let { intervalLabel(it) } ?: "Tietoa odotetaan", style = MaterialTheme.typography.labelMedium)
                     }
+                    Text(if (state.includeVat) "Sisältää ALV 25,5 %" else "Veroton hinta · ALV 0 %", style = MaterialTheme.typography.labelMedium)
                     if (band != null) Surface(color = colors.accent.copy(alpha = 0.12f), contentColor = colors.accent,
                         shape = RoundedCornerShape(50), modifier = Modifier.padding(top = 16.dp)) {
                         Text(band.label, style = MaterialTheme.typography.labelMedium,
