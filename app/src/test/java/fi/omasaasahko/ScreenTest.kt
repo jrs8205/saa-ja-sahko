@@ -207,7 +207,9 @@ class ScreenTest {
         }
         compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("current-price-level").assertTextEquals("Melko kallista")
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("vat-switch"))
         compose.onNodeWithTag("vat-switch").assertIsOn().performClick().assertIsOff()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("current-price"))
         compose.onNodeWithTag("current-price-level").assertTextEquals("Kohtuullista")
         val date = state.now.atZone(HELSINKI).toLocalDate()
         val net = Prices.slots(state.prices!!.quarters, date, Resolution.QUARTER, false).first { it.contains(state.now) }
@@ -220,7 +222,9 @@ class ScreenTest {
         compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(hourly.centsPerKwh))
         compose.onNodeWithTag("tab-weather").performClick()
         compose.onNodeWithTag("tab-prices").performClick()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("vat-switch"))
         compose.onNodeWithTag("vat-switch").assertIsOff().performClick().assertIsOn()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("current-price"))
         compose.onNodeWithTag("current-price-level").assertTextEquals("Poikkeuksellisen kallista")
         val gross = Prices.slots(state.prices!!.quarters, date, Resolution.HOUR, true).first { it.contains(state.now) }
         compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(gross.centsPerKwh))
@@ -278,6 +282,7 @@ class ScreenTest {
         compose.setContent { AppTheme(dynamic=false) { AppScreen(PreviewData.state,true,{},{},{},{},{},{},
             priceAlerts=alerts,onPriceAlerts={ alerts=alerts.copy(enabled=it) },pricesRequest=request,priceDateRequest=date) } }
         compose.onNodeWithTag("tab-prices").performClick()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("price-alert-switch"))
         compose.onNodeWithTag("price-alert-switch").assertIsOff().performClick().assertIsOn()
         compose.runOnIdle { request++ }
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Torstaina 17.9."))
@@ -348,6 +353,16 @@ class ScreenTest {
         compose.onNodeWithTag("warning-day-2026-09-16").performClick()
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Tälle päivälle ei ole julkaistu alueesi varoituksia."))
         compose.onNodeWithText("Tälle päivälle ei ole julkaistu alueesi varoituksia.").assertIsDisplayed()
+    }
+
+    @Test fun `price hero is a flat block and chart marks the current slot`() {
+        compose.setContent { AppTheme(dark = false, dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
+        compose.onNodeWithTag("tab-prices").performClick()
+        compose.onNodeWithTag("current-price").assertIsDisplayed()
+        compose.onNodeWithText("Sisältää ALV 25,5 %").assertIsDisplayed()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("price-timeline"))
+        compose.onNodeWithTag("price-timeline").performScrollToNode(hasText("Nyt"))
+        compose.onNodeWithText("Nyt").assertIsDisplayed()
     }
 
     @Test fun `floating navigation selects tabs and hides while place search is open`() {

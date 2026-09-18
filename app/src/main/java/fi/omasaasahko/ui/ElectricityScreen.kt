@@ -1,22 +1,22 @@
 package fi.omasaasahko.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
@@ -33,7 +33,6 @@ import fi.omasaasahko.data.PriceAlertState
 import fi.omasaasahko.domain.*
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -53,111 +52,93 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
     val maximum = available.maxByOrNull { it.centsPerKwh!! }
     var selected by remember(date, state.resolution) { mutableIntStateOf(-1) }
     val largeFont = LocalDensity.current.fontScale > 1.25f
-    LazyColumn(state = scroll, modifier = Modifier.testTag("electricity-scroll"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    // VAT and alerts must stay reachable even when the day has no prices yet.
+    val settings: LazyListScope.() -> Unit = {
+        item(key = "price-settings") { PriceSettingsBlock(state, alerts, onVat, onAlerts, onNotificationSettings, onAlertsTest) }
+    }
+    LazyColumn(state = scroll, modifier = Modifier.testTag("electricity-scroll"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             val band = priceBand(current?.centsPerKwh)
             val colors = priceColors(band)
-            Surface(shape = RoundedCornerShape(30.dp), color = Color.Transparent, contentColor = colors.ink,
-                border = BorderStroke(1.dp, colors.accent.copy(alpha = 0.25f))) {
-                Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(colors.top, colors.bottom))).padding(24.dp)) {
-                    Text(if (state.resolution == Resolution.QUARTER) "NYKYINEN VARTTI" else "NYKYISEN TUNNIN KESKIHINTA", style = MaterialTheme.typography.labelSmall)
-                    Text(Prices.format(current?.centsPerKwh), style = MaterialTheme.typography.displayLarge, color = colors.accent,
-                        modifier = Modifier.padding(top = 10.dp).testTag("current-price"))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("snt/kWh", style = MaterialTheme.typography.titleMedium)
-                        Text(current?.let { intervalLabel(it) } ?: "Tietoa odotetaan", style = MaterialTheme.typography.labelMedium)
+            val dark = isDarkTheme()
+            Block(color = colors.top, contentColor = colors.ink, radius = Radius.hero, padding = PaddingValues(horizontal = 24.dp, vertical = 20.dp)) {
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(if (state.resolution == Resolution.QUARTER) "NYKYINEN VARTTI" else "NYKYISEN TUNNIN KESKIHINTA", style = MaterialTheme.typography.labelMedium)
+                    Text(current?.let { intervalLabel(it) } ?: "Tietoa odotetaan", style = MaterialTheme.typography.labelMedium)
+                }
+                Text(Prices.format(current?.centsPerKwh), style = MaterialTheme.typography.displayMedium, color = colors.accent, maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 40.sp, maxFontSize = 80.sp),
+                    modifier = Modifier.padding(top = 6.dp).testTag("current-price"))
+                FlowRow(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                    if (band != null) Box(Modifier.clip(PillShape).background(colors.accent).heightIn(min = 36.dp).padding(horizontal = 14.dp),
+                        contentAlignment = Alignment.Center) {
+                        Text(band.label, style = MaterialTheme.typography.labelLarge, color = if (dark) colors.bottom else Color.White,
+                            modifier = Modifier.testTag("current-price-level"))
                     }
-                    Text(if (state.includeVat) "Sisältää ALV 25,5 %" else "Veroton hinta · ALV 0 %", style = MaterialTheme.typography.labelMedium)
-                    if (band != null) Surface(color = colors.accent.copy(alpha = 0.12f), contentColor = colors.accent,
-                        shape = RoundedCornerShape(50), modifier = Modifier.padding(top = 16.dp)) {
-                        Text(band.label, style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).testTag("current-price-level"))
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("snt/kWh", style = MaterialTheme.typography.titleMedium)
+                        Text(if (state.includeVat) "Sisältää ALV 25,5 %" else "Veroton hinta · ALV 0 %", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
         }
         state.pricesError?.let { item { Notice(it) } }
         item {
-            Card {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Ilmoita huomisen hinnat", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                        Switch(checked=alerts.enabled,onCheckedChange=onAlerts,modifier=Modifier.testTag("price-alert-switch"))
-                    }
-                    Text("Keskihinta sekä halvin ja kallein tunti. Ilmoitus kerran, kun kaikki huomisen hinnat ovat saatavilla.",style=MaterialTheme.typography.bodySmall)
-                    Text("Taustahaku klo 14–16 Suomen aikaa, 15 min välein. Haku loppuu ilmoituksen jälkeen. Android voi viivästyttää tarkistusta.",style=MaterialTheme.typography.bodySmall)
-                    if (!alerts.allowed) TextButton(onClick=onNotificationSettings) { Text("Ilmoitusasetukset") }
-                    else if (alerts.enabled) {
-                        TextButton(onClick=onAlertsTest, enabled=!alerts.testPending) { Text("Testaa ilmoitus 10 s kuluttua") }
-                        if (alerts.testPending) Text("Lukitse puhelin nyt ja odota ilmoitusta kelloon.",style=MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth().testTag("vat-switch")
-                .toggleable(value = state.includeVat, role = Role.Switch, onValueChange = onVat)
-                .padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("ALV 25,5 %", style = MaterialTheme.typography.titleMedium)
-                    Text(if (state.includeVat) "Mukana hinnoissa" else "Hinnat ilman ALV:tä", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Switch(checked = state.includeVat, onCheckedChange = null)
-            }
-        }
-        item {
-            ChoiceRow(listOf("Tänään", "Huomenna"), if (tomorrow) 1 else 0, { tomorrow = it == 1 }, Modifier.fillMaxWidth())
-            ChoiceRow(Resolution.entries.map { it.label }, state.resolution.ordinal, { onResolution(Resolution.entries[it]) }, Modifier.fillMaxWidth().padding(top = 8.dp))
+            val day: @Composable (Modifier) -> Unit = { ChoiceRow(listOf("Tänään", "Huomenna"), if (tomorrow) 1 else 0, { tomorrow = it == 1 }, it) }
+            val unit: @Composable (Modifier) -> Unit = { ChoiceRow(Resolution.entries.map { r -> r.label }, state.resolution.ordinal, { i -> onResolution(Resolution.entries[i]) }, it) }
+            if (largeFont) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { day(Modifier.fillMaxWidth()); unit(Modifier.fillMaxWidth()) }
+            else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { day(Modifier.weight(1f)); unit(Modifier.weight(1f)) }
         }
         item {
             SectionTitle(date.format(DateTimeFormatter.ofPattern("EEEE d.M.", FINNISH)).replaceFirstChar { it.titlecase(FINNISH) },
                 if (state.resolution == Resolution.QUARTER) "Varttihinnat · ${rows.size} varttia" else "Tuntikeskiarvot · ${rows.size} tuntia")
         }
-        if (available.isEmpty()) item {
-            Notice(if (state.pricesLoading) "Haetaan hintoja…" else if (tomorrow && state.prices != null)
-                "Huomisen hinnat eivät ole vielä saatavilla. Ne ilmestyvät tähän, kun ne julkaistaan hintapalvelussa."
-                else "Hintoja ei ole saatavilla. Päivitä näkymä tai tarkista verkkoyhteys.")
+        if (available.isEmpty()) {
+            item {
+                Notice(if (state.pricesLoading) "Haetaan hintoja…" else if (tomorrow && state.prices != null)
+                    "Huomisen hinnat eivät ole vielä saatavilla. Ne ilmestyvät tähän, kun ne julkaistaan hintapalvelussa."
+                    else "Hintoja ei ole saatavilla. Päivitä näkymä tai tarkista verkkoyhteys.")
+            }
+            settings()
         } else {
             if (available.size < rows.size) item { Notice("Päivän hinnoista puuttuu tietoja. Minimi ja maksimi koskevat saatavilla olevia hintoja. Päivän keskihinta näytetään vasta, kun kaikki hinnat ovat saatavilla.") }
             item {
                 if (largeFont) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
                         PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.fillMaxWidth(), true)
                         PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
                     }
                 } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.weight(1f))
-                        PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.weight(1f))
-                        PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.weight(1f))
+                    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
+                        PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.weight(1f).fillMaxHeight())
+                        PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
                     }
                 }
             }
             item(key = "price-chart") {
-                Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
-                    Column(Modifier.padding(16.dp)) {
-                        val picked = rows.getOrNull(selected)
-                        val pickedBand = priceBand(picked?.centsPerKwh)
-                        Text(picked?.let { "${intervalLabel(it)} · ${Prices.format(it.centsPerKwh)} snt/kWh" } ?: "Paina pylvästä nähdäksesi hinnan",
-                            style = MaterialTheme.typography.bodyMedium, color = priceColors(pickedBand).accent,
-                            modifier = Modifier.testTag("selected-price"))
-                        if (pickedBand != null) Text(pickedBand.label, style = MaterialTheme.typography.labelSmall,
-                            color = priceColors(pickedBand).accent)
-                        key(date, state.resolution) { PriceChart(rows, selected, { selected = it }) }
-                        PriceLegend()
-                    }
+                Block {
+                    val picked = rows.getOrNull(selected)
+                    val pickedBand = priceBand(picked?.centsPerKwh)
+                    Text(picked?.let { "${intervalLabel(it)} · ${Prices.format(it.centsPerKwh)} snt/kWh" } ?: "Paina pylvästä nähdäksesi hinnan",
+                        style = MaterialTheme.typography.titleMedium, color = priceColors(pickedBand).accent,
+                        modifier = Modifier.testTag("selected-price"))
+                    if (pickedBand != null) Text(pickedBand.label, style = MaterialTheme.typography.labelMedium,
+                        color = priceColors(pickedBand).accent)
+                    key(date, state.resolution) { PriceChart(rows, selected, rows.indexOfFirst { it.contains(state.now) }, { selected = it }) }
+                    PriceLegend()
                 }
             }
+            settings()
             item { SectionTitle(if (state.resolution == Resolution.QUARTER) "Kaikki vartit" else "Kaikki tunnit", if (state.includeVat) "snt/kWh · ALV 25,5 %" else "snt/kWh · ALV 0 %") }
             items(rows, key = { "price-${it.start}" }) { row ->
                 val isNow = row.contains(state.now)
                 val band = priceBand(row.centsPerKwh)
                 val colors = priceColors(band)
-                Surface(shape = RoundedCornerShape(18.dp), color = if (isNow) colors.top else colors.bottom, contentColor = colors.ink,
-                    border = if (isNow) BorderStroke(1.dp, colors.accent) else null) {
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(Radius.row), color = if (isNow) colors.top else colors.bottom, contentColor = colors.ink) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(intervalLabel(row), style = MaterialTheme.typography.bodyMedium)
                             Text(listOfNotNull(if (isNow) "NYT" else null, band?.label).joinToString(" · "),
@@ -178,24 +159,45 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
     }
 }
 
+@Composable
+private fun PriceSettingsBlock(state: AppState, alerts: PriceAlertState, onVat: (Boolean) -> Unit, onAlerts: (Boolean) -> Unit,
+                               onNotificationSettings: () -> Unit, onAlertsTest: () -> Unit) {
+    Block(radius = Radius.panel, padding = PaddingValues(horizontal = 20.dp, vertical = 6.dp)) {
+        SettingSwitchRow("ALV 25,5 %", if (state.includeVat) "Mukana hinnoissa" else "Hinnat ilman ALV:tä",
+            state.includeVat, onVat, Modifier.testTag("vat-switch"))
+        HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.outlineVariant)
+        SettingSwitchRow("Ilmoita huomisen hinnat", "Keskihinta sekä halvin ja kallein tunti", alerts.enabled, onAlerts,
+            Modifier.testTag("price-alert-switch"))
+        Text("Ilmoitus kerran, kun kaikki huomisen hinnat ovat saatavilla. Taustahaku klo 14–16 Suomen aikaa, 15 min välein. Haku loppuu ilmoituksen jälkeen. Android voi viivästyttää tarkistusta.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!alerts.allowed) TextButton(onClick = onNotificationSettings) { Text("Ilmoitusasetukset") }
+        else if (alerts.enabled) {
+            TextButton(onClick = onAlertsTest, enabled = !alerts.testPending) { Text("Testaa ilmoitus 10 s kuluttua") }
+            if (alerts.testPending) Text("Lukitse puhelin nyt ja odota ilmoitusta kelloon.", style = MaterialTheme.typography.bodySmall)
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
 private fun intervalLabel(slot: PriceSlot): String = "${clockLabel(slot.start)}–${clockLabel(slot.end)}"
 
 @Composable
 private fun PriceSummary(label: String, value: BigDecimal?, footnote: String?, modifier: Modifier, horizontal: Boolean = false) {
     val colors = priceColors(priceBand(value))
-    Surface(modifier = modifier, shape = RoundedCornerShape(20.dp), color = colors.top, contentColor = colors.ink) {
+    Surface(modifier = modifier, shape = RoundedCornerShape(Radius.tile), color = colors.top, contentColor = colors.ink) {
         if (horizontal) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(label, style = MaterialTheme.typography.labelMedium)
                     Text(footnote ?: "–", style = MaterialTheme.typography.labelSmall)
                 }
-                Text(Prices.format(value), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.accent)
+                Text(Prices.format(value), style = MaterialTheme.typography.titleLarge, color = colors.accent)
             }
         } else {
-            Column(Modifier.padding(12.dp)) {
+            Column(Modifier.padding(14.dp)) {
                 Text(label, style = MaterialTheme.typography.labelMedium)
-                Text(Prices.format(value), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = colors.accent, modifier = Modifier.padding(vertical = 7.dp))
+                Text(Prices.format(value), style = MaterialTheme.typography.titleLarge, color = colors.accent, maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = 22.sp), modifier = Modifier.padding(vertical = 4.dp))
                 Text(footnote ?: "–", style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -203,7 +205,7 @@ private fun PriceSummary(label: String, value: BigDecimal?, footnote: String?, m
 }
 
 @Composable
-private fun PriceChart(rows: List<PriceSlot>, selected: Int, onSelected: (Int) -> Unit) {
+private fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onSelected: (Int) -> Unit) {
     val axis = remember(rows) { priceAxis(rows) }
     val horizontalScroll = rememberLazyListState()
     val selectedColor = MaterialTheme.colorScheme.onSurface
@@ -249,17 +251,20 @@ private fun PriceChart(rows: List<PriceSlot>, selected: Int, onSelected: (Int) -
                             val value = row.centsPerKwh?.toDouble()
                             if (value == null) drawCircle(guide, 3.dp.toPx(), Offset(size.width / 2f, zero))
                             else {
-                                val width = 44.dp.toPx()
+                                val width = 36.dp.toPx()
                                 val position = Offset((size.width - width) / 2f, minOf(y(value), zero))
-                                val barSize = Size(width, kotlin.math.abs(y(value) - zero).coerceAtLeast(2.dp.toPx()))
-                                drawRect(color, position, barSize)
-                                if (index == selected) drawRect(selectedColor, position, barSize, style = Stroke(2.dp.toPx()))
+                                val barSize = Size(width, kotlin.math.abs(y(value) - zero).coerceAtLeast(6.dp.toPx()))
+                                val corner = CornerRadius(minOf(12.dp.toPx(), barSize.height / 2f))
+                                drawRoundRect(color, position, barSize, corner)
+                                if (index == selected) drawRoundRect(selectedColor, position, barSize, corner, style = Stroke(2.dp.toPx()))
                             }
                         }
-                        Text(clockLabel(row.start).replace(" (", "\n("), style = labelStyle, textAlign = TextAlign.Center,
-                            color = if (index == selected) color else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = if (index == selected) FontWeight.Bold else FontWeight.Medium,
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp))
+                        val isNow = index == nowIndex
+                        Text(if (isNow) "Nyt" else clockLabel(row.start).replace(" (", "\n("), style = labelStyle, textAlign = TextAlign.Center,
+                            color = if (isNow) MaterialTheme.colorScheme.inverseOnSurface else if (index == selected) color else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (index == selected || isNow) FontWeight.Bold else FontWeight.Medium,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                .then(if (isNow) Modifier.clip(PillShape).background(MaterialTheme.colorScheme.inverseSurface).padding(horizontal = 10.dp, vertical = 2.dp) else Modifier.fillMaxWidth()))
                     }
                 }
             }
@@ -291,11 +296,9 @@ private fun PriceLegend() {
             modifier = Modifier.padding(top = 10.dp)) {
             PriceBand.entries.forEach { band ->
                 val colors = priceColors(band)
-                Surface(color = colors.top, contentColor = colors.accent, shape = RoundedCornerShape(12.dp)) {
-                    Column(Modifier.padding(horizontal = 10.dp, vertical = 7.dp).semantics(mergeDescendants = true) {}) {
-                        Text(band.range, style = MaterialTheme.typography.labelMedium)
-                        Text(band.label, style = MaterialTheme.typography.labelSmall)
-                    }
+                Surface(color = colors.top, contentColor = colors.accent, shape = PillShape) {
+                    Text("${band.range} · ${band.label}", style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
                 }
             }
         }
