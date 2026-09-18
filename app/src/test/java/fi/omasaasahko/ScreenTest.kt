@@ -41,6 +41,40 @@ class ScreenTest {
 
     @Test
     @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
+    fun `narrow electricity selectors keep labels readable and choices usable`() {
+        checkElectricitySelectors(listOf(1f, 1.25f, 1.6f), "320")
+    }
+
+    @Test fun `electricity selectors fit at moderately increased font scale`() {
+        checkElectricitySelectors(listOf(1.2f, 1f, 1.6f), "411")
+    }
+
+    private fun checkElectricitySelectors(scales: List<Float>, width: String) {
+        var state by mutableStateOf(PreviewData.state)
+        var fontScale by mutableFloatStateOf(scales.first())
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                AppTheme(dynamic = false) {
+                    AppScreen(state, true, {}, {}, {}, {}, {}, { state = state.copy(resolution = it) })
+                }
+            }
+        }
+        compose.onNodeWithTag("tab-prices").performClick()
+        for (scale in scales) {
+            compose.runOnIdle { fontScale = scale }
+            for (label in listOf("Huomenna", "Tänään", "Vartti", "Tunti")) {
+                compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText(label))
+                compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits()
+                compose.onNodeWithText(label).assertHeightIsAtLeast(44.dp).performClick().assertIsSelected()
+            }
+            assertEquals(Resolution.HOUR, state.resolution)
+            screenshot("electricity-selectors-$width-$scale")
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
     fun `narrow price summaries retain every digit at different font scales`() {
         val preview = PreviewData.state
         val state = preview.copy(includeVat = false, prices = preview.prices!!.copy(

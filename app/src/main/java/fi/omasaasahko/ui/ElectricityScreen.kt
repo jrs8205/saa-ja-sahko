@@ -86,10 +86,20 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
         }
         state.pricesError?.let { item { Notice(it) } }
         item {
-            val day: @Composable (Modifier) -> Unit = { ChoiceRow(listOf("Tänään", "Huomenna"), if (tomorrow) 1 else 0, { tomorrow = it == 1 }, it) }
-            val unit: @Composable (Modifier) -> Unit = { ChoiceRow(Resolution.entries.map { r -> r.label }, state.resolution.ordinal, { i -> onResolution(Resolution.entries[i]) }, it) }
-            if (largeFont) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { day(Modifier.fillMaxWidth()); unit(Modifier.fillMaxWidth()) }
-            else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { day(Modifier.weight(1f)); unit(Modifier.weight(1f)) }
+            val dayLabels = listOf("Tänään", "Huomenna")
+            val unitLabels = Resolution.entries.map { it.label }
+            val day: @Composable (Modifier) -> Unit = { ChoiceRow(dayLabels, if (tomorrow) 1 else 0, { tomorrow = it == 1 }, it) }
+            val unit: @Composable (Modifier) -> Unit = { ChoiceRow(unitLabels, state.resolution.ordinal, { i -> onResolution(Resolution.entries[i]) }, it) }
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val measurer = rememberTextMeasurer()
+                val labelWidth = (dayLabels + unitLabels).maxOf {
+                    measurer.measure(it, MaterialTheme.typography.labelLarge, softWrap = false, maxLines = 1).size.width
+                }
+                // ChoiceRow has two equal cells, 8 dp padding per side, and a 4 dp outer inset.
+                val fits = with(LocalDensity.current) { ((maxWidth - 10.dp) / 2 - 40.dp).roundToPx() >= labelWidth * 2 }
+                if (largeFont || !fits) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { day(Modifier.fillMaxWidth()); unit(Modifier.fillMaxWidth()) }
+                else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { day(Modifier.weight(1f)); unit(Modifier.weight(1f)) }
+            }
         }
         item {
             SectionTitle(date.format(DateTimeFormatter.ofPattern("EEEE d.M.", FINNISH)).replaceFirstChar { it.titlecase(FINNISH) },
