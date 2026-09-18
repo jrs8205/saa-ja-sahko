@@ -76,7 +76,7 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
                         Text(band.label, style = MaterialTheme.typography.labelLarge, color = if (dark) colors.bottom else Color.White,
                             modifier = Modifier.testTag("current-price-level"))
                     }
-                    Column(horizontalAlignment = Alignment.End) {
+                    Column(horizontalAlignment = if (largeFont) Alignment.Start else Alignment.End) {
                         Text("snt/kWh", style = MaterialTheme.typography.titleMedium)
                         Text(if (state.includeVat) "Sisältää ALV 25,5 %" else "Veroton hinta · ALV 0 %", style = MaterialTheme.typography.labelMedium)
                     }

@@ -19,23 +19,23 @@ import fi.omasaasahko.domain.PlaceResult
 internal fun PlacePicker(state: AppState, onQuery: (String) -> Unit, onSelect: (PlaceResult) -> Unit,
                          onFavorite: (PlaceResult) -> Unit, onDismiss: () -> Unit) {
     BackHandler(onBack = onDismiss)
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Hae paikka", style = MaterialTheme.typography.headlineSmall)
+                Text("Hae paikka", style = MaterialTheme.typography.headlineLarge)
                 Text("Paikkahaku · Maanmittauslaitos", style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(value = state.searchQuery, onValueChange = onQuery, singleLine = true,
+                OutlinedTextField(value = state.searchQuery, onValueChange = onQuery, singleLine = true, shape = PillShape,
                     label = { Text("Kunta tai paikannimi") }, modifier = Modifier.fillMaxWidth().testTag("place-search"))
                 if (state.searching) LinearProgressIndicator(Modifier.fillMaxWidth())
                 state.searchError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 LazyColumn(Modifier.weight(1f).testTag("place-results"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (state.favorites.isNotEmpty()) {
-                        item { Text("Suosikit", style = MaterialTheme.typography.titleMedium) }
+                        item { Text("Suosikit", style = MaterialTheme.typography.titleLarge) }
                         items(state.favorites, key = { "favorite-${it.id}" }) { place ->
                             PlaceChoice(place, true, { onSelect(place); onDismiss() }, { onFavorite(place) })
                         }
                     }
                     if (state.searchResults.isNotEmpty()) {
-                        item { Text("Hakutulokset", style = MaterialTheme.typography.titleMedium) }
+                        item { Text("Hakutulokset", style = MaterialTheme.typography.titleLarge) }
                         items(state.searchResults, key = { "result-${it.id}" }) { place ->
                             PlaceChoice(place, state.favorites.any { it.id == place.id },
                                 { onSelect(place); onDismiss() }, { onFavorite(place) })

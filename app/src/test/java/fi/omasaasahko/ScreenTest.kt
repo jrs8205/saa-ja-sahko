@@ -248,9 +248,11 @@ class ScreenTest {
         }
         compose.onNodeWithTag("tab-warnings").performClick()
         screenshot("warnings-dark")
+        compose.onNodeWithText("1 varoitus").assertIsDisplayed()
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Sadevaroitus"))
         compose.onNodeWithText("Sadevaroitus").assertIsDisplayed()
         compose.onNodeWithText("Uusimaa").assertIsDisplayed()
+        compose.onNodeWithText("Oranssi · Tulossa").assertIsDisplayed()
         screenshot("warnings-future-dark")
         compose.runOnIdle { dark=false }
         screenshot("warnings-future-light")
@@ -263,7 +265,7 @@ class ScreenTest {
         compose.onNodeWithTag("warning-day-2026-09-17").performClick()
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Sadevaroitus"))
         compose.onNodeWithText("Sadevaroitus").assertIsDisplayed()
-        compose.onNodeWithTag("warnings-scroll").performScrollToIndex(1)
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Ilmoitusasetukset · 30 min ↓"))
         compose.onNodeWithText("Ilmoitusasetukset · 30 min ↓").performClick()
         compose.onNodeWithText("60 min").performScrollTo().performClick()
         assertEquals(60,warnings.intervalMinutes)
