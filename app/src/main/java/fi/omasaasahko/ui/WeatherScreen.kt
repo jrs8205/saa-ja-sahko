@@ -1,8 +1,6 @@
 package fi.omasaasahko.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -12,12 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -37,6 +36,7 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
     var expandedHours by rememberSaveable { mutableStateOf(false) }
     var expandedDay by rememberSaveable { mutableStateOf<String?>(null) }
     var rainSource by rememberSaveable { mutableIntStateOf(0) }
+    val largeFont = LocalDensity.current.fontScale > 1.25f
     val fmi = state.weather[WeatherSource.FMI]?.forecast
     val meteo = state.weather[WeatherSource.OPEN_METEO]?.forecast
     val zone = meteo?.zone ?: HELSINKI
@@ -85,33 +85,51 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
         if (state.selectedPlace == null && state.place != null && (!permitted || state.locationError != null)) item {
             Text("Viimeisin sijainti · ${updatedLabel(state.place.locatedAt)}", style = MaterialTheme.typography.bodySmall)
         }
+        items(WeatherSource.entries, key = { "current-$it" }) { source ->
+            CurrentBlock(source, state.weather.getValue(source), state.now, zone, largeFont,
+                Modifier.fillMaxWidth().testTag("current-${source.name}"))
+        }
         item {
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                WeatherSource.entries.forEach { source ->
-                    CurrentCard(source, state.weather.getValue(source), state.now, zone,
-                        Modifier.weight(1f).fillMaxHeight().testTag("current-${source.name}"))
-                }
+            val a = fmi?.current(state.now); val b = meteo?.current(state.now)
+            val tiles: List<@Composable (Modifier) -> Unit> = listOf(
+                { m -> MetricTile("Tuuli · m/s", decimal(a?.wind), decimal(b?.wind), m) },
+                { m -> MetricTile("Sade · mm", decimal(a?.rain), decimal(b?.rain), m) },
+                { m -> MetricTile("Sateen riski", a?.rainProbability?.let { "${decimal(it, 0)} %" } ?: "–",
+                    b?.rainProbability?.let { "${decimal(it, 0)} %" } ?: "–", m) },
+            )
+            if (largeFont) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { tiles.forEach { it(Modifier.fillMaxWidth()) } }
+            else Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                tiles.forEach { it(Modifier.weight(1f).fillMaxHeight()) }
             }
         }
+        fmi?.recentObservation(state.now)?.let { observed -> item {
+            Block(radius = Radius.tile, padding = PaddingValues(16.dp)) {
+                Text("Lähimmän FMI-aseman havainto", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                fmi.observationStation?.let { station ->
+                    Text(station.name, style = MaterialTheme.typography.titleMedium)
+                    Text("${decimal(station.distanceMeters / 1000)} km valitusta paikasta", style = MaterialTheme.typography.bodySmall)
+                }
+                Text("${temperature(observed.temperature)} · ${clockLabel(observed.time, zone)}", style = MaterialTheme.typography.titleLarge)
+                Text("Tuuli ${decimal(observed.wind)} m/s", style = MaterialTheme.typography.bodySmall)
+            }
+        } }
         val fmiSun = fmi?.days?.firstOrNull { it.date == today && (it.sunrise != null || it.sunset != null) }
         val sun = fmiSun ?: meteo?.days?.firstOrNull { it.date == today }
         if (sun != null) item {
             val colors = sunColors()
-            Surface(color = Color.Transparent, contentColor = colors.ink, shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, colors.accent.copy(alpha = 0.2f))) {
-                Column(Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(colors.top, colors.bottom))).padding(18.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column {
-                            Text("Auringonnousu", style = MaterialTheme.typography.labelMedium, color = colors.muted)
-                            Text("↑ ${sun.sunrise?.let { clockLabel(it, zone) } ?: "–"}", style = MaterialTheme.typography.titleLarge, color = colors.accent)
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("Auringonlasku", style = MaterialTheme.typography.labelMedium, color = colors.muted)
-                            Text("↓ ${sun.sunset?.let { clockLabel(it, zone) } ?: "–"}", style = MaterialTheme.typography.titleLarge, color = colors.accent)
-                        }
+            val rise = sun.sunrise?.let { clockLabel(it, zone) } ?: "–"
+            val set = sun.sunset?.let { clockLabel(it, zone) } ?: "–"
+            Block(color = colors.top, contentColor = colors.ink, radius = Radius.panel, padding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("↑ $rise", style = MaterialTheme.typography.headlineSmall, color = colors.accent,
+                        modifier = Modifier.weight(1f).semantics { contentDescription = "Auringonnousu $rise" })
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Aurinko", style = MaterialTheme.typography.labelMedium, color = colors.muted)
+                        Text(if (fmiSun != null) "Ilmatieteen laitos" else "Open-Meteo", style = MaterialTheme.typography.labelSmall,
+                            color = colors.muted, modifier = Modifier.testTag("sun-source"))
                     }
-                    Text(if (fmiSun != null) "Ilmatieteen laitos" else "Open-Meteo", style = MaterialTheme.typography.labelSmall,
-                        color = colors.muted, modifier = Modifier.padding(top = 10.dp).testTag("sun-source"))
+                    Text("↓ $set", style = MaterialTheme.typography.headlineSmall, color = colors.accent, textAlign = TextAlign.End,
+                        modifier = Modifier.weight(1f).semantics { contentDescription = "Auringonlasku $set" })
                 }
             }
         }
@@ -126,10 +144,11 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
             }
         }
         item {
-            SectionTitle("Sademäärä", "Seuraavat 24 tuntia · mm")
-            ChoiceRow(listOf("FMI", "Open-Meteo"), rainSource, { rainSource = it }, Modifier.fillMaxWidth().padding(top = 10.dp))
+            val source = if (rainSource == 0) WeatherSource.FMI else WeatherSource.OPEN_METEO
+            RainBlock(times.map { if (rainSource == 0) fmiHours[it]?.rain else meteoHours[it]?.rain }, times, zone, source) {
+                ChoiceRow(listOf("FMI", "Open-Meteo"), rainSource, { rainSource = it }, Modifier.fillMaxWidth())
+            }
         }
-        item { RainChart(times.map { if (rainSource == 0) fmiHours[it]?.rain else meteoHours[it]?.rain }, times, zone) }
         item { SectionTitle("Viikko", "Avaa päivä nähdäksesi tuntiennusteet") }
         (0..6).forEach { offset ->
             val date = today.plusDays(offset.toLong())
@@ -137,13 +156,13 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
             val b = meteo?.days?.firstOrNull { it.date == date }
             item(key = "day-$date") {
                 val expanded = expandedDay == date.toString()
-                Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surfaceContainerLow,
+                Surface(shape = RoundedCornerShape(Radius.block), color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     modifier = Modifier.fillMaxWidth().testTag("day-$date").semantics {
                         stateDescription = if (expanded) "Avattu" else "Suljettu"
                     }.clickable(onClickLabel = if (expanded) "Sulje tuntiennuste" else "Avaa tuntiennuste") {
                         expandedDay = if (expanded) null else date.toString()
                     }) {
-                    Column(Modifier.padding(16.dp)) {
+                    Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(if (offset == 0) "Tänään" else date.format(DateTimeFormatter.ofPattern("EEEE", FINNISH)).replaceFirstChar { it.titlecase(FINNISH) },
                                 style = MaterialTheme.typography.titleMedium)
@@ -154,8 +173,10 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
                         }
                         Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             WeatherSource.entries.forEach { source ->
-                                Text(source.title, Modifier.weight(1f), style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold, color = forecastColors(source).accent)
+                                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    SourceDot(source)
+                                    Text(source.title, style = MaterialTheme.typography.labelMedium, color = forecastColors(source).accent)
+                                }
                             }
                         }
                         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -178,57 +199,52 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
 }
 
 @Composable
-private fun CurrentCard(source: WeatherSource, state: SourceState, now: Instant, zone: ZoneId, modifier: Modifier) {
+private fun CurrentBlock(source: WeatherSource, state: SourceState, now: Instant, zone: ZoneId, largeFont: Boolean, modifier: Modifier) {
     val forecast = state.forecast
     val current = forecast?.current(now)
-    val observed = forecast?.recentObservation(now)
     val stale = forecast != null && Duration.between(forecast.fetchedAt, now).toMinutes() >= 60
     val colors = forecastColors(source)
-    Surface(modifier = modifier, shape = RoundedCornerShape(28.dp), color = Color.Transparent, contentColor = colors.ink,
-        border = BorderStroke(1.dp, colors.accent.copy(alpha = 0.2f))) {
-        Column(Modifier.fillMaxHeight().background(Brush.verticalGradient(listOf(colors.top, colors.bottom))).padding(16.dp)) {
-            Text(source.title, style = MaterialTheme.typography.labelLarge, color = colors.accent, modifier = Modifier.heightIn(min = 38.dp))
-            WeatherSymbol(current?.condition ?: Condition.UNKNOWN, current?.night ?: false, Modifier.size(86.dp), current?.description ?: Condition.UNKNOWN.label)
-            Text(temperature(current?.temperature), fontSize = 46.sp, fontWeight = FontWeight.Light, letterSpacing = (-2).sp)
-            Text(current?.description ?: if (state.loading) "Haetaan säätä…" else "Tieto puuttuu", style = MaterialTheme.typography.bodyMedium)
-            Text("Ennuste ${current?.let { clockLabel(it.time, zone) } ?: "–"}", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp, bottom = 16.dp))
-            Metric("Tuntuu kuin", temperature(current?.feelsLike))
-            Metric("Tuuli", "${decimal(current?.wind)} m/s")
-            Metric("Sade", "${decimal(current?.rain)} mm")
-            Metric("Sateen riski", current?.rainProbability?.let { "${decimal(it, 0)} %" } ?: "–")
-            val uv = forecast?.days?.firstOrNull { it.date == now.atZone(zone).toLocalDate() }?.uvMax
-            if (source == WeatherSource.OPEN_METEO) Metric("UV, päivän maks.", decimal(uv))
-            if (observed != null) {
-                HorizontalDivider(Modifier.padding(vertical = 10.dp), color = colors.accent.copy(alpha = 0.25f))
-                Text("Lähimmän FMI-aseman havainto", style = MaterialTheme.typography.labelSmall)
-                forecast.observationStation?.let { station ->
-                    Text(station.name, style = MaterialTheme.typography.bodyMedium)
-                    Text("${decimal(station.distanceMeters / 1000)} km valitusta paikasta", style = MaterialTheme.typography.bodySmall)
-                }
-                Text("${temperature(observed.temperature)} · ${clockLabel(observed.time, zone)}", style = MaterialTheme.typography.titleLarge)
-                Text("Tuuli ${decimal(observed.wind)} m/s", style = MaterialTheme.typography.bodySmall)
+    Block(modifier, color = colors.top, contentColor = colors.ink, radius = Radius.hero,
+        padding = PaddingValues(start = 24.dp, end = 20.dp, top = 18.dp, bottom = 18.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(source.title, style = MaterialTheme.typography.labelLarge, color = colors.accent)
+                Text(temperature(current?.temperature), style = MaterialTheme.typography.displayLarge,
+                    fontSize = if (largeFont) 64.sp else 92.sp, lineHeight = if (largeFont) 68.sp else 92.sp, maxLines = 1)
+                Text(current?.description ?: if (state.loading) "Haetaan säätä…" else "Tieto puuttuu", style = MaterialTheme.typography.titleMedium)
+                Text("Tuntuu kuin ${temperature(current?.feelsLike)}", style = MaterialTheme.typography.bodyMedium, color = colors.muted)
             }
-            Spacer(Modifier.weight(1f))
-            Text((if (stale) "Vanha ennuste · " else "Päivitetty ") + updatedLabel(forecast?.fetchedAt),
-                style = MaterialTheme.typography.labelSmall, color = colors.muted, modifier = Modifier.padding(top = 14.dp))
-            if (state.error != null) Text(state.error, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 6.dp))
+            WeatherSymbol(current?.condition ?: Condition.UNKNOWN, current?.night ?: false,
+                Modifier.size(if (largeFont) 64.dp else 92.dp), current?.description ?: Condition.UNKNOWN.label)
         }
+        val uv = forecast?.days?.firstOrNull { it.date == now.atZone(zone).toLocalDate() }?.uvMax
+        Text(listOfNotNull("Ennuste ${current?.let { clockLabel(it.time, zone) } ?: "–"}",
+            if (source == WeatherSource.OPEN_METEO) "UV, päivän maks. ${decimal(uv)}" else null,
+            (if (stale) "Vanha ennuste · " else "Päivitetty ") + updatedLabel(forecast?.fetchedAt)).joinToString(" · "),
+            style = MaterialTheme.typography.labelSmall, color = colors.muted, modifier = Modifier.padding(top = 10.dp))
+        if (state.error != null) Text(state.error, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
 @Composable
-private fun Metric(label: String, value: String) {
-    Column(Modifier.padding(bottom = 9.dp)) {
-        Text(label, style = MaterialTheme.typography.labelSmall)
-        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+private fun MetricTile(label: String, fmi: String, meteo: String, modifier: Modifier) {
+    Block(modifier, radius = Radius.tile, padding = PaddingValues(14.dp)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        listOf(WeatherSource.FMI to fmi, WeatherSource.OPEN_METEO to meteo).forEach { (source, value) ->
+            Row(Modifier.padding(top = 4.dp).semantics(mergeDescendants = true) { contentDescription = "${source.title}: $value" },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                SourceDot(source)
+                Text(value, style = MaterialTheme.typography.titleMedium)
+            }
+        }
     }
 }
 
 @Composable
 private fun ProviderHeading() {
     Row(Modifier.fillMaxWidth().padding(start = 54.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("FMI", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-        Text("OPEN-METEO", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+        Text("FMI", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = forecastColors(WeatherSource.FMI).accent)
+        Text("OPEN-METEO", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = forecastColors(WeatherSource.OPEN_METEO).accent)
     }
 }
 
@@ -272,32 +288,34 @@ private fun DaySummary(day: WeatherDay?, modifier: Modifier) {
 }
 
 @Composable
-private fun RainChart(rain: List<Double?>, times: List<Instant>, zone: ZoneId) {
-    val colors = forecastColors(WeatherSource.FMI)
-    val color = colors.accent
+private fun RainBlock(rain: List<Double?>, times: List<Instant>, zone: ZoneId, source: WeatherSource, sourcePicker: @Composable () -> Unit) {
+    val color = forecastColors(source).accent
     val line = MaterialTheme.colorScheme.outlineVariant
     val maximum = (rain.filterNotNull().maxOrNull() ?: 0.0).coerceAtLeast(1.0)
     val total = if (rain.all { it != null }) rain.sumOf { it!! } else null
-    Surface(shape = RoundedCornerShape(24.dp), color = colors.bottom, contentColor = colors.ink) {
-        Column(Modifier.padding(18.dp)) {
-            Text(if (total != null) "Yhteensä ${decimal(total)} mm" else "Osa sadetiedoista puuttuu", style = MaterialTheme.typography.titleMedium)
-            Text("Asteikko 0–${decimal(maximum)} mm", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Canvas(Modifier.fillMaxWidth().height(140.dp).padding(top = 16.dp).semantics {
-                contentDescription = rain.mapIndexed { i, r -> "${clockLabel(times[i], zone)}: ${decimal(r)} millimetriä" }.joinToString(", ")
-            }) {
-                repeat(3) { i -> val y = size.height * i / 2; drawLine(line, Offset(0f, y), Offset(size.width, y), 1.dp.toPx()) }
-                val width = size.width / rain.size
-                rain.forEachIndexed { i, value ->
-                    if (value == null) drawCircle(line, 2.dp.toPx(), Offset(width * (i + 0.5f), size.height - 4.dp.toPx()), style = Stroke(1.dp.toPx()))
-                    else if (value > 0) {
-                        val h = size.height * (value / maximum).toFloat()
-                        drawRoundRect(color, Offset(width * i + width * 0.15f, size.height - h), Size(width * 0.7f, h), androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
-                    }
+    Block {
+        Text("Sademäärä", style = MaterialTheme.typography.titleLarge)
+        Text((if (total != null) "Yhteensä ${decimal(total)} mm" else "Osa sadetiedoista puuttuu") + " · asteikko 0–${decimal(maximum)} mm",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(12.dp))
+        sourcePicker()
+        Canvas(Modifier.fillMaxWidth().height(120.dp).padding(top = 16.dp).semantics {
+            contentDescription = rain.mapIndexed { i, r -> "${clockLabel(times[i], zone)}: ${decimal(r)} millimetriä" }.joinToString(", ")
+        }) {
+            val base = 4.dp.toPx()
+            drawRoundRect(line, Offset(0f, size.height - base), Size(size.width, base), CornerRadius(base / 2))
+            val width = size.width / rain.size
+            rain.forEachIndexed { i, value ->
+                if (value == null) drawCircle(line, 2.dp.toPx(), Offset(width * (i + 0.5f), size.height - base - 6.dp.toPx()), style = Stroke(1.dp.toPx()))
+                else if (value > 0) {
+                    val bar = width * 0.7f
+                    val h = ((size.height - base) * (value / maximum).toFloat()).coerceAtLeast(bar)
+                    drawRoundRect(color, Offset(width * i + width * 0.15f, size.height - h), Size(bar, h), CornerRadius(bar / 2))
                 }
             }
-            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf(0, 6, 12, 18, 23).forEach { Text(clockLabel(times[it], zone), style = MaterialTheme.typography.labelSmall) }
-            }
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            listOf(0, 6, 12, 18, 23).forEach { Text(clockLabel(times[it], zone), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }

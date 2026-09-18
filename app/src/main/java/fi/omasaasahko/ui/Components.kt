@@ -127,7 +127,7 @@ fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, desc
 @Composable
 fun ExpandArrow(expanded: Boolean, modifier: Modifier = Modifier) {
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "Viikon päivän nuoli")
-    val color = forecastColors(fi.omasaasahko.domain.WeatherSource.FMI).accent
+    val color = MaterialTheme.colorScheme.primary
     Canvas(modifier.size(28.dp)) {
         withTransform({ rotate(rotation) }) {
             val path = Path().apply {

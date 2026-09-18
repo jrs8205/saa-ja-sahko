@@ -151,27 +151,30 @@ class ScreenTest {
         compose.onNodeWithTag("selected-price").assertTextContains("23.00–00.00", substring = true)
     }
 
-    @Test fun `weather cards stay equally tall as asymmetric data changes`() {
+    @Test fun `weather blocks stack full width and observation gets its own block`() {
         var state by mutableStateOf(PreviewData.state)
         compose.setContent { AppTheme(dark = true, dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {}, {}) } }
-        fun equalHeight() {
-            val a = compose.onNodeWithTag("current-FMI").getUnclippedBoundsInRoot()
-            val b = compose.onNodeWithTag("current-OPEN_METEO").getUnclippedBoundsInRoot()
-            assertEquals((a.bottom - a.top).value, (b.bottom - b.top).value, 0.1f)
-        }
-        equalHeight()
+        val a = compose.onNodeWithTag("current-FMI").getUnclippedBoundsInRoot()
+        val b = compose.onNodeWithTag("current-OPEN_METEO").getUnclippedBoundsInRoot()
+        assertEquals((a.right - a.left).value, (b.right - b.left).value, 0.1f)
+        assert(b.top >= a.bottom) { "Open-Meteo-lohkon pitää olla FMI-lohkon alla" }
         compose.onNodeWithTag("current-time").assertTextEquals("Nyt 12.10")
         compose.runOnIdle { state = state.copy(now = state.now.plusSeconds(60)) }
         compose.onNodeWithTag("current-time").assertTextEquals("Nyt 12.11")
+        compose.onNodeWithText("Lähimmän FMI-aseman havainto").assertDoesNotExist()
         compose.runOnIdle {
             val fmi = state.weather.getValue(WeatherSource.FMI)
             state = state.copy(weather = state.weather + (WeatherSource.FMI to fmi.copy(
                 forecast = fmi.forecast!!.copy(observation = WeatherHour(state.now, 15.0)),
                 error = "Päivitys epäonnistui. Näytetään viimeisin onnistunut ennuste.")))
         }
-        equalHeight()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Lähimmän FMI-aseman havainto"))
+        compose.onNodeWithText("Lähimmän FMI-aseman havainto").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Tuuli · m/s"))
+        compose.onNodeWithText("Tuuli · m/s").assertIsDisplayed()
         compose.runOnIdle { state = state.copy(weather = state.weather + (WeatherSource.OPEN_METEO to SourceState())) }
-        equalHeight()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("current-OPEN_METEO"))
+        compose.onNodeWithTag("current-OPEN_METEO").assertIsDisplayed()
     }
 
     @Test fun `weekly arrow expands and collapses day and solar source prefers FMI`() {
