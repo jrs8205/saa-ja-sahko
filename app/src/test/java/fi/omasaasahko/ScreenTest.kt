@@ -113,6 +113,9 @@ class ScreenTest {
                 AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) }
             }
         }
+        screenshot("weather-large-font")
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("sun-source"))
+        screenshot("weather-sun-large-font")
         compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Tunti"))
         compose.onNodeWithText("Tunti").assertIsDisplayed()

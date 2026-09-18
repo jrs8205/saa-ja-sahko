@@ -120,15 +120,20 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
             val rise = sun.sunrise?.let { clockLabel(it, zone) } ?: "–"
             val set = sun.sunset?.let { clockLabel(it, zone) } ?: "–"
             Block(color = colors.top, contentColor = colors.ink, radius = Radius.panel, padding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("↑ $rise", style = MaterialTheme.typography.headlineSmall, color = colors.accent,
-                        modifier = Modifier.weight(1f).semantics { contentDescription = "Auringonnousu $rise" })
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val source: @Composable () -> Unit = {
+                    Column(horizontalAlignment = if (largeFont) Alignment.Start else Alignment.CenterHorizontally) {
                         Text("Aurinko", style = MaterialTheme.typography.labelMedium, color = colors.muted)
                         Text(if (fmiSun != null) "Ilmatieteen laitos" else "Open-Meteo", style = MaterialTheme.typography.labelSmall,
                             color = colors.muted, modifier = Modifier.testTag("sun-source"))
                     }
-                    Text("↓ $set", style = MaterialTheme.typography.headlineSmall, color = colors.accent, textAlign = TextAlign.End,
+                }
+                // Three columns do not fit beside each other once the text is scaled up.
+                if (largeFont) source()
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("↑ $rise", style = MaterialTheme.typography.headlineSmall, color = colors.accent, softWrap = false,
+                        modifier = Modifier.weight(1f).semantics { contentDescription = "Auringonnousu $rise" })
+                    if (!largeFont) source()
+                    Text("↓ $set", style = MaterialTheme.typography.headlineSmall, color = colors.accent, textAlign = TextAlign.End, softWrap = false,
                         modifier = Modifier.weight(1f).semantics { contentDescription = "Auringonlasku $set" })
                 }
             }
@@ -252,7 +257,7 @@ private fun ProviderHeading() {
 private fun HourComparison(time: Instant, a: WeatherHour?, b: WeatherHour?, zone: ZoneId) {
     Column {
         Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(clockLabel(time, zone), Modifier.width(44.dp), style = MaterialTheme.typography.labelMedium)
+            Text(clockLabel(time, zone), Modifier.widthIn(min = 44.dp), style = MaterialTheme.typography.labelMedium, softWrap = false)
             HourCell(a, Modifier.weight(1f)); HourCell(b, Modifier.weight(1f))
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
