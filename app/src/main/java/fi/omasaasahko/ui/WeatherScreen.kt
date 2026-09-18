@@ -16,11 +16,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fi.omasaasahko.*
@@ -120,21 +120,35 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
             val rise = sun.sunrise?.let { clockLabel(it, zone) } ?: "–"
             val set = sun.sunset?.let { clockLabel(it, zone) } ?: "–"
             Block(color = colors.top, contentColor = colors.ink, radius = Radius.panel, padding = PaddingValues(horizontal = 24.dp, vertical = 14.dp)) {
-                val source: @Composable () -> Unit = {
-                    Column(horizontalAlignment = if (largeFont) Alignment.Start else Alignment.CenterHorizontally) {
-                        Text("Aurinko", style = MaterialTheme.typography.labelMedium, color = colors.muted)
-                        Text(if (fmiSun != null) "Ilmatieteen laitos" else "Open-Meteo", style = MaterialTheme.typography.labelSmall,
-                            color = colors.muted, modifier = Modifier.testTag("sun-source"))
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val sourceName = if (fmiSun != null) "Ilmatieteen laitos" else "Open-Meteo"
+                    val measurer = rememberTextMeasurer()
+                    val timesWidth = listOf("↑ $rise", "↓ $set").sumOf {
+                        measurer.measure(it, MaterialTheme.typography.headlineSmall, softWrap = false).size.width
                     }
-                }
-                // Three columns do not fit beside each other once the text is scaled up.
-                if (largeFont) source()
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("↑ $rise", style = MaterialTheme.typography.headlineSmall, color = colors.accent, softWrap = false,
-                        modifier = Modifier.weight(1f).semantics { contentDescription = "Auringonnousu $rise" })
-                    if (!largeFont) source()
-                    Text("↓ $set", style = MaterialTheme.typography.headlineSmall, color = colors.accent, textAlign = TextAlign.End, softWrap = false,
-                        modifier = Modifier.weight(1f).semantics { contentDescription = "Auringonlasku $set" })
+                    val sourceWidth = maxOf(
+                        measurer.measure("Aurinko", MaterialTheme.typography.labelMedium, softWrap = false).size.width,
+                        measurer.measure(sourceName, MaterialTheme.typography.labelSmall, softWrap = false).size.width)
+                    val sourceAbove = largeFont || with(LocalDensity.current) { (maxWidth - 16.dp).roundToPx() < timesWidth + sourceWidth }
+                    val source: @Composable () -> Unit = {
+                        Column(horizontalAlignment = if (sourceAbove) Alignment.Start else Alignment.CenterHorizontally) {
+                            Text("Aurinko", style = MaterialTheme.typography.labelMedium, color = colors.muted)
+                            Text(sourceName, style = MaterialTheme.typography.labelSmall,
+                                color = colors.muted, modifier = Modifier.testTag("sun-source"))
+                        }
+                    }
+                    Column {
+                        if (sourceAbove) source()
+                        // At very large font sizes the complete times can also move onto separate lines.
+                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                            Text("↑ $rise", style = MaterialTheme.typography.headlineSmall, color = colors.accent, softWrap = false,
+                                modifier = Modifier.semantics { contentDescription = "Auringonnousu $rise" })
+                            if (!sourceAbove) source()
+                            Text("↓ $set", style = MaterialTheme.typography.headlineSmall, color = colors.accent, softWrap = false,
+                                modifier = Modifier.semantics { contentDescription = "Auringonlasku $set" })
+                        }
+                    }
                 }
             }
         }

@@ -41,6 +41,34 @@ class ScreenTest {
 
     @Test
     @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
+    fun `narrow sun block retains both times and source across themes and font scales`() {
+        var fontScale by mutableFloatStateOf(1f)
+        var dark by mutableStateOf(false)
+        var source by mutableStateOf(WeatherSource.FMI)
+        val preview = PreviewData.state
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                AppTheme(dark = dark, dynamic = false) {
+                    val state = if (source == WeatherSource.FMI) preview else preview.copy(weather = preview.weather - WeatherSource.FMI)
+                    AppScreen(state, true, {}, {}, {}, {}, {}, {})
+                }
+            }
+        }
+        for (night in listOf(false, true)) for (provider in WeatherSource.entries) for (scale in listOf(1f, 1.25f, 1.6f)) {
+            compose.runOnIdle { dark = night; source = provider; fontScale = scale }
+            compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("sun-source"))
+            compose.onNodeWithTag("sun-source").assertTextEquals(provider.title).assertTextFits()
+            compose.onNode(hasScrollAction()).performScrollToNode(hasContentDescription("Auringonnousu 06.50"))
+            compose.onNodeWithContentDescription("Auringonnousu 06.50").assertTextFits()
+            compose.onNode(hasScrollAction()).performScrollToNode(hasContentDescription("Auringonlasku 19.39"))
+            compose.onNodeWithContentDescription("Auringonlasku 19.39").assertTextFits()
+            if (provider == WeatherSource.FMI) screenshot("weather-sun-320-$scale-${if (night) "dark" else "light"}")
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
     fun `narrow electricity selectors keep labels readable and choices usable`() {
         checkElectricitySelectors(listOf(1f, 1.25f, 1.6f), "320")
     }
@@ -461,7 +489,8 @@ class ScreenTest {
             assertEquals("All characters must be drawn: $text", text.length,
                 layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
             // Compare the drawn line, not the paragraph's possibly wider cached constraints.
-            assertTrue("Clipped right edge: $text", layout.getLineRight(0) <= layout.size.width + 1f)
+            assertTrue("Clipped right edge: $text (${layout.getLineRight(0)} > ${layout.size.width}, " +
+                "scale=${layout.layoutInput.density.fontScale})", layout.getLineRight(0) <= layout.size.width + 1f)
             assertTrue("Clipped left edge: $text", layout.getLineLeft(0) >= -1f)
         }
     }
