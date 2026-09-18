@@ -3,10 +3,13 @@ package fi.omasaasahko.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -139,7 +142,7 @@ fun ExpandArrow(expanded: Boolean, modifier: Modifier = Modifier) {
 
 @Composable
 fun SectionTitle(title: String, subtitle: String? = null) {
-    Column(Modifier.padding(top = 16.dp, bottom = 2.dp)) {
+    Column(Modifier.padding(start = 4.dp, top = 14.dp, bottom = 2.dp)) {
         Text(title, style = MaterialTheme.typography.titleLarge)
         subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
@@ -147,21 +150,25 @@ fun SectionTitle(title: String, subtitle: String? = null) {
 
 @Composable
 fun Notice(text: String, actionLabel: String? = null, onAction: () -> Unit = {}) {
-    Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(20.dp)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            Text(text, style = MaterialTheme.typography.bodyMedium)
-            if (actionLabel != null) TextButton(onClick = onAction) { Text(actionLabel) }
-        }
+    Block(color = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        radius = Radius.tile, padding = PaddingValues(16.dp)) {
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+        if (actionLabel != null) TextButton(onClick = onAction) { Text(actionLabel) }
     }
 }
 
 @Composable
 fun ChoiceRow(labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    SingleChoiceSegmentedButtonRow(modifier) {
+    val scheme = MaterialTheme.colorScheme
+    Row(modifier.clip(PillShape).background(scheme.surfaceContainerHigh).padding(4.dp).selectableGroup()) {
         labels.forEachIndexed { index, label ->
-            SegmentedButton(selected = index == selected, onClick = { onSelect(index) },
-                shape = SegmentedButtonDefaults.itemShape(index, labels.size), icon = {}) {
-                Text(label)
+            val active = index == selected
+            Box(Modifier.weight(1f).heightIn(min = 44.dp).clip(PillShape)
+                .background(if (active) scheme.inverseSurface else Color.Transparent)
+                .selectable(selected = active, role = Role.RadioButton, onClick = { onSelect(index) })
+                .padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1,
+                    color = if (active) scheme.inverseOnSurface else scheme.onSurfaceVariant)
             }
         }
     }
