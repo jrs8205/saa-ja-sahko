@@ -204,7 +204,7 @@ class AppViewModel(
                 namingStarted = true
                 nameJob = viewModelScope.launch naming@ {
                     try {
-                        val result = try { location.describe(fix) }
+                        val result = try { location.describe(place) }
                             catch (e: CancellationException) { throw e }
                             catch (_: Exception) { fix }
                         ensureActive()

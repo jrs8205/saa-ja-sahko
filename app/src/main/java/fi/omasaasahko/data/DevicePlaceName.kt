@@ -22,6 +22,11 @@ internal class DevicePlaceName(
     private val finePermission: () -> Boolean,
 ) {
     suspend fun describe(place: Place): Place = coroutineScope {
+        // AppViewModel carries the name only after checking the fresh fix against its
+        // original 50 m anchor. Retry incomplete names so a past outage can recover.
+        if (place.nameResolved && place.nearbyName != null && place.nameAnchor != null && finePermission()) {
+            return@coroutineScope place
+        }
         val anchor = place.accuracyMeters?.let { NameAnchor(place.latitude, place.longitude, it) }
         val android = async {
             try { withTimeoutOrNull(4_000) { address(place) } }

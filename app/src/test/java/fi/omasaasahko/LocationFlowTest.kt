@@ -25,6 +25,40 @@ class LocationFlowTest {
         override suspend fun prices(now: Instant): PriceData { priceCalls++; return PriceData(now, emptyList()) }
     }
 
+    @Test fun `reopening nearby passes anchored name to lookup and completes warning location promptly`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler); Dispatchers.setMain(dispatcher)
+        try {
+            var current = espoo.copy(name = CURRENT_LOCATION_NAME, nameResolved = false, accuracyMeters = 10f)
+            var calls = 0
+            var pending = false
+            val saved = mutableListOf<Pair<Place, Boolean>>()
+            val namer = DevicePlaceName({ calls++; delay(1_000); listOf(NearbyName("Nikunmäki", "Espoo", 10.0)) }, { null }, { true })
+            val model = AppViewModel(Repo(), object : LocationProvider {
+                override suspend fun locate() = current
+                override suspend fun describe(place: Place) = namer.describe(place)
+            }, ioDispatcher = dispatcher, onDeviceLocationStart = { pending = true }, onDeviceLocationEnd = { pending = false },
+                onDevicePlace = { place, ready -> saved += place to ready })
+            model.start(true); advanceTimeBy(1_001); runCurrent()
+            assertEquals(1, calls)
+            model.stop(); runCurrent()
+            current = current.copy(latitude = current.latitude + 0.0001, locatedAt = now.plusSeconds(60))
+            model.start(true); runCurrent()
+            assertEquals("No repeat lookup for an anchored nearby name", 1, calls)
+            assertFalse(model.state.value.locating)
+            assertFalse(model.state.value.namingLocation)
+            assertFalse(pending)
+            assertTrue(saved.last().second)
+            assertEquals(current.latitude, saved.last().first.latitude, 0.0)
+            assertEquals(current.locatedAt, saved.last().first.locatedAt)
+            assertEquals("Nikunmäki", model.state.value.place?.nearbyName)
+            current = current.copy(latitude = espoo.latitude + 0.001)
+            model.refreshWeather(); runCurrent()
+            assertEquals("Moving beyond original anchor starts another lookup", 2, calls)
+            assertTrue(model.state.value.namingLocation)
+            model.stop()
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `every foreground entry refreshes device coordinates and prices within fifteen minutes`() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler); Dispatchers.setMain(dispatcher)
         try {

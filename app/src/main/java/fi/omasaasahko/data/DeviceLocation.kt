@@ -38,16 +38,26 @@ class DeviceLocation(private val context: Context) : LocationProvider {
             replies.send(location)
         } }
         var location: Location? = null
+        var received = 0
+        suspend fun receiveFix() {
+            val fix = replies.receive()?.takeIf { usableFix(it, SystemClock.elapsedRealtimeNanos()) }
+            received++
+            if (fix != null && (location == null || fix.accuracy < location!!.accuracy)) location = fix
+        }
         try {
             withTimeoutOrNull(12_000) {
-                repeat(providers.size) {
-                    val fix = replies.receive()?.takeIf { usableFix(it, SystemClock.elapsedRealtimeNanos()) }
-                    if (fix != null && (location == null || fix.accuracy < location!!.accuracy)) location = fix
-                    if (location != null && location.accuracy <= 50f) return@withTimeoutOrNull
+                while (location == null && received < providers.size) receiveFix()
+                // Weather and nearby names already accept 200 m accuracy. Indoor GPS
+                // must not hold a usable network fix for the full acquisition timeout.
+                withTimeoutOrNull(2_000) {
+                    while (received < providers.size && location!!.accuracy > 200f) receiveFix()
                 }
             }
         } finally { jobs.forEach { it.cancel() }; replies.close() }
-        val fix = location ?: throw LocationFailure("Tuoretta sijaintia ei saatu. Yritä uudelleen.")
+        // Freshness was checked on receipt. Optional refinement must not invalidate
+        // an accepted fix; retain its original timestamp below, including the wait.
+        val fix = location
+            ?: throw LocationFailure("Tuoretta sijaintia ei saatu. Yritä uudelleen.")
         val ageMillis = ((SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos) / 1_000_000).coerceAtLeast(0)
         Place(fix.latitude, fix.longitude, CURRENT_LOCATION_NAME, java.time.Instant.now().minusMillis(ageMillis),
             accuracyMeters = fix.accuracy, origin = PlaceOrigin.DEVICE, nameResolved = false)

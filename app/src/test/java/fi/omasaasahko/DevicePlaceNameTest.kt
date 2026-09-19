@@ -12,6 +12,34 @@ import java.time.Instant
 class DevicePlaceNameTest {
     private val fix = Place(60.27, 24.75, CURRENT_LOCATION_NAME, Instant.EPOCH, accuracyMeters = 10f, nameResolved = false, origin = PlaceOrigin.DEVICE)
 
+    @Test fun `nearby anchored name avoids both network lookups without replacing fresh coordinates`() = runTest {
+        val original = fix.copy(name = "Espoo", nearbyName = "Nikunmäki", nameResolved = true)
+        val moved = fix.copy(latitude = fix.latitude + 0.0001, locatedAt = Instant.EPOCH.plusSeconds(60))
+        val retained = retainDeviceName(moved, original)
+        var requests = 0
+        val result = DevicePlaceName({ requests++; emptyList() }, { requests++; null }, { true }).describe(retained)
+        assertEquals(retained, result)
+        assertEquals(moved.latitude, result.latitude, 0.0)
+        assertEquals(moved.locatedAt, result.locatedAt)
+        assertEquals(original.latitude, result.nameAnchor!!.latitude, 0.0)
+        assertEquals(0, requests)
+        assertEquals(0L, testScheduler.currentTime)
+    }
+
+    @Test fun `incomplete name is retried and revoked fine permission drops retained detail`() = runTest {
+        val original = fix.copy(name = "Espoo", nearbyName = "Nikunmäki", nameResolved = true)
+        var calls = 0
+        val lookup: suspend (Place) -> List<NearbyName> = { calls++; listOf(NearbyName("Nikunmäki", "Espoo", 10.0)) }
+        val incomplete = retainDeviceName(fix, original.copy(nearbyName = null))
+        val recovered = DevicePlaceName(lookup, { null }, { true }).describe(incomplete)
+        assertEquals("Nikunmäki", recovered.nearbyName)
+        assertEquals(1, calls)
+        val coarse = DevicePlaceName(lookup, { null }, { false }).describe(retainDeviceName(fix, original))
+        assertEquals("Espoo", coarse.name)
+        assertNull(coarse.nearbyName)
+        assertEquals(2, calls)
+    }
+
     @Test fun `retained names stay anchored to their original fix through successive small movements`() {
         val original = fix.copy(name = "Espoo", nearbyName = "Nikunmäki", nameResolved = true)
         val first = retainDeviceName(fix.copy(latitude = fix.latitude + 0.0003), original)

@@ -1,13 +1,13 @@
 # Paikkahaku, FMI-asemat ja ilmoitusten sijainti — 0.2.2
 
-Uusin korjaus- ja varmennustilanne: [REVIEW-0.2.2-ROUND3.md](REVIEW-0.2.2-ROUND3.md). Alla olevat aiemmat testimäärät ja APK-tiiviste kuvaavat niitä edeltäviä käännöksiä.
+Uusin paikallinen jatko: [paikannuksen viiveen korjaus 18.9.2026](LOCATION-PERFORMANCE.md). Asennetun 0.2.2:n aiempi korjaus- ja varmennustilanne: [REVIEW-0.2.2-ROUND3.md](REVIEW-0.2.2-ROUND3.md). Alla olevat aiemmat testimäärät ja APK-tiiviste kuvaavat niitä edeltäviä käännöksiä.
 
 17.9.2026. VersionName 0.2.2, versionCode 6. Toiminnalliset muutokset ovat commitissa `2073661`, joka sisältää myös aiemmat paikalliset 0.2.1-muutokset. Käyttäjä pyysi lähdekoodin ja dokumentaation commitoinnin sekä pushin GitHubin main-haaraan. Käyttäjä valitsi lähimmän FMI-aseman havainnot, katseltavan paikan koordinaattien ennusteet ja ilmoitusten seuraavan puhelimen sijaintia.
 
 ## Käyttäjälle näkyvä toiminta
 
 - Sovellukseen palaaminen käynnistää aina uuden paikannuksen. Aiempi 15 minuutin raja saattoi pitää Espoon tiedot Porvoossa, vaikka sovellus avattiin matkan jälkeen. Sähköhinnatkin päivitetään avauksella.
-- Verkko- ja GPS-paikannusta odotetaan enintään 12 sekuntia. Karkea ensimmäinen tulos ei enää peruuta tarkempaa keskeneräistä paikannusta. Enintään 30 sekuntia vanha sijainti hyväksytään; enintään 50 metrin tarkkuudella voidaan jatkaa heti.
+- Verkko- ja GPS-paikannusta odotetaan enintään 12 sekuntia. Paikallisessa 18.9. korjauksessa enintään 200 metrin tarkkuudella jatketaan heti; karkeamman ensimmäisen tuloksen jälkeen tarkempaa odotetaan korkeintaan kaksi lisäsekuntia kokonaisaikarajan sisällä. Vastaanotettaessa enintään 30 sekuntia vanha sijainti hyväksytään. Paikallinen 19.9. korjaus säilyttää hyväksytyn tuloksen myös tarkennusodotuksen lopussa ja palauttaa alkuperäisen aikaleiman. Alkuperäinen asennettu 0.2.2 käytti 50 metrin rajaa ja saattoi odottaa GPS:ää koko 12 sekunnin ajan.
 - Ennustepyynnöt alkavat koordinaattien saavuttua. MML-paikannimi ja Androidin varahaku tehdään erikseen. Molemmissa puhelimissa käytetään samaa MML-nimiaineistoa, joten Androidin erilaiset kaupunginosanimet eivät määrää ensisijaista otsikkoa.
 - MML:n lähimmän nimipisteen kunta toimii otsikkona. Nimipisteen nimi näytetään erikseen. Piste ei todista hallinnollista rajaa; kuntarajojen lähellä nimipisteen kunta voi poiketa koordinaatin kunnasta. GPS-ero voi edelleen vaihtaa lähimmän pisteen kahden nimen rajalla.
 - MML-haun säde on 5 km. Yli 750 metrin etäisyys nimipisteeseen näytetään. Tarkempi nimi vaatii tarkan sijaintiluvan ja enintään 200 metrin ilmoitetun epävarmuuden. Karkealla sijainnilla näytetään tarkkuus ja kunta; tarkkaa nimeä ei arvata. Ilman kelvollista MML-vastausta käytetään Androidin ensimmäisen osoitteen kuntaa/aluevara-arvoa.
