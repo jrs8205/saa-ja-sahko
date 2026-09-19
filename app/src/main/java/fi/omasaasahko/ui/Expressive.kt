@@ -30,7 +30,7 @@ val PillShape: Shape = RoundedCornerShape(percent = 50)
 
 @Composable fun isDarkTheme(): Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
-/** A flat, solid-colour container. Meaning comes from the colour, never from a gradient or border. */
+/** A flat container; colour supports the visible labels and accessibility descriptions. */
 @Composable
 fun Block(modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
           contentColor: Color = MaterialTheme.colorScheme.onSurface, radius: Dp = Radius.block,
@@ -84,8 +84,9 @@ fun SettingSwitchRow(title: String, subtitle: String?, checked: Boolean, onCheck
         .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
         .padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            val alpha = if (enabled) 1f else 0.38f
+            Text(title, style = MaterialTheme.typography.titleMedium, color = LocalContentColor.current.copy(alpha = alpha))
+            subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha)) }
         }
         Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }

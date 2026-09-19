@@ -1,5 +1,7 @@
 # Pehmeä Expressive — katselmointi ja korjaukset 18.9.2026
 
+**Uusin kierros 19.9.2026:** [toisen katselmoinnin raportti](REVIEW-UI-EXPRESSIVE-ROUND2.md) käsittelee katselmoinnin uudet 15 kohtaa ja niiden paikalliset korjaukset. Alla oleva raportti kuvaa 18.9. tilannetta; erityisesti kohtien 6.4, 6.6 ja 6.12 siirtopäätökset eivät enää kuvaa nykyistä koodia.
+
 Kolme katselmoinnissa ilmoitettua P2-asetteluvirhettä toistettiin testeillä ja korjattiin. Yhteenvetohintojen numerot, sähkövalitsimien vaihtoehdot ja aurinkoajat mahtuvat nyt myös 320 dp:n näkymään. Korjaukset ovat paikallisessa `ui-pehmea-expressive`-haarassa. Fyysisen laitteen varmennus on edelleen avoin.
 
 ## Lähtötila ja rajaus

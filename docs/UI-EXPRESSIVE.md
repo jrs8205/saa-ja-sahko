@@ -1,5 +1,7 @@
 # Pehmeä Expressive -käyttöliittymä — 18.9.2026
 
+19.9. paikalliset katselmointikorjaukset: [kaikkien 15 kohdan tulokset](REVIEW-UI-EXPRESSIVE-ROUND2.md). Tuotannon dynaaminen teemapolku on nyt myös paikallisissa SDK 33/35 -renderöinti- ja kontrastitesteissä.
+
 Sovelluksen ilme uudistettiin haarassa `ui-pehmea-expressive`. Muutos koskee vain `fi.omasaasahko.ui`-pakettia, resursseja ja käyttöliittymätestejä. Data, ViewModelit, taustatyöt ja ilmoitukset eivät muuttuneet, eikä `AppScreen(...)`-funktion allekirjoitus.
 
 Suunnitelma: (suunnitelma, ei julkinen). Mockupit: (suunnittelukangas, ei julkinen) (yksityinen kangas, rivit ”C · Pehmeä Expressive”).
@@ -7,7 +9,7 @@ Suunnitelma: (suunnitelma, ei julkinen). Mockupit: (suunnittelukangas, ei julkin
 ## Periaatteet
 
 - Pinnat ovat tasavärisiä lohkoja (`Block`). Ei liukuvärejä, ei 1 px reunuksia.
-- Merkitys tulee väristä: `forecastColors` (FMI sininen, Open-Meteo vihreä), `priceColors` (viisi hintaluokkaa), `warningColors` (keltainen, oranssi, punainen), `sunColors`. Nämä ovat kiinteitä molemmissa teemoissa.
+- Merkitys ilmaistaan tekstillä ja saavutettavuuskuvauksilla; väri tukee niitä: `forecastColors` (FMI sininen, Open-Meteo vihreä), `priceColors` (viisi hintaluokkaa), `warningColors` (keltainen, oranssi, punainen), `sunColors`. Nämä ovat kiinteitä molemmissa teemoissa. Yhteiset lämpimät paletit sijaitsevat `MeaningColors.kt`:ssa.
 - Neutraalit pinnat luetaan aina `MaterialTheme.colorScheme`-tokeneista, joten dynaaminen väri toimii edelleen.
 - Otsikot ja numerot: Bricolage Grotesque 800 (`DisplayFont`). Muu teksti: Figtree (`BodyFont`). Molemmat ovat muuttuvia fontteja kansiossa `app/src/main/res/font/`, lisenssi OFL (`docs/licenses/`).
 
@@ -17,7 +19,7 @@ Suunnitelma: (suunnitelma, ei julkinen). Mockupit: (suunnittelukangas, ei julkin
 |---|---|
 | Säteet (`Radius`) | hero 36 dp · block 32 dp · panel 28 dp · tile 24 dp · row 20 dp · `PillShape` 50 % |
 | Näytön reunus / lohkojen väli | 20 dp / 10 dp |
-| Lämpötila | `displayLarge` 92 sp (suurella fontilla 64 sp) |
+| Lämpötila | Sovitus 24–92 sp; suurella fontilla enintään 64 sp, suhteellinen kirjainväli ja rivikorkeus |
 | Hinta | `displayMedium` 80 sp, pienenee automaattisesti 40 sp:hen |
 | Näytön otsikko / lohkon otsikko | `headlineLarge` 32 sp / `titleLarge` 22 sp |
 | Neutraali lohko | `surfaceContainerHigh` |

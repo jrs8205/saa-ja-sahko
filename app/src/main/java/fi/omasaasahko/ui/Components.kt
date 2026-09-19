@@ -21,6 +21,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import fi.omasaasahko.domain.Condition
 import kotlin.math.cos
@@ -28,7 +30,7 @@ import kotlin.math.sin
 
 @Composable
 fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, description: String = condition.label) {
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val dark = isDarkTheme()
     val cloud = if (dark) Color(0xFFD0E5F7) else Color(0xFF6589B3)
     val rearCloud = if (dark) Color(0xFF7EAACF) else Color(0xFFAAC8E5)
     val rain = if (dark) Color(0xFF61DBFF) else Color(0xFF087FB7)
@@ -158,18 +160,34 @@ fun Notice(text: String, actionLabel: String? = null, onAction: () -> Unit = {})
 }
 
 @Composable
+internal fun choiceRowMinWidth(labels: List<String>): androidx.compose.ui.unit.Dp {
+    val measurer = rememberTextMeasurer()
+    val width = labels.maxOfOrNull { measurer.measure(it, MaterialTheme.typography.labelLarge, softWrap = false).size.width } ?: 0
+    return with(LocalDensity.current) { width.toDp() + ChoiceCellPadding * 2 } * labels.size + ChoiceInset * 2
+}
+
+private val ChoiceCellPadding = 8.dp
+private val ChoiceInset = 4.dp
+
+@Composable
 fun ChoiceRow(labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    Row(modifier.clip(PillShape).background(scheme.surfaceContainerHigh).padding(4.dp).selectableGroup()) {
-        labels.forEachIndexed { index, label ->
+    val minimumWidth = choiceRowMinWidth(labels)
+    BoxWithConstraints(modifier) {
+        val stacked = maxWidth < minimumWidth
+        val group = Modifier.fillMaxWidth().clip(if (stacked) androidx.compose.foundation.shape.RoundedCornerShape(Radius.tile) else PillShape)
+            .background(scheme.surfaceContainerHigh).padding(ChoiceInset).selectableGroup()
+        val choice: @Composable (Int, String, Modifier) -> Unit = { index, label, cell ->
             val active = index == selected
-            Box(Modifier.weight(1f).heightIn(min = 44.dp).clip(PillShape)
+            Box(cell.heightIn(min = 44.dp).clip(PillShape)
                 .background(if (active) scheme.inverseSurface else Color.Transparent)
                 .selectable(selected = active, role = Role.RadioButton, onClick = { onSelect(index) })
-                .padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1,
+                .padding(horizontal = ChoiceCellPadding, vertical = 4.dp), contentAlignment = Alignment.Center) {
+                Text(label, style = MaterialTheme.typography.labelLarge,
                     color = if (active) scheme.inverseOnSurface else scheme.onSurfaceVariant)
             }
         }
+        if (stacked) Column(group) { labels.forEachIndexed { i, label -> choice(i, label, Modifier.fillMaxWidth()) } }
+        else Row(group) { labels.forEachIndexed { i, label -> choice(i, label, Modifier.weight(1f)) } }
     }
 }

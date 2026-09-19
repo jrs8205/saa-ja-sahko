@@ -39,15 +39,13 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scroll: LazyListState, onVat: (Boolean) -> Unit = {},
     alerts: PriceAlertState = PriceAlertState(), onAlerts: (Boolean) -> Unit = {}, onNotificationSettings: () -> Unit = {}, pricesRequest: Int = 0, priceDateRequest: String? = null,
-    onAlertsTest: () -> Unit = {}) {
+    onAlertsTest: () -> Unit = {}, todayRows: List<PriceSlot> = rememberPriceRows(state, state.now.atZone(HELSINKI).toLocalDate())) {
     var tomorrow by rememberSaveable { mutableStateOf(false) }
     val today = state.now.atZone(HELSINKI).toLocalDate()
     LaunchedEffect(pricesRequest) { if (pricesRequest > 0) tomorrow = priceDateRequest == today.plusDays(1).toString() }
     val date = today.plusDays(if (tomorrow) 1 else 0)
-    val rows = remember(state.prices, date, state.resolution, state.includeVat) { Prices.slots(state.prices?.quarters.orEmpty(), date, state.resolution, state.includeVat) }
-    val current = remember(state.prices, today, state.resolution, state.now, state.includeVat) {
-        Prices.slots(state.prices?.quarters.orEmpty(), today, state.resolution, state.includeVat).firstOrNull { it.contains(state.now) }
-    }
+    val rows = if (tomorrow) rememberPriceRows(state, date) else todayRows
+    val current = todayRows.firstOrNull { it.contains(state.now) }
     val available = rows.filter { it.centsPerKwh != null }
     val minimum = available.minByOrNull { it.centsPerKwh!! }
     val maximum = available.maxByOrNull { it.centsPerKwh!! }
@@ -90,15 +88,12 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
             val unitLabels = Resolution.entries.map { it.label }
             val day: @Composable (Modifier) -> Unit = { ChoiceRow(dayLabels, if (tomorrow) 1 else 0, { tomorrow = it == 1 }, it) }
             val unit: @Composable (Modifier) -> Unit = { ChoiceRow(unitLabels, state.resolution.ordinal, { i -> onResolution(Resolution.entries[i]) }, it) }
+            val selectorWidth = maxOf(choiceRowMinWidth(dayLabels), choiceRowMinWidth(unitLabels))
+            val gap = 10.dp
             BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val measurer = rememberTextMeasurer()
-                val labelWidth = (dayLabels + unitLabels).maxOf {
-                    measurer.measure(it, MaterialTheme.typography.labelLarge, softWrap = false, maxLines = 1).size.width
-                }
-                // ChoiceRow has two equal cells, 8 dp padding per side, and a 4 dp outer inset.
-                val fits = with(LocalDensity.current) { ((maxWidth - 10.dp) / 2 - 40.dp).roundToPx() >= labelWidth * 2 }
-                if (largeFont || !fits) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { day(Modifier.fillMaxWidth()); unit(Modifier.fillMaxWidth()) }
-                else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { day(Modifier.weight(1f)); unit(Modifier.weight(1f)) }
+                val fits = (maxWidth - gap) / 2 >= selectorWidth
+                if (largeFont || !fits) Column(verticalArrangement = Arrangement.spacedBy(gap)) { day(Modifier.fillMaxWidth()); unit(Modifier.fillMaxWidth()) }
+                else Row(horizontalArrangement = Arrangement.spacedBy(gap)) { day(Modifier.weight(1f)); unit(Modifier.weight(1f)) }
             }
         }
         item {
@@ -115,22 +110,17 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
         } else {
             if (available.size < rows.size) item { Notice("Päivän hinnoista puuttuu tietoja. Minimi ja maksimi koskevat saatavilla olevia hintoja. Päivän keskihinta näytetään vasta, kun kaikki hinnat ovat saatavilla.") }
             item {
+                val summaryWidth = priceSummaryMinWidth(listOf(minimum?.centsPerKwh, Prices.average(rows), maximum?.centsPerKwh))
+                val gap = 10.dp
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val measurer = rememberTextMeasurer()
-                    val minimumPriceWidth = listOf(minimum?.centsPerKwh, Prices.average(rows), maximum?.centsPerKwh).maxOf {
-                        measurer.measure(Prices.format(it), MaterialTheme.typography.titleLarge.copy(fontSize = 14.sp),
-                            softWrap = false, maxLines = 1).size.width
-                    }
-                    // Allow for the two gaps and each tile's horizontal padding before autosizing.
-                    val priceWidth = with(LocalDensity.current) { ((maxWidth - 20.dp) / 3 - 28.dp).roundToPx() }
-                    if (largeFont || priceWidth < minimumPriceWidth) {
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (largeFont || (maxWidth - gap * 2) / 3 < summaryWidth) {
+                        Column(verticalArrangement = Arrangement.spacedBy(gap)) {
                             PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
                             PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.fillMaxWidth(), true)
                             PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
                         }
                     } else {
-                        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(gap)) {
                             PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
                             PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.weight(1f).fillMaxHeight())
                             PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
@@ -201,6 +191,17 @@ private fun PriceSettingsBlock(state: AppState, alerts: PriceAlertState, onVat: 
 
 private fun intervalLabel(slot: PriceSlot): String = "${clockLabel(slot.start)}–${clockLabel(slot.end)}"
 
+private val SummaryPadding = 14.dp
+private val SummaryMinFontSize = 14.sp
+
+@Composable
+private fun priceSummaryMinWidth(values: List<BigDecimal?>): androidx.compose.ui.unit.Dp {
+    val measurer = rememberTextMeasurer()
+    val width = values.maxOf { measurer.measure(Prices.format(it),
+        MaterialTheme.typography.titleLarge.copy(fontSize = SummaryMinFontSize), softWrap = false).size.width }
+    return with(LocalDensity.current) { width.toDp() } + SummaryPadding * 2
+}
+
 @Composable
 private fun PriceSummary(label: String, value: BigDecimal?, footnote: String?, modifier: Modifier, horizontal: Boolean = false) {
     val colors = priceColors(priceBand(value))
@@ -214,10 +215,10 @@ private fun PriceSummary(label: String, value: BigDecimal?, footnote: String?, m
                 Text(Prices.format(value), style = MaterialTheme.typography.titleLarge, color = colors.accent)
             }
         } else {
-            Column(Modifier.padding(14.dp)) {
+            Column(Modifier.padding(SummaryPadding)) {
                 Text(label, style = MaterialTheme.typography.labelMedium)
                 Text(Prices.format(value), style = MaterialTheme.typography.titleLarge, color = colors.accent, maxLines = 1,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = 22.sp), modifier = Modifier.padding(vertical = 4.dp))
+                    autoSize = TextAutoSize.StepBased(minFontSize = SummaryMinFontSize, maxFontSize = 22.sp), modifier = Modifier.padding(vertical = 4.dp))
                 Text(footnote ?: "–", style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -225,7 +226,7 @@ private fun PriceSummary(label: String, value: BigDecimal?, footnote: String?, m
 }
 
 @Composable
-private fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onSelected: (Int) -> Unit) {
+internal fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onSelected: (Int) -> Unit) {
     val axis = remember(rows) { priceAxis(rows) }
     val horizontalScroll = rememberLazyListState()
     val selectedColor = MaterialTheme.colorScheme.onSurface
@@ -234,6 +235,7 @@ private fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onSe
     val plotHeight = 220.dp
     val cellWidth = 52.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
     val labelStyle = MaterialTheme.typography.labelSmall.copy(lineHeight = 16.sp)
+    val labelLines = remember(rows) { if (rows.any { '(' in clockLabel(it.start) }) 2 else 1 }
     Column {
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("snt/kWh", style = labelStyle)
@@ -257,7 +259,7 @@ private fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onSe
                         .semantics(mergeDescendants = true) { contentDescription = description },
                         horizontalAlignment = Alignment.CenterHorizontally) {
                         // The entire column is tappable, including very short or negative bars.
-                        Canvas(Modifier.fillMaxWidth().height(plotHeight)) {
+                        Canvas(Modifier.fillMaxWidth().height(plotHeight).testTag("price-plot-$index")) {
                             val inset = labelHeight.toPx() / 2f
                             val height = size.height - 2f * inset
                             val span = axis.high - axis.low
@@ -272,19 +274,31 @@ private fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onSe
                             if (value == null) drawCircle(guide, 3.dp.toPx(), Offset(size.width / 2f, zero))
                             else {
                                 val width = 36.dp.toPx()
-                                val position = Offset((size.width - width) / 2f, minOf(y(value), zero))
-                                val barSize = Size(width, kotlin.math.abs(y(value) - zero).coerceAtLeast(6.dp.toPx()))
+                                val barHeight = if (value == 0.0) 1.dp.toPx() else kotlin.math.abs(y(value) - zero).coerceAtLeast(2.dp.toPx())
+                                val top = when {
+                                    value > 0 -> zero - barHeight
+                                    value < 0 -> zero
+                                    else -> zero - barHeight / 2f
+                                }
+                                val position = Offset((size.width - width) / 2f, top)
+                                val barSize = Size(width, barHeight)
                                 val corner = CornerRadius(minOf(12.dp.toPx(), barSize.height / 2f))
                                 drawRoundRect(color, position, barSize, corner)
                                 if (index == selected) drawRoundRect(selectedColor, position, barSize, corner, style = Stroke(2.dp.toPx()))
                             }
                         }
                         val isNow = index == nowIndex
-                        Text(if (isNow) "Nyt" else clockLabel(row.start).replace(" (", "\n("), style = labelStyle, textAlign = TextAlign.Center,
-                            color = if (isNow) MaterialTheme.colorScheme.inverseOnSurface else if (index == selected) color else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = if (index == selected || isNow) FontWeight.Bold else FontWeight.Medium,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                                .then(if (isNow) Modifier.clip(PillShape).background(MaterialTheme.colorScheme.inverseSurface).padding(horizontal = 10.dp, vertical = 2.dp) else Modifier.fillMaxWidth()))
+                        val clock = clockLabel(row.start).replace(" (", "\n(")
+                        // Reserve the longest clock label for every cell, including DST offsets.
+                        Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp).height(labelHeight * labelLines + 4.dp),
+                            contentAlignment = Alignment.TopCenter) {
+                            Text(if (isNow) "Nyt" else clock, style = labelStyle, textAlign = TextAlign.Center,
+                                softWrap = false, maxLines = if (isNow) 1 else labelLines,
+                                color = if (isNow) MaterialTheme.colorScheme.inverseOnSurface else if (index == selected) color else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = if (index == selected || isNow) FontWeight.Bold else FontWeight.Medium,
+                                modifier = (if (isNow) Modifier.clip(PillShape).background(MaterialTheme.colorScheme.inverseSurface) else Modifier.fillMaxWidth())
+                                    .padding(horizontal = if (isNow) 10.dp else 0.dp, vertical = 2.dp))
+                        }
                     }
                 }
             }

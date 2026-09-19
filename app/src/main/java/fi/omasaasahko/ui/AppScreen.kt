@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import fi.omasaasahko.domain.HELSINKI
-import fi.omasaasahko.domain.Prices
 import fi.omasaasahko.domain.updatedLabel
 import fi.omasaasahko.AppState
 import fi.omasaasahko.WarningsState
@@ -47,13 +46,10 @@ fun AppScreen(
     val refresh = when (tab) { 0 -> onWeatherRefresh; 1 -> onPricesRefresh; else -> onWarningsRefresh }
     val current = AppTab.entries[tab]
     val scheme = MaterialTheme.colorScheme
-    val currentBand = remember(state.prices, state.now, state.resolution, state.includeVat) {
-        priceBand(Prices.slots(state.prices?.quarters.orEmpty(), state.now.atZone(HELSINKI).toLocalDate(), state.resolution, state.includeVat)
-            .firstOrNull { it.contains(state.now) }?.centsPerKwh)
-    }
-    val topLevel = remember(warnings.snapshot, state.place, state.now, permitted, state.selectedPlace) {
-        if (permitted || state.selectedPlace != null) warnings.snapshot?.local(state.place, state.now).orEmpty().maxByOrNull { it.level.rank }?.level else null
-    }
+    val todayRows = rememberPriceRows(state, state.now.atZone(HELSINKI).toLocalDate())
+    val currentBand = priceBand(todayRows.firstOrNull { it.contains(state.now) }?.centsPerKwh)
+    val localWarnings = rememberLocalWarnings(state, warnings, permitted)
+    val topLevel = localWarnings.maxByOrNull { it.level.rank }?.level
     val tint = navTint(current, currentBand, topLevel)
     Scaffold(containerColor = scheme.background, topBar = {
         Box(Modifier.fillMaxWidth().statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
@@ -82,10 +78,10 @@ fun AppScreen(
                 modifier = Modifier.widthIn(max = 720.dp).fillMaxSize()
                     .then(if (pickerOpen) Modifier.clearAndSetSemantics {} else Modifier)) {
                 if (tab == 0) WeatherScreen(state, permitted, onPermission, onSettings, onLocationSettings, weatherScroll,
-                    { pickerOpen = true }, onCurrentLocation)
-                else if (tab == 1) ElectricityScreen(state, onResolution, priceScroll, onVat, priceAlerts, onPriceAlerts, onNotificationSettings, pricesRequest, priceDateRequest, onPriceAlertsTest)
+                    onCurrentLocation)
+                else if (tab == 1) ElectricityScreen(state, onResolution, priceScroll, onVat, priceAlerts, onPriceAlerts, onNotificationSettings, pricesRequest, priceDateRequest, onPriceAlertsTest, todayRows)
                 else WarningsScreen(state, warnings, permitted, warningsScroll, onWarningsEnable, onWarningsInterval,
-                    onWarningsTest, onNotificationSettings, onPermission)
+                    onWarningsTest, onNotificationSettings, onPermission, localWarnings)
             }
             // A sibling overlay keeps weather's remembered state and scroll position alive,
             // while the search list is outside the pull-to-refresh gesture hierarchy.

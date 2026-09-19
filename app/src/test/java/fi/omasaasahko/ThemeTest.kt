@@ -25,6 +25,19 @@ import fi.omasaasahko.ui.DisplayFont
 import fi.omasaasahko.ui.LocationPill
 import fi.omasaasahko.ui.SettingSwitchRow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import fi.omasaasahko.domain.WeatherSource
+import fi.omasaasahko.ui.forecastColors
+import fi.omasaasahko.ui.priceColors
+import fi.omasaasahko.ui.warningColors
+import fi.omasaasahko.ui.sunColors
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,6 +50,73 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ThemeTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test
+    @Config(sdk = [33, 35])
+    fun `production dynamic palettes and semantic surfaces retain text contrast`() {
+        val pairs = mutableListOf<Triple<String, Color, Color>>()
+        val checks = mutableListOf<Pair<ColorScheme, ColorScheme>>()
+        compose.setContent {
+            val context = LocalContext.current
+            for (dark in listOf(false, true)) AppTheme(dark = dark) {
+                val scheme = MaterialTheme.colorScheme
+                checks.add(scheme to if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context))
+                fun pair(name: String, ink: Color, background: Color) { pairs.add(Triple("$dark $name", ink, background)) }
+                for (surface in listOf(scheme.background, scheme.surfaceContainer, scheme.surfaceContainerLow,
+                    scheme.surfaceContainerHigh, scheme.surfaceContainerHighest)) {
+                    pair("surface", scheme.onSurface, surface)
+                    pair("secondary text", scheme.onSurfaceVariant, surface)
+                    pair("primary text", scheme.primary, surface)
+                }
+                pair("inverse", scheme.inverseOnSurface, scheme.inverseSurface)
+                pair("notice", scheme.onSecondaryContainer, scheme.secondaryContainer)
+                pair("error", scheme.error, scheme.background)
+                pair("selected", scheme.onPrimaryContainer, scheme.primaryContainer)
+                for (colors in WeatherSource.entries.map { forecastColors(it) } + sunColors()) {
+                    pair("weather ink", colors.ink, colors.top)
+                    pair("weather muted", colors.muted, colors.top)
+                    pair("weather accent", colors.accent, colors.top)
+                }
+                for (band in PriceBand.entries) {
+                    val colors = priceColors(band)
+                    pair("price ink", colors.ink, colors.top)
+                    pair("price accent", colors.accent, colors.top)
+                }
+                for (level in WarningLevel.entries) {
+                    val colors = warningColors(level)
+                    pair("warning ink", colors.ink, colors.container)
+                    pair("warning muted", colors.muted, colors.container)
+                    pair("warning pill", colors.onAccent, colors.accent)
+                    pair("warning time", colors.ink, colors.accent.copy(alpha = 0.16f).compositeOver(colors.container))
+                }
+            }
+        }
+        compose.runOnIdle {
+            checks.forEach { (actual, expected) ->
+                assertEquals(expected.primary, actual.primary)
+                assertEquals(expected.surfaceContainerHigh, actual.surfaceContainerHigh)
+            }
+            pairs.forEach { (name, ink, background) ->
+                val a = ink.luminance(); val b = background.luminance()
+                val contrast = (maxOf(a, b) + 0.05f) / (minOf(a, b) + 0.05f)
+                assertTrue("$name contrast $contrast", contrast >= 4.5f)
+            }
+        }
+    }
+
+    @Test fun `disabled switch exposes disabled state and dims both text labels`() {
+        var calls = 0
+        compose.setContent { AppTheme(dynamic = false) {
+            SettingSwitchRow("Varoitusilmoitukset", "Sijainti puuttuu", false, { calls++ }, Modifier.testTag("disabled-switch"), enabled = false)
+        } }
+        compose.onNodeWithTag("disabled-switch").assertIsNotEnabled().performClick()
+        assertEquals(0, calls)
+        for (text in listOf("Varoitusilmoitukset", "Sijainti puuttuu")) {
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(text, useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertEquals(0.38f, layouts.single().layoutInput.style.color.alpha, 0.01f)
+        }
+    }
 
     @Test fun `expressive theme uses bundled fonts and defines navigation tokens`() {
         lateinit var typography: Typography

@@ -8,6 +8,10 @@ import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.ColorDrawable
 import androidx.test.core.app.ApplicationProvider
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -38,6 +42,203 @@ import java.time.temporal.ChronoUnit
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ScreenTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test fun `price timeline reserves offset label height throughout autumn clock change`() {
+        val start = java.time.Instant.parse("2026-10-25T00:00:00Z")
+        val rows = (0..11).map { i -> PriceSlot(start.plusSeconds(i * 3600L), start.plusSeconds((i + 1) * 3600L), BigDecimal.ONE) }
+        var scale by mutableFloatStateOf(1f)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                AppTheme(dynamic = false) { PriceChart(rows, -1, 1, {}) }
+            }
+        }
+        for (size in listOf(1f, 2f)) {
+            compose.runOnIdle { scale = size }
+            compose.onNodeWithTag("price-timeline").performScrollToIndex(0)
+            compose.onNodeWithText(clockLabel(start).replace(" (", "\n("), useUnmergedTree = true).assertTextFits(singleLine = false)
+            val height = compose.onNodeWithTag("price-timeline").fetchSemanticsNode().size.height
+            compose.onNodeWithTag("price-timeline").performScrollToIndex(8)
+            assertEquals(height, compose.onNodeWithTag("price-timeline").fetchSemanticsNode().size.height)
+        }
+    }
+
+    @Test
+    @Config(sdk = [33, 35])
+    fun `production dynamic theme renders all screens in light and dark`() {
+        var dark by mutableStateOf(false)
+        compose.setContent { AppTheme(dark = dark) {
+            AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}, warnings = WarningsState(
+                snapshot = WarningSnapshot(PreviewData.now, PreviewData.now, emptyList())))
+        } }
+        for (night in listOf(false, true)) {
+            compose.runOnIdle { dark = night }
+            for (tab in AppTab.entries) {
+                compose.onNodeWithTag(tab.tag).performClick().assertIsSelected()
+                screenshot("review-dynamic-${android.os.Build.VERSION.SDK_INT}-${tab.name}-${if (night) "dark" else "light"}")
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
+    fun `hourly columns align with headings across font scales and autumn clock change`() {
+        val now = java.time.Instant.parse("2026-10-24T23:10:00Z")
+        val state = PreviewData.state.copy(now = now)
+        var scale by mutableFloatStateOf(1f)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                AppTheme(dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {}, {}) }
+            }
+        }
+        val times = (0..2).map { now.truncatedTo(ChronoUnit.HOURS).plusSeconds((it + 1) * 3600L) }
+        for (size in listOf(1f, 2f)) {
+        compose.runOnIdle { scale = size }
+        for (source in WeatherSource.entries) {
+            compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("hour-heading-${source.name}"))
+            val heading = compose.onNodeWithTag("hour-heading-${source.name}").fetchSemanticsNode().boundsInRoot
+            compose.onNodeWithTag("hour-heading-${source.name}").assertTextFits()
+            for (time in times) {
+                val tag = "hour-${source.name}-$time"
+                compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag(tag))
+                assertEquals(heading.left, compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot.left, 1f)
+                compose.onNodeWithText(clockLabel(time), useUnmergedTree = true).assertTextFits()
+            }
+        }
+        }
+        screenshot("review-hour-columns-dst-320-2.0")
+    }
+
+    @Test fun `tiny signed prices stay on their side of zero and zero has no area`() {
+        val start = PreviewData.now
+        val rows = listOf("0.3", "-0.3", "0", "20", "-5").mapIndexed { i, value ->
+            PriceSlot(start.plusSeconds(i * 900L), start.plusSeconds((i + 1) * 900L), BigDecimal(value))
+        }
+        compose.setContent { AppTheme(dark = false, dynamic = false) { PriceChart(rows, -1, -1, {}) } }
+        val accent = Color.rgb(0x14, 0x62, 0x3C)
+        for (i in 0..2) {
+            val bitmap = compose.onNodeWithTag("price-plot-$i", useUnmergedTree = true).captureToImage().asAndroidBitmap()
+            // Axis is -10..20, with 8 dp inset in the 220 dp canvas.
+            val zero = bitmap.height * (8f + 204f * 20f / 30f) / 220f
+            val painted = (0 until bitmap.height).filter { bitmap.getPixel(bitmap.width / 2, it) == accent }
+            if (i == 0) assertTrue("Positive bar extends below zero: $painted / $zero", painted.isNotEmpty() && painted.all { it < zero })
+            if (i == 1) assertTrue("Negative bar extends above zero", painted.isNotEmpty() && painted.all { it >= zero - 1 })
+            if (i == 2) assertTrue("Zero should only mark the baseline", painted.size <= 4)
+        }
+        screenshot("review-signed-price-bars")
+    }
+
+    @Test
+    @Config(qualifiers = "fi-rFI-w800dp-h891dp-xhdpi")
+    fun `trace rainfall keeps a small height on tablet with visible scale guides`() {
+        val times = (0..23).map { PreviewData.now.plusSeconds(it * 3600L) }
+        val rain = listOf(0.1, 20.0) + List(22) { 0.0 }
+        compose.setContent { AppTheme(dark = false, dynamic = false) {
+            RainBlock(rain, times, HELSINKI, WeatherSource.FMI) {}
+        } }
+        val bitmap = compose.onNodeWithTag("rain-plot").captureToImage().asAndroidBitmap()
+        val accent = Color.rgb(0x17, 0x66, 0x9E)
+        val painted = (0 until bitmap.height).count { bitmap.getPixel(bitmap.width / 48, it) == accent }
+        assertTrue("0.1 mm was exaggerated to $painted pixels", painted in 1..4)
+        screenshot("review-tablet-rain")
+    }
+
+    @Test
+    @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
+    fun `negative current temperatures fit at narrow width through double font scale`() {
+        var scale by mutableFloatStateOf(1f)
+        var temperature by mutableStateOf(-27.0)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                AppTheme(dynamic = false) {
+                    val preview = PreviewData.state
+                    val state = preview.copy(weather = preview.weather.mapValues { (_, source) ->
+                        source.copy(forecast = source.forecast!!.copy(hours = source.forecast.hours.map { it.copy(temperature = temperature) }))
+                    })
+                    AppScreen(state, true, {}, {}, {}, {}, {}, {})
+                }
+            }
+        }
+        for (size in listOf(1f, 1.15f, 1.6f, 2f)) for (value in listOf(-27.0, -9.0, -105.0)) {
+            compose.runOnIdle { scale = size; temperature = value }
+            for (source in WeatherSource.entries) {
+                compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("current-${source.name}"))
+                compose.onNode(hasText(temperature(value)) and hasAnyAncestor(hasTestTag("current-${source.name}"))).assertTextFits()
+            }
+            if (value == -27.0) screenshot("review-temperature-320-$size")
+        }
+    }
+
+    @Test fun `warning count is never presented as known when the source or location is unavailable`() {
+        val app = PreviewData.state
+        val snapshot = WarningSnapshot(app.now, app.now, emptyList())
+        var state by mutableStateOf(WarningsState())
+        var permitted by mutableStateOf(true)
+        var place by mutableStateOf(app.place)
+        compose.setContent { AppTheme(dynamic = false) {
+            WarningsScreen(app.copy(place = place), state, permitted, rememberLazyListState(), {}, {}, {}, {}, {})
+        } }
+        val unknown = listOf(WarningsState(), WarningsState(loading = true), WarningsState(error = "Ei verkkoa"),
+            WarningsState(snapshot = snapshot, error = "Ei verkkoa"), WarningsState(snapshot = snapshot.copy(partial = true)),
+            WarningsState(snapshot = snapshot.copy(fetchedAt = app.now.minusSeconds(7200))))
+        for (value in unknown) {
+            compose.runOnIdle { state = value }
+            compose.onNodeWithText("0 varoitusta").assertDoesNotExist()
+        }
+        compose.runOnIdle { state = WarningsState(snapshot = snapshot); permitted = false }
+        compose.onNodeWithText("0 varoitusta").assertDoesNotExist()
+        compose.runOnIdle { permitted = true; place = null }
+        compose.onNodeWithText("0 varoitusta").assertDoesNotExist()
+        compose.runOnIdle { place = app.place }
+        compose.onNodeWithText("0 varoitusta").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
+    fun `all choice rows keep full labels and clickable targets at large fonts`() {
+        var scale by mutableFloatStateOf(1.5f)
+        var source by mutableIntStateOf(0)
+        var interval by mutableIntStateOf(0)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                AppTheme(dynamic = false) {
+                    Column(Modifier.width(224.dp)) {
+                        ChoiceRow(listOf("FMI", "Open-Meteo"), source, { source = it })
+                        ChoiceRow(listOf("15 min", "30 min", "60 min"), interval, { interval = it })
+                    }
+                }
+            }
+        }
+        for (size in listOf(1.5f, 1.8f, 2f)) {
+            compose.runOnIdle { scale = size }
+            for (label in listOf("Open-Meteo", "60 min")) {
+                compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits()
+                compose.onNodeWithText(label).assertHeightIsAtLeast(44.dp).performClick().assertIsSelected()
+            }
+        }
+        screenshot("review-choice-320-2.0")
+    }
+
+    @Test fun `metric values identify provider metric and unit without relying on color`() {
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Tuuli · m/s"))
+        compose.onNodeWithContentDescription("Ilmatieteen laitos: Tuuli 4,0 m/s").assertExists()
+        compose.onNodeWithContentDescription("Open-Meteo: Tuuli 4,0 m/s").assertExists()
+        compose.onNode(hasText("FMI") and hasAnyAncestor(hasContentDescription("Ilmatieteen laitos: Tuuli 4,0 m/s")), useUnmergedTree = true).assertExists()
+    }
+
+    @Test fun `price timeline height stays constant when current slot scrolls out`() {
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
+        compose.onNodeWithTag("tab-prices").performClick()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("price-timeline"))
+        compose.onNodeWithTag("price-timeline").performScrollToNode(hasText("Nyt"))
+        val withNow = compose.onNodeWithTag("price-timeline").fetchSemanticsNode().size.height
+        compose.onNodeWithTag("price-timeline").performScrollToIndex(0)
+        assertEquals(withNow, compose.onNodeWithTag("price-timeline").fetchSemanticsNode().size.height)
+    }
 
     @Test
     @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
@@ -477,21 +678,24 @@ class ScreenTest {
         compose.onNodeWithTag("tab-weather").assertIsDisplayed()
     }
 
-    private fun SemanticsNodeInteraction.assertTextFits() {
+    private fun SemanticsNodeInteraction.assertTextFits(singleLine: Boolean = true) {
         assertIsDisplayed()
         val layouts = mutableListOf<TextLayoutResult>()
         performSemanticsAction(SemanticsActions.GetTextLayoutResult) { assertTrue(it(layouts)) }
         assertTrue("Text must expose its actual layout", layouts.isNotEmpty())
         layouts.forEach { layout ->
             val text = layout.layoutInput.text.text
-            assertEquals("Keep the text on one line: $text", 1, layout.lineCount)
+            if (singleLine) assertEquals("Keep the text on one line: $text", 1, layout.lineCount)
             assertFalse("Ellipsized text: $text", layout.isLineEllipsized(0))
             assertEquals("All characters must be drawn: $text", text.length,
                 layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
             // Compare the drawn line, not the paragraph's possibly wider cached constraints.
-            assertTrue("Clipped right edge: $text (${layout.getLineRight(0)} > ${layout.size.width}, " +
-                "scale=${layout.layoutInput.density.fontScale})", layout.getLineRight(0) <= layout.size.width + 1f)
-            assertTrue("Clipped left edge: $text", layout.getLineLeft(0) >= -1f)
+            for (line in 0 until layout.lineCount) {
+                assertFalse("Ellipsized line: $text", layout.isLineEllipsized(line))
+                assertTrue("Clipped right edge: $text (${layout.getLineRight(line)} > ${layout.size.width}, " +
+                    "scale=${layout.layoutInput.density.fontScale})", layout.getLineRight(line) <= layout.size.width + 1f)
+                assertTrue("Clipped left edge: $text", layout.getLineLeft(line) >= -1f)
+            }
         }
     }
 

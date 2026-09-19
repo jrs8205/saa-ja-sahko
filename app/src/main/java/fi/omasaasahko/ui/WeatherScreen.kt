@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,10 +20,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.em
 import fi.omasaasahko.*
 import fi.omasaasahko.domain.*
 import java.time.*
@@ -32,7 +36,7 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit, onSettings: () -> Unit,
                   onLocationSettings: () -> Unit, scroll: LazyListState,
-                  onOpenPlacePicker: () -> Unit = {}, onCurrentLocation: () -> Unit = {}) {
+                  onCurrentLocation: () -> Unit = {}) {
     var expandedHours by rememberSaveable { mutableStateOf(false) }
     var expandedDay by rememberSaveable { mutableStateOf<String?>(null) }
     var rainSource by rememberSaveable { mutableIntStateOf(0) }
@@ -45,6 +49,14 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
     val times = (0 until 24).map { nextHour.plusSeconds(it * 3600L) }
     val fmiHours = remember(fmi) { fmi?.hours?.associateBy { it.time }.orEmpty() }
     val meteoHours = remember(meteo) { meteo?.hours?.associateBy { it.time }.orEmpty() }
+    val timeMeasurer = rememberTextMeasurer()
+    val timeStyle = MaterialTheme.typography.labelMedium
+    val timeWidthPx = remember(times, fmiHours, meteoHours, zone, timeStyle, timeMeasurer, LocalDensity.current) {
+        (times + fmiHours.keys + meteoHours.keys).maxOf {
+            timeMeasurer.measure(clockLabel(it, zone), timeStyle, softWrap = false).size.width
+        }
+    }
+    val timeWidth = with(LocalDensity.current) { timeWidthPx.toDp().coerceAtLeast(44.dp) }
     LazyColumn(state = scroll, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Column {
@@ -92,10 +104,9 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
         item {
             val a = fmi?.current(state.now); val b = meteo?.current(state.now)
             val tiles: List<@Composable (Modifier) -> Unit> = listOf(
-                { m -> MetricTile("Tuuli · m/s", decimal(a?.wind), decimal(b?.wind), m) },
-                { m -> MetricTile("Sade · mm", decimal(a?.rain), decimal(b?.rain), m) },
-                { m -> MetricTile("Sateen riski", a?.rainProbability?.let { "${decimal(it, 0)} %" } ?: "–",
-                    b?.rainProbability?.let { "${decimal(it, 0)} %" } ?: "–", m) },
+                { m -> MetricTile("Tuuli", "m/s", decimal(a?.wind), decimal(b?.wind), m) },
+                { m -> MetricTile("Sade", "mm", decimal(a?.rain), decimal(b?.rain), m) },
+                { m -> MetricTile("Sateen riski", "%", decimal(a?.rainProbability, 0), decimal(b?.rainProbability, 0), m) },
             )
             if (largeFont) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { tiles.forEach { it(Modifier.fillMaxWidth()) } }
             else Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -129,7 +140,8 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
                     val sourceWidth = maxOf(
                         measurer.measure("Aurinko", MaterialTheme.typography.labelMedium, softWrap = false).size.width,
                         measurer.measure(sourceName, MaterialTheme.typography.labelSmall, softWrap = false).size.width)
-                    val sourceAbove = largeFont || with(LocalDensity.current) { (maxWidth - 16.dp).roundToPx() < timesWidth + sourceWidth }
+                    val gap = 8.dp
+                    val sourceAbove = largeFont || with(LocalDensity.current) { (maxWidth - gap * 2).roundToPx() < timesWidth + sourceWidth }
                     val source: @Composable () -> Unit = {
                         Column(horizontalAlignment = if (sourceAbove) Alignment.Start else Alignment.CenterHorizontally) {
                             Text("Aurinko", style = MaterialTheme.typography.labelMedium, color = colors.muted)
@@ -140,7 +152,7 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
                     Column {
                         if (sourceAbove) source()
                         // At very large font sizes the complete times can also move onto separate lines.
-                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap, Alignment.CenterHorizontally),
                             verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
                             Text("↑ $rise", style = MaterialTheme.typography.headlineSmall, color = colors.accent, softWrap = false,
                                 modifier = Modifier.semantics { contentDescription = "Auringonnousu $rise" })
@@ -153,9 +165,9 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
             }
         }
         item { SectionTitle("Seuraavat 24 tuntia", "Lämpötila · tuuli · sade") }
-        item { ProviderHeading() }
+        item { ProviderHeading(timeWidth) }
         items(if (expandedHours) times else times.take(8), key = { "hour-$it" }) { time ->
-            HourComparison(time, fmiHours[time], meteoHours[time], zone)
+            HourComparison(time, fmiHours[time], meteoHours[time], zone, timeWidth)
         }
         item {
             TextButton(onClick = { expandedHours = !expandedHours }, modifier = Modifier.fillMaxWidth()) {
@@ -207,7 +219,8 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
             if (expandedDay == date.toString()) {
                 val dayTimes = (fmiHours.keys + meteoHours.keys).filter { it.atZone(zone).toLocalDate() == date }.sorted()
                 if (dayTimes.isEmpty()) item { Text("Päivän tuntiennustetta ei ole saatavilla.") }
-                items(dayTimes, key = { "detail-$it" }) { t -> HourComparison(t, fmiHours[t], meteoHours[t], zone) }
+                if (dayTimes.isNotEmpty()) item { ProviderHeading(timeWidth) }
+                items(dayTimes, key = { "detail-$it" }) { t -> HourComparison(t, fmiHours[t], meteoHours[t], zone, timeWidth) }
             }
         }
         item {
@@ -228,8 +241,9 @@ private fun CurrentBlock(source: WeatherSource, state: SourceState, now: Instant
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(source.title, style = MaterialTheme.typography.labelLarge, color = colors.accent)
-                Text(temperature(current?.temperature), style = MaterialTheme.typography.displayLarge,
-                    fontSize = if (largeFont) 64.sp else 92.sp, lineHeight = if (largeFont) 68.sp else 92.sp, maxLines = 1)
+                Text(temperature(current?.temperature), style = MaterialTheme.typography.displayLarge.copy(letterSpacing = (-0.02).em, lineHeight = 1.em),
+                    autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = if (largeFont) 64.sp else 92.sp),
+                    maxLines = 1)
                 Text(current?.description ?: if (state.loading) "Haetaan säätä…" else "Tieto puuttuu", style = MaterialTheme.typography.titleMedium)
                 Text("Tuntuu kuin ${temperature(current?.feelsLike)}", style = MaterialTheme.typography.bodyMedium, color = colors.muted)
             }
@@ -246,42 +260,68 @@ private fun CurrentBlock(source: WeatherSource, state: SourceState, now: Instant
 }
 
 @Composable
-private fun MetricTile(label: String, fmi: String, meteo: String, modifier: Modifier) {
+private fun MetricTile(label: String, unit: String, fmi: String, meteo: String, modifier: Modifier) {
     Block(modifier, radius = Radius.tile, padding = PaddingValues(14.dp)) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(if (unit == "%") label else "$label · $unit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         listOf(WeatherSource.FMI to fmi, WeatherSource.OPEN_METEO to meteo).forEach { (source, value) ->
-            Row(Modifier.padding(top = 4.dp).semantics(mergeDescendants = true) { contentDescription = "${source.title}: $value" },
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                SourceDot(source)
-                Text(value, style = MaterialTheme.typography.titleMedium)
+            Column(Modifier.padding(top = 8.dp).semantics(mergeDescendants = true) {
+                contentDescription = "${source.title}: $label ${if (value == "–") "Tieto puuttuu" else "$value $unit"}"
+            }) {
+                // Visible source names also distinguish the values without colour vision.
+                Text(if (source == WeatherSource.FMI) "FMI" else "Open-Meteo", style = MaterialTheme.typography.labelSmall,
+                    color = forecastColors(source).accent)
+                Text(if (unit == "%" && value != "–") "$value %" else value, style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.clearAndSetSemantics {})
             }
         }
     }
 }
 
 @Composable
-private fun ProviderHeading() {
-    Row(Modifier.fillMaxWidth().padding(start = 54.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("FMI", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = forecastColors(WeatherSource.FMI).accent)
-        Text("OPEN-METEO", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = forecastColors(WeatherSource.OPEN_METEO).accent)
+private fun ProviderHeading(timeWidth: Dp) {
+    HourColumns(timeWidth) {
+        Text("FMI", Modifier.weight(1f).testTag("hour-heading-FMI"), style = MaterialTheme.typography.labelSmall, color = forecastColors(WeatherSource.FMI).accent)
+        Text("Open-Meteo", Modifier.weight(1f).testTag("hour-heading-OPEN_METEO"), style = MaterialTheme.typography.labelSmall, color = forecastColors(WeatherSource.OPEN_METEO).accent)
     }
 }
 
 @Composable
-private fun HourComparison(time: Instant, a: WeatherHour?, b: WeatherHour?, zone: ZoneId) {
+private fun HourComparison(time: Instant, a: WeatherHour?, b: WeatherHour?, zone: ZoneId, timeWidth: Dp) {
     Column {
-        Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(clockLabel(time, zone), Modifier.widthIn(min = 44.dp), style = MaterialTheme.typography.labelMedium, softWrap = false)
-            HourCell(a, Modifier.weight(1f)); HourCell(b, Modifier.weight(1f))
+        HourColumns(timeWidth, Modifier.padding(vertical = 6.dp), time = {
+            Text(clockLabel(time, zone), style = MaterialTheme.typography.labelMedium, softWrap = false)
+        }) {
+            HourCell(a, Modifier.weight(1f).testTag("hour-FMI-$time")); HourCell(b, Modifier.weight(1f).testTag("hour-OPEN_METEO-$time"))
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+    }
+}
+
+/** Both the header and every row use the same measured time column and gaps. */
+@Composable
+private fun HourColumns(timeWidth: Dp, modifier: Modifier = Modifier, time: (@Composable () -> Unit)? = null,
+                        cells: @Composable RowScope.() -> Unit) {
+    val gap = 10.dp
+    val measurer = rememberTextMeasurer()
+    val columnWidth = with(LocalDensity.current) {
+        measurer.measure("Open-Meteo", MaterialTheme.typography.labelSmall, softWrap = false).size.width.toDp()
+    }
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val timeAbove = maxWidth < timeWidth + gap * 2 + columnWidth * 2
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (timeAbove) time?.invoke()
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap)) {
+                if (!timeAbove) Box(Modifier.width(timeWidth)) { time?.invoke() }
+                cells()
+            }
+        }
     }
 }
 
 @Composable
 private fun HourCell(hour: WeatherHour?, modifier: Modifier) {
     Column(modifier.semantics(mergeDescendants = true) {}) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
             WeatherSymbol(hour?.condition ?: Condition.UNKNOWN, hour?.night ?: false, Modifier.size(34.dp), hour?.description ?: Condition.UNKNOWN.label)
             Text(temperature(hour?.temperature), style = MaterialTheme.typography.titleMedium)
         }
@@ -307,7 +347,7 @@ private fun DaySummary(day: WeatherDay?, modifier: Modifier) {
 }
 
 @Composable
-private fun RainBlock(rain: List<Double?>, times: List<Instant>, zone: ZoneId, source: WeatherSource, sourcePicker: @Composable () -> Unit) {
+internal fun RainBlock(rain: List<Double?>, times: List<Instant>, zone: ZoneId, source: WeatherSource, sourcePicker: @Composable () -> Unit) {
     val color = forecastColors(source).accent
     val line = MaterialTheme.colorScheme.outlineVariant
     val maximum = (rain.filterNotNull().maxOrNull() ?: 0.0).coerceAtLeast(1.0)
@@ -318,18 +358,22 @@ private fun RainBlock(rain: List<Double?>, times: List<Instant>, zone: ZoneId, s
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(12.dp))
         sourcePicker()
-        Canvas(Modifier.fillMaxWidth().height(120.dp).padding(top = 16.dp).semantics {
+        Canvas(Modifier.fillMaxWidth().height(120.dp).padding(top = 16.dp).testTag("rain-plot").semantics {
             contentDescription = rain.mapIndexed { i, r -> "${clockLabel(times[i], zone)}: ${decimal(r)} millimetriä" }.joinToString(", ")
         }) {
             val base = 4.dp.toPx()
-            drawRoundRect(line, Offset(0f, size.height - base), Size(size.width, base), CornerRadius(base / 2))
+            val baseline = size.height - base
+            listOf(0f, 0.5f, 1f).forEach { fraction ->
+                val y = baseline * (1f - fraction)
+                drawLine(line, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+            }
             val width = size.width / rain.size
             rain.forEachIndexed { i, value ->
                 if (value == null) drawCircle(line, 2.dp.toPx(), Offset(width * (i + 0.5f), size.height - base - 6.dp.toPx()), style = Stroke(1.dp.toPx()))
                 else if (value > 0) {
                     val bar = width * 0.7f
-                    val h = ((size.height - base) * (value / maximum).toFloat()).coerceAtLeast(bar)
-                    drawRoundRect(color, Offset(width * i + width * 0.15f, size.height - h), Size(bar, h), CornerRadius(bar / 2))
+                    val h = (baseline * (value / maximum).toFloat()).coerceAtLeast(2.dp.toPx())
+                    drawRoundRect(color, Offset(width * i + width * 0.15f, baseline - h), Size(bar, h), CornerRadius(minOf(bar / 2, h / 2)))
                 }
             }
         }

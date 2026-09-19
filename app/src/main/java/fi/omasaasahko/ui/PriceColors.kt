@@ -3,7 +3,6 @@ package fi.omasaasahko.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -33,20 +32,14 @@ data class PriceColors(val top: Color, val bottom: Color, val ink: Color, val ac
 @Composable
 fun priceColors(band: PriceBand?): PriceColors {
     val theme = MaterialTheme.colorScheme
-    val dark = theme.background.luminance() < 0.5f
+    val dark = isDarkTheme()
     return when (band) {
         PriceBand.CHEAP -> if (dark)
             PriceColors(Color(0xFF184E39), Color(0xFF142F29), Color(0xFFE2F9EB), Color(0xFF87EDB5))
         else PriceColors(Color(0xFFD3F2DF), Color(0xFFECF9EF), Color(0xFF183F2B), Color(0xFF14623C))
-        PriceBand.MODERATE -> if (dark)
-            PriceColors(Color(0xFF50431A), Color(0xFF302B1D), Color(0xFFFFF3CC), Color(0xFFFFD873))
-        else PriceColors(Color(0xFFFFEDB0), Color(0xFFFFF8DE), Color(0xFF4B3C13), Color(0xFF735700))
-        PriceBand.EXPENSIVE -> if (dark)
-            PriceColors(Color(0xFF58351F), Color(0xFF352720), Color(0xFFFFEBDC), Color(0xFFFFB27C))
-        else PriceColors(Color(0xFFFFDEC2), Color(0xFFFFF0E3), Color(0xFF562E16), Color(0xFF964100))
-        PriceBand.VERY_EXPENSIVE -> if (dark)
-            PriceColors(Color(0xFF582731), Color(0xFF34232C), Color(0xFFFFE7EB), Color(0xFFFF9CAC))
-        else PriceColors(Color(0xFFFFD9DF), Color(0xFFFFEFF2), Color(0xFF601F30), Color(0xFFA7213D))
+        PriceBand.MODERATE -> warmColors(WarmTone.YELLOW).let { PriceColors(it.top, it.bottom, it.ink, it.accent) }
+        PriceBand.EXPENSIVE -> warmColors(WarmTone.ORANGE).let { PriceColors(it.top, it.bottom, it.ink, it.accent) }
+        PriceBand.VERY_EXPENSIVE -> warmColors(WarmTone.RED).let { PriceColors(it.top, it.bottom, it.ink, it.accent) }
         PriceBand.EXTREME -> if (dark)
             PriceColors(Color(0xFF452D61), Color(0xFF2C2440), Color(0xFFF4E9FF), Color(0xFFD7AFFF))
         else PriceColors(Color(0xFFEADBFF), Color(0xFFF6EFFF), Color(0xFF462363), Color(0xFF752EAB))

@@ -26,11 +26,11 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scroll: LazyListState,
-    onEnable: (Boolean) -> Unit, onInterval: (Int) -> Unit, onTest: () -> Unit, onSettings: () -> Unit, onPermission: () -> Unit) {
+    onEnable: (Boolean) -> Unit, onInterval: (Int) -> Unit, onTest: () -> Unit, onSettings: () -> Unit, onPermission: () -> Unit,
+    local: List<WeatherWarning> = rememberLocalWarnings(app, state, permitted)) {
     val place = app.place
     val notificationPlace = app.devicePlace
     val snapshot = state.snapshot
-    val local = if (permitted || app.selectedPlace != null) snapshot?.local(place, app.now).orEmpty() else emptyList()
     val uri = LocalUriHandler.current
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var selectedDay by rememberSaveable { mutableStateOf("all") }
@@ -48,11 +48,20 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         return local.filter { it.onset < end && it.expires > start }
     }
     val stale = snapshot != null && Duration.between(snapshot.fetchedAt, app.now).toMinutes() > state.intervalMinutes * 2
+    val heading = when {
+        (!permitted && app.selectedPlace == null) || place == null -> "Varoitusalue puuttuu"
+        snapshot == null && state.loading -> "Haetaan varoituksia…"
+        snapshot == null -> "Varoitustietoa ei saatavilla"
+        stale || state.error != null || snapshot.partial -> "Varoitustieto epävarma"
+        else -> "${local.size} ${if (local.size == 1) "varoitus" else "varoitusta"}"
+    }
     LazyColumn(state = scroll, modifier = Modifier.fillMaxSize().testTag("warnings-scroll"),
         contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("${local.size} ${if (local.size == 1) "varoitus" else "varoitusta"}", style = MaterialTheme.typography.headlineLarge)
+                Text(heading, style = MaterialTheme.typography.headlineLarge)
+                if (snapshot != null && place != null && (permitted || app.selectedPlace != null) && (stale || state.error != null || snapshot.partial))
+                    Text("Tallennetuissa tiedoissa: ${local.size} ${if (local.size == 1) "varoitus" else "varoitusta"}", style = MaterialTheme.typography.bodyMedium)
                 Text("Ilmatieteen laitos · Nyt ${updatedLabel(app.now)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 snapshot?.let { Text("Tarkistettu ${updatedLabel(it.fetchedAt)} · FMI julkaisi ${updatedLabel(it.publishedAt)}",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
