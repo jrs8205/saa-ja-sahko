@@ -1,6 +1,6 @@
 # Expressive-käyttöliittymän toinen katselmointi — 19.9.2026
 
-katselmoinnin toimittaman raportin kaikki 15 kohtaa tarkistettiin nykyisestä koodista. Vahvistetut toimintaviat korjattiin, puuttuvaa testikattavuutta lisättiin ja ylläpidettävyyskohdat siivottiin. Käyttäjä valtuutti korjausten jälkeen testipuhelimen asennuksen sekä commitit ja GitHub-pushin `ui-pehmea-expressive`-haaraan. Sijaintityö ja UI-korjaukset toimitetaan erillisinä committeina. Uusin toimitustilanne: [jatkomuistio](../jatkomuistio).
+katselmoinnin toimittaman raportin kaikki 15 kohtaa tarkistettiin nykyisestä koodista. Vahvistetut toimintaviat korjattiin, puuttuvaa testikattavuutta lisättiin ja ylläpidettävyyskohdat siivottiin. Käyttäjä valtuutti korjausten jälkeen testipuhelimen asennuksen sekä commitit ja GitHub-pushin `ui-pehmea-expressive`-haaraan. Sijaintityö on pushatussa commitissa `287b669` ja UI-korjaukset commitissa `3dcde84`. Käyttäjän lisäpyynnöstä rakennettiin myös allekirjoitettu release-APK hänen itse tehtäviä asennuksiaan varten. Uusin toimitustilanne: [jatkomuistio](../jatkomuistio).
 
 ## Lähtötila ja rajaus
 
@@ -52,3 +52,7 @@ Kuvat ovat testidataa ja syntyvät kansioon `app/build/screenshots/`. Esimerkkej
 Robolectric testaa Android-/Compose-koodia paikallisesti. Käyttäjän puhelimien nykyistä taustakuvapalettia, fyysistä TalkBackia, fonttien laiterenderöintiä, eleohjauksen välyksiä tai Wi-Fi-/mobiilipaikannuksen kestoa ei testattu kattavasti laitteella. Käyttäjä kumosi aiemman päivityskiellon testipuhelimen osalta: uusi debug-APK asennettiin 19.9. klo 08.36.15 `install --no-incremental -r` -komennolla. Allekirjoituksen yhteensopivuus, asennetun APK:n tiiviste ja käynnistys (`Status: ok`) varmennettiin. AppId, CE/DE-inodet ja ensimmäinen asennusaika säilyivät. Sovellusta ei poistettu eikä dataa tyhjennetty. Vanhoja toimitus-APK:ita ei korvattu; uusi tiedosto on `Saa-Sahko-0.2.2-expressive-2026-09-19-debug.apk`. testipuhelimeen ei koskettu.
 
 API-tukena käytettiin Androidin [TextAutoSize-viitettä](https://developer.android.com/reference/kotlin/androidx/compose/foundation/text/TextAutoSize) ja [Material 3:n dynaamisen teeman ohjetta](https://developer.android.com/codelabs/jetpack-compose-theming). Todisteet korjausten toiminnasta ovat tämän työpuun testit ja renderöinnit.
+
+## Käyttäjän pyytämä release-APK
+
+`Saa-Sahko-0.2.2-expressive-2026-09-19-release.apk` on projektin juuressa toisen henkilön puhelimen / testipuhelimen omaa asennusta varten. `assembleRelease` ja `lintRelease` onnistuivat, lintissä 0 virhettä ja 4 aiempaa varoitusta. Paketti on `fi.omasaasahko`, 0.2.2 / versionCode 6, ja allekirjoitus vastaa alkuperäistä release-avainta. APK:n SHA-256: `AC04516B10456BC34E4C1859936BC2679E270B9240F855C6672091CACFFD9259`. Release rakennettiin commitin `3dcde84` lähteistä. Sitä ei asennettu muihin laitteisiin tässä istunnossa eikä julkaistu GitHub-releasena. Aiemmat APK:t säilytettiin.

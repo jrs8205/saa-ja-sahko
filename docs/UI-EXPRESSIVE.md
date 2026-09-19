@@ -1,6 +1,6 @@
 # Pehmeä Expressive -käyttöliittymä — 18.9.2026
 
-19.9. paikalliset katselmointikorjaukset: [kaikkien 15 kohdan tulokset](REVIEW-UI-EXPRESSIVE-ROUND2.md). Tuotannon dynaaminen teemapolku on nyt myös paikallisissa SDK 33/35 -renderöinti- ja kontrastitesteissä.
+19.9. katselmointikorjaukset: [kaikkien 15 kohdan tulokset](REVIEW-UI-EXPRESSIVE-ROUND2.md), UI-commit `3dcde84` GitHubin `ui-pehmea-expressive`-haarassa. Tuotannon dynaaminen teemapolku on nyt myös paikallisissa SDK 33/35 -renderöinti- ja kontrastitesteissä. testipuhelimen asennus ja käyttäjälle toimitettu release-APK on kirjattu [jatkomuistioon](../jatkomuistio).
 
 Sovelluksen ilme uudistettiin haarassa `ui-pehmea-expressive`. Muutos koskee vain `fi.omasaasahko.ui`-pakettia, resursseja ja käyttöliittymätestejä. Data, ViewModelit, taustatyöt ja ilmoitukset eivät muuttuneet, eikä `AppScreen(...)`-funktion allekirjoitus.
 
