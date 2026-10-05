@@ -13,7 +13,7 @@ import java.time.*
 @Config(sdk = [35])
 class ParsersTest {
     private val now = Instant.parse("2026-09-16T09:00:00Z")
-    private val place = Place(60.29, 24.84, "Testipaikka", now, origin = PlaceOrigin.DEVICE)
+    private val place = Place(60.2925, 25.0408, "Testipaikka", now, origin = PlaceOrigin.DEVICE)
     @Test fun `Elering retains raw decimal price and discards invalid intervals`() {
         val data = Parsers.prices("""{"success":true,"data":{"fi":[{"timestamp":1789552800,"price":12.123456},{"timestamp":1789553700,"price":null},{"timestamp":1789552801,"price":100}]}}""", now)
         assertEquals(1, data.quarters.size)

@@ -329,7 +329,7 @@ class ScreenTest {
     }
 
     @Test fun `nearby name is separate from district and electricity test can be scheduled`() {
-        val state=PreviewData.state.copy(place=PreviewData.state.place!!.copy(nearbyName="Kaivopuisto"))
+        val state=PreviewData.state.copy(place=PreviewData.state.place!!.copy(nearbyName="Jokiniemi"))
         var pending by mutableStateOf(false)
         compose.setContent {
             AppTheme(dynamic=false) {
@@ -338,7 +338,7 @@ class ScreenTest {
             }
         }
         compose.onNodeWithText("Tikkurila, Vantaa").assertIsDisplayed()
-        compose.onNodeWithText("Kaivopuisto").assertIsDisplayed()
+        compose.onNodeWithText("Jokiniemi").assertIsDisplayed()
         compose.onNodeWithText("Lähin paikannimi · Maanmittauslaitos").assertIsDisplayed()
         screenshot("nearby-place")
         compose.onNodeWithTag("tab-prices").performClick()

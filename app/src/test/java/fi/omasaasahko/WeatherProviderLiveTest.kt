@@ -25,7 +25,7 @@ class WeatherProviderLiveTest {
         runBlocking {
             val context = ApplicationProvider.getApplicationContext<Context>()
             val repo = Repository(context); val now = Instant.now()
-            val place = Place(60.29,24.84,"Tikkurila, Vantaa",now, origin = PlaceOrigin.DEVICE)
+            val place = Place(60.2925,25.0408,"Tikkurila, Vantaa",now, origin = PlaceOrigin.DEVICE)
             val a = async { repo.weather(WeatherSource.FMI,place,now) }
             val b = async { repo.weather(WeatherSource.OPEN_METEO,place,now) }
             val fmi = a.await(); val om = b.await()

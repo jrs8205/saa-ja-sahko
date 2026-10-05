@@ -2,7 +2,7 @@
 
 ## Toimitettu
 
-Android-versio **0.1.2** (`versionCode=3`), sovellustunnus `fi.omasaasahko`. Debug-APK päivitettiin käyttäjän luvalla testipuhelimeen Wi-Fi-ADB:n kautta. Laite tunnistettiin uudelleen mallin perusteella. Asennus tehtiin `adb install -r` -päivityksenä, ja asennetun APK:n SHA-256 vastaa paikallista tiedostoa. Samalla ADB:ssä olevaan testipuhelimeen ei tehty muutoksia.
+Android-versio **0.1.2** (`versionCode=3`), sovellustunnus `fi.omasaasahko`. Debug-APK päivitettiin testipuhelimeen Wi-Fi-ADB:n kautta. Laite tunnistettiin uudelleen mallin perusteella. Asennus tehtiin `adb install -r` -päivityksenä, ja asennetun APK:n SHA-256 vastaa paikallista tiedostoa. Muihin ADB:ssä oleviin laitteisiin ei tehty muutoksia.
 
 Sää ja Pörssi-sähkö ovat ylävälilehdillä. Sovellus avautuu säähän ja käyttää nykyistä sijaintia vain etualalla. FMI ja Open-Meteo ovat rinnakkain: nykyhetken ennuste, erillinen lähialueen havainto, 24 tunnin lista, lähdettä vaihtava sadekaavio sekä avattavat viikon päivät. Puhelimen vaalea/tumma tila ja dynaamiset korostusvärit ovat käytössä.
 
@@ -35,7 +35,7 @@ Komento: `SAA_PRICE_CHECK=1` ympäristömuuttujalla `gradlew.bat :app:assembleDe
 - Käyttöliittymätesti varmistaa, että hintataso vaihtuu ALV-kytkimen ja tuntikeskiarvovalinnan mukana. Molempien teemojen hintasivu, kaavio, hintalista ja suuri fontti tarkastettiin kuvista.
 - Debug-käännös onnistui. Lint: **0 virhettä**, neljä aiempaa riippuvuus/Gradle-päivitysilmoitusta.
 - Debug 0.1.2 asennettiin testipuhelimeen päivityksenä. Asennetun APK:n SHA-256 vastasi paikallista tiedostoa. Muita laitteita ei muutettu.
-- testipuhelimen sähkösivu tarkastettiin oikealla datalla: 16.9. klo 20.15–20.30 **2,369 snt/kWh, ALV pois**, vihreä kortti ja Halpaa-merkintä. Arvo täsmää viralliseen raakadataan 23,69 EUR/MWh. Käyttäjän ALV-valintaa ei muutettu. Haettu-aika näkyi 20.17 ja puhelimen teema säilyi.
+- Testipuhelimen sähkösivu tarkastettiin oikealla datalla: 16.9. klo 20.15–20.30 **2,369 snt/kWh, ALV pois**, vihreä kortti ja Halpaa-merkintä. Arvo täsmää viralliseen raakadataan 23,69 EUR/MWh. Käyttäjän ALV-valintaa ei muutettu. Haettu-aika näkyi 20.17 ja puhelimen teema säilyi.
 - Tämän päivän kaikki hinnat ovat alle 5 snt/kWh myös ALV:n kanssa, joten koko päivä on oikein vihreä. Testien esikatseludata kattaa kaikki viisi hintaluokkaa, eikä sitä käytetä varsinaisessa sovelluksessa.
 - Kuvat: `app/build/screenshots/electricity-*.png` ja `app/build/device-screenshots/electricity-0.1.2.png`. Hintavertailun raportti: `app/build/test-results/testDebugUnitTest/TEST-fi.omasaasahko.OfficialPricesLiveTest.xml`.
 - Fyysisen laitteen tarkistus kattoi asennuksen ja sähkösivun. Vaihtimien toiminta ja molemmat teemat varmennettiin paikallisissa käyttöliittymätesteissä; laiteasetuksia ei muutettu.
@@ -54,7 +54,7 @@ SHA-256: `CB1C4437838D2B12846D4F01D253B2454ADB326C0654D2D8E758E4A58A0060E6`
 - `PriceSlot.centsPerKwh` sisältää valitun verotilan mukaisen hinnan. Alkuperäiset hinnat säilyvät verottomina välimuistissa. ALV-asetus on SharedPreferences-avain `includeVat`, oletusarvo `true`.
 - Esimerkkidata on vain debug-esikatseluiden ja testien käytössä. Sovelluksen varsinaiseen näkymään ei syötetä näytedataa.
 - Paikkatiedot ja palveluvastaukset tallentuvat sovelluksen sisäiseen välimuistiin. Ei taustapaikannusta, omaa palvelinta tai analytiikkaa. Varmuuskopiointi/laitesiirto estetty.
-- Tämä hakemisto alkoi neljästä Supersää-referenssikuvasta. Kuvat säilytettiin. Vanhaa FsClock-projektia tai Samsung-kansiota ei muutettu.
+- Tämä hakemisto alkoi neljästä Supersää-referenssikuvasta. Kuvat säilytettiin. Aiempia omia projekteja ei muutettu.
 - Git-repoa/committia/pushia ei tehty. Ei release-allekirjoitusta tai julkaisua.
 
 Tutka, varoitukset, hintahistoria, widgetit ja ilmoitukset ovat sovitun ensimmäisen version ulkopuolella.

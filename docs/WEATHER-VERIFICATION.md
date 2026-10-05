@@ -12,11 +12,11 @@ Open-Meteolta pyydetään nimenomaisesti Celsius, m/s, mm, UTC-epoch-aika ja `ti
 
 FMI:n päiväkuvake on lähimpänä keskipäivää oleva symboli. Open-Meteon päiväkuvake on palvelun määrittelemä päivän merkittävin sää. Tämä ero kerrotaan käyttöliittymässä. Mallien lämpötilojen, sademäärien, ruutupisteiden ja aurinkoaikojen keskinäistä yhtäsuuruutta ei oleteta.
 
-`WeatherProviderLiveTest` hakee molemmat ennusteet sovelluksen Repositorylla julkiselle Tikkurilan vertailupisteelle (60.29, 24.84) ja vertaa näytettäviä lukuja alkuperäiseen JSONiin ja erillisellä DOM-parserilla luettuun WFS-XML:ään. 16.9.2026 klo 20.49 Suomen aikaa onnistui: FMI 169 tuntia / 7 päivää, Open-Meteo 168 tuntia / 7 päivää. Yksiköt, aikaleimat, aurinkoajat, min/max, sade, tuuli ja yömerkinnät täsmäsivät. Välimuistin palautuminen tarkistetaan lisäksi RepositoryLiveTestissä.
+`WeatherProviderLiveTest` hakee molemmat ennusteet sovelluksen Repositorylla julkiselle vertailupisteelle Vantaalla ja vertaa näytettäviä lukuja alkuperäiseen JSONiin ja erillisellä DOM-parserilla luettuun WFS-XML:ään. 16.9.2026 klo 20.49 Suomen aikaa onnistui: FMI 169 tuntia / 7 päivää, Open-Meteo 168 tuntia / 7 päivää. Yksiköt, aikaleimat, aurinkoajat, min/max, sade, tuuli ja yömerkinnät täsmäsivät. Välimuistin palautuminen tarkistetaan lisäksi RepositoryLiveTestissä.
 
 ## Varoitukset
 
-Lähtökohdaksi luettiin Arkikeskuksen `aiempi-projekti` ja `WarningsRepository.java`. Niitä ei muutettu. Arkikeskus käyttää MeteoAlarm-välityspalvelua, suodattaa seuraavaan 24 tuntiin eikä kyseisessä haussa kohdista koordinaatteja polygonien avulla.
+Lähtökohdaksi luettiin aiemman oman Arkikeskus-projektin `WarningsClient` ja `WarningsRepository`. Niitä ei muutettu. Arkikeskus käyttää MeteoAlarm-välityspalvelua, suodattaa seuraavaan 24 tuntiin eikä kyseisessä haussa kohdista koordinaatteja polygonien avulla.
 
 Uusi toteutus käyttää suoraan [FMI:n suomenkielistä fat Atom -syötettä](https://alerts.fmi.fi/cap/feed/atom_fi-FI.xml). Sopimus tarkistettiin [FMI:n pikaohjeesta](https://www.ilmatieteenlaitos.fi/varoitusten-latauspalvelun-pikaohje) ja [FMI CAP -profiilista 1.1.0](https://alerts.fmi.fi/cap/profile/current/):
 
@@ -51,4 +51,4 @@ Julkaisu-APK:n allekirjoitus edellyttää paikallista release-avainta. Tavallise
 
 Varoitussivun päivärivillä on Kaikki sekä viisi vuorokautta eteenpäin nykyinen päivä mukaan lukien. Myös varoitukseton päivä on valittavissa ja kertoo, ettei sille ole julkaistu alueen varoituksia. FMI:n [varoitusohje](https://www.ilmatieteenlaitos.fi/tietoa-varoituksista) vahvistaa viiden vuorokauden käytännön. Lauantain 19.9.2026 Uudenmaan keltainen tuulivaroitus tarkistettiin suoraan syötteestä: voimassa 13–18 Suomen aikaa, kuvaus mainitsee 20 prosentin todennäköisyyden ja 15 m/s puuskat.
 
-Lisäksi luettiin Arkikeskuksen uudemman mobiiliversion `aiempi-projekti`: se kohdistaa kotikunnan/maakunnan nimien kautta. Tässä sovelluksessa käytetään varsinaista CAP-polygonia, jotta maakuntaa pienempi vapaa aluerajaus kohdistuu oikein.
+Lisäksi luettiin Arkikeskuksen uudemman mobiiliversion `WeatherWarningNotifier`: se kohdistaa kotikunnan/maakunnan nimien kautta. Tässä sovelluksessa käytetään varsinaista CAP-polygonia, jotta maakuntaa pienempi vapaa aluerajaus kohdistuu oikein.

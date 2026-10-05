@@ -22,7 +22,7 @@ import java.io.File
 @Config(sdk = [35])
 class WarningsTest {
     private val now = Instant.parse("2026-09-16T09:00:00Z")
-    private val vantaa = Place(60.29,24.84,"Tikkurila, Vantaa",now, origin = PlaceOrigin.DEVICE)
+    private val vantaa = Place(60.2925,25.0408,"Tikkurila, Vantaa",now, origin = PlaceOrigin.DEVICE)
     private val tampere = Place(61.5,23.76,"Tampere",now, origin = PlaceOrigin.DEVICE)
     private fun feed(vararg alerts: String) = """<feed xmlns="http://www.w3.org/2005/Atom"><updated>$now</updated>${alerts.joinToString("") { "<entry><content>$it</content></entry>" }}</feed>"""
     private fun alert(id: String = "a", type: String = "Alert", references: String = "", severity: String = "Moderate",
@@ -44,7 +44,7 @@ class WarningsTest {
         assertTrue(snapshot.local(tampere,now).isEmpty())
         assertTrue(snapshot.local(vantaa,warning.expires).isEmpty())
         assertTrue(warning.areas.single().contains(vantaa.copy(latitude=60.0,longitude=24.0)))
-        assertFalse(warning.areas.single().contains(vantaa.copy(latitude=24.84,longitude=60.29)))
+        assertFalse(warning.areas.single().contains(vantaa.copy(latitude=25.0408,longitude=60.2925)))
     }
     @Test fun `updates cancellations and test messages are excluded independent of entry order`() {
         val ref = "urn:oid:2.49.0.0.246.0,a,$now"

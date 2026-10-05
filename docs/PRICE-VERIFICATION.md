@@ -39,7 +39,7 @@ Paikalliset raakavastaukset ja ensimmäisen vertailun kooste: `app/build/price-v
 
 ## Huomisen hintailmoitus (0.2.0)
 
-Arkikeskuksen mobiilitoteutus luettiin tiedostosta `aiempi-projekti`. Se käyttää Eleringiä, opt-in-asetusta ja toimituspäivään sidottua toistojen estoa. Vanhaa projektia ei muutettu. Uudessa sovelluksessa vaaditaan kaikkien Suomen paikallisen vuorokauden varttien saatavuus, ei pelkästään iltatunnin läsnäoloa. Puuttuva tai ristiriitainen vartti estää ilmoituksen. Kellonsiirtopäivinä odotetaan 92/100 varttia.
+Aiemman oman Arkikeskus-projektin mobiilitoteutus (`ElectricityNotifier`) luettiin. Se käyttää Eleringiä, opt-in-asetusta ja toimituspäivään sidottua toistojen estoa. Vanhaa projektia ei muutettu. Uudessa sovelluksessa vaaditaan kaikkien Suomen paikallisen vuorokauden varttien saatavuus, ei pelkästään iltatunnin läsnäoloa. Puuttuva tai ristiriitainen vartti estää ilmoituksen. Kellonsiirtopäivinä odotetaan 92/100 varttia.
 
 Nord Poolin [markkinakuvaus](https://www.nordpoolgroup.com/en/the-power-market/Day-ahead-market/) käsittelee seuraavan päivän huutokauppaa. [Virallinen viivästystiedote 14.9.2025](https://www.nordpoolgroup.com/en/trading/Operational-Message-List/2025/09/day-ahead-new-publication-time---market-coupling-results-expected-at-1250-cet--20250914104900/) osoittaa, että julkaisuaika voi muuttua. Siksi ilmoitusta ei laukaista kellon perusteella. Sen tiedot ovat samat Elering/Nord Pool FI -hinnat kuin sähkösivulla, laskenta BigDecimalilla ja näyttö 0,000.
 

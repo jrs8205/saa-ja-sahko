@@ -12,7 +12,7 @@ import kotlin.math.sin
 /** Deterministic design data: used by previews/tests only, never by the production screen. */
 object PreviewData {
     val now: Instant = Instant.parse("2026-09-16T09:10:00Z")
-    val place = Place(60.29, 24.84, "Tikkurila, Vantaa", now)
+    val place = Place(60.2925, 25.0408, "Tikkurila, Vantaa", now)
     val state: AppState get() {
         val start = now.atZone(HELSINKI).toLocalDate().atStartOfDay(HELSINKI).toInstant()
         val weather = WeatherSource.entries.associateWith { source ->

@@ -16,11 +16,11 @@ Ilmoitukset otetaan käyttöön sivujen kytkimistä ja Androidin ilmoitusluvalla
 ## APK ja asennus
 
 - Tiedosto projektin juuressa ja GitHub-julkaisun liitteenä: `Saa-Sahko-0.2.0-release.apk`.
-- [GitHub-julkaisu v0.2.0](https://github.com/jrs8205/saa-porssi-sovellus/releases/tag/v0.2.0). Arkisto on yksityinen; ladatun APK:n voi siirtää toiseen puhelimeen.
+- [GitHub-julkaisu v0.2.0](https://github.com/jrs8205/saa-porssi-sovellus/releases/tag/v0.2.0). Ladatun APK:n voi asentaa puhelimeen.
 - Android 13 tai uudempi; kohdealusta Android 17. Versio 0.2.0, versionCode 4.
 - APK-tiedoston SHA-256: `1F99D10EDCA9C40911E984B47CF4063955120405ED97769E5DCEC6F778991098`.
 
-Release asennettiin testipuhelimeen. testipuhelin päivitettiin debug-versioon aiemmat sovellustiedot säilyttäen. Asennettujen pakettien tiivisteet tarkistettiin. Debug ja release käyttävät eri allekirjoituksia, joten release ei päivity suoraan debug-asennuksen päälle samalla pakettinimellä. Uuteen puhelimeen käytetään tämän julkaisun release-APK:ta.
+Release asennettiin testipuhelimeen, ja toinen testipuhelin päivitettiin debug-versioon aiemmat sovellustiedot säilyttäen. Asennettujen pakettien tiivisteet tarkistettiin. Debug ja release käyttävät eri allekirjoituksia, joten release ei päivity suoraan debug-asennuksen päälle samalla pakettinimellä. Uuteen puhelimeen käytetään tämän julkaisun release-APK:ta.
 
 ## Google Android Developer Console
 

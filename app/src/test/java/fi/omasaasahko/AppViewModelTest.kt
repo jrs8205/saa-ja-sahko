@@ -11,7 +11,7 @@ import java.time.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppViewModelTest {
     private val now = Instant.parse("2026-09-16T09:00:00Z")
-    private val place = Place(60.29, 24.84, "Vantaa", now, origin = PlaceOrigin.DEVICE)
+    private val place = Place(60.2925, 25.0408, "Vantaa", now, origin = PlaceOrigin.DEVICE)
     private fun forecast(source: WeatherSource, p: Place = place) = Forecast(source, p, now, listOf(WeatherHour(now, 15.0)), emptyList())
     private open inner class Repo : DataRepository {
         override suspend fun cached() = CachedData(emptyMap(), null)
