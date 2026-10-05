@@ -22,12 +22,19 @@ android {
         applicationId = "fi.omasaasahko"
         minSdk = 33
         targetSdk = 37
-        versionCode = 6
-        versionName = "0.2.2"
+        versionCode = 7
+        versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "MML_API_KEY", "\"$mmlApiKey\"")
     }
     buildFeatures { compose = true; buildConfig = true }
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
     if (releaseProperties.isNotEmpty()) {
         signingConfigs {
             create("personalRelease") {
@@ -35,6 +42,8 @@ android {
                 storePassword = releaseProperties.getProperty("storePassword")
                 keyAlias = releaseProperties.getProperty("keyAlias")
                 keyPassword = releaseProperties.getProperty("keyPassword")
+                enableV2Signing = true
+                enableV3Signing = true
             }
         }
         buildTypes.getByName("release").signingConfig = signingConfigs.getByName("personalRelease")

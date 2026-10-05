@@ -1,17 +1,17 @@
-Sää & Sähkö 0.2.0 (versionCode 4)
+Sää & Sähkö 0.3.0 (versionCode 7)
 Package: fi.omasaasahko
 Minimum Android: 13 / API 33
 Target Android: 17 / API 37
-APK: Saa-Sahko-0.2.0-release.apk
+APK: Saa-Sahko-0.3.0-release.apk (R8, APK Signature Scheme v3)
 
 Signing certificate SHA-256 (Google Android Developer Console):
 C7:0B:B7:BE:13:92:07:37:47:8F:A8:1C:DD:82:12:BE:BE:DD:C8:AC:8B:63:26:C7:96:4B:6F:6E:B4:FF:96:5E
 
 APK file SHA-256 (file integrity only):
-1F99D10EDCA9C40911E984B47CF4063955120405ED97769E5DCEC6F778991098
+692B574DC0EAE010A22FD828365FFC8952F653FD79955F8E178720E3247A14B3
 
 Public certificate: docs/release-certificate.pem
-Release: https://github.com/jrs8205/saa-porssi-sovellus/releases/tag/v0.2.0
+Previous release: https://github.com/jrs8205/saa-porssi-sovellus/releases/tag/v0.2.0
 
 Keep the original private release key and release-signing.properties backed up securely.
 Neither private file is included in Git or release attachments.

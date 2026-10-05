@@ -1,3 +1,14 @@
+# Sää & Sähkö 0.3.0
+
+Julkaisu 5.10.2026: Pehmeä Expressive -käyttöliittymä, WCAG AAA -kontrastit, isommat sääsymbolit ja lämpötilat yhden desimaalin tarkkuudella. Versio **0.3.0**, versionCode **7**, paketti `fi.omasaasahko`, Android 13+ (API 33), kohde Android 17 (API 37).
+
+- Release rakennetaan R8:lla (`isMinifyEnabled` ja `isShrinkResources`), säännöt tiedostossa `app/proguard-rules.pro`. Koko pieneni 26,1 MB:stä 3,2 MB:iin. Symbolikartta syntyy polkuun `app/build/outputs/mapping/release/mapping.txt`; säilytä se jokaisesta julkaistusta koonnista pinotulosteiden lukemista varten.
+- APK allekirjoitetaan pysyvällä julkaisuavaimella APK Signature Scheme v3:lla (minSdk 33 ei tarvitse v1/v2-allekirjoituksia). `apksigner verify --print-certs` vahvisti varmenteen SHA-256:n `C7:0B:B7:BE:…:FF:96:5E`, joka on sama kuin `docs/release-certificate.pem`-tiedostossa ja aiemmissa julkaisuissa.
+- Tiedosto projektin juuressa: `Saa-Sahko-0.3.0-release.apk`, SHA-256 `692B574DC0EAE010A22FD828365FFC8952F653FD79955F8E178720E3247A14B3`. Ei debuggable-lippua.
+- R8-koontia ei ole vielä ajettu puhelimella: asenna ja käy näkymät, paikannus ja ilmoitukset läpi ennen jakelua.
+
+---
+
 # Sää & Sähkö 0.2.0
 
 Henkilökohtainen Android-sovellus: Ilmatieteen laitoksen ja Open-Meteon sää, Suomen pörssisähkö sekä sijaintiin kohdistuvat FMI-varoitukset. Vaalea ja tumma teema seuraavat puhelimen asetusta.

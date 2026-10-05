@@ -2,7 +2,7 @@
 
 Suomenkielinen Android-sovellus, joka näyttää Ilmatieteen laitoksen ja Open-Meteon sääennusteet rinnakkain, Suomen pörssisähkön hinnat ja FMI:n säävaroitukset. Toteutettu Kotlinilla, Jetpack Composella ja Material 3:lla.
 
-**Vaatimukset:** Android 13 tai uudempi (API 33). Kohdealusta Android 17 (API 37). Versio 0.2.2.
+**Vaatimukset:** Android 13 tai uudempi (API 33). Kohdealusta Android 17 (API 37). Versio 0.3.0.
 
 ## Ominaisuudet
 
