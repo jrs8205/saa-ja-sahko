@@ -11,6 +11,7 @@ APK file SHA-256 (file integrity only):
 692B574DC0EAE010A22FD828365FFC8952F653FD79955F8E178720E3247A14B3
 
 Public certificate: docs/release-certificate.pem
+Release: https://github.com/jrs8205/saa-ja-sahko/releases/tag/v0.3.0
 Previous release: https://github.com/jrs8205/saa-ja-sahko/releases/tag/v0.2.0
 
 Keep the original private release key and release-signing.properties backed up securely.
