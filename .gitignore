@@ -12,8 +12,8 @@ captures/
 release-signing.properties
 
 # Paikalliset työmuistiinpanot ja suunnittelureferenssit, eivät kuulu julkiseen arkistoon
-jatkomuistio
-katselmointipyyntö
+HANDOFF.md
+review-request.md
 .local/
 24h-saa.png
 saa-nyt.png
