@@ -1,0 +1,468 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "P_10342656",
+      "properties": {
+        "placeId": 10342656,
+        "placeVersionId": 4,
+        "placeType": 3020105,
+        "placeTypeDescription": 3020105,
+        "placeTypeCategory": 3,
+        "placeTypeGroup": 302,
+        "placeTypeSubgroup": 30201,
+        "placeElevation": 12,
+        "tm35MapSheet": "L4133C2",
+        "gslsMapSheet": "203406A",
+        "rescueGridSquare": "19O4A1",
+        "municipality": "091",
+        "subregion": "011",
+        "region": "01",
+        "scaleRelevance": 100000,
+        "placeCreationTime": "2008-12-05T22:00:00Z",
+        "placeModificationTime": "2023-02-02T11:54:38Z",
+        "placeDeletionTime": null,
+        "name": [
+          {
+            "placeNameId": 40342657,
+            "placeNameVersionId": 1,
+            "spelling": "Brunnsparken",
+            "language": "swe",
+            "languageOfficiality": 1,
+            "languageDominance": 2,
+            "placeNameSource": 1,
+            "placeNameStatus": 5,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2008-12-05T22:00:00Z",
+            "placeNameDeletionTime": null
+          },
+          {
+            "placeNameId": 40342656,
+            "placeNameVersionId": 1,
+            "spelling": "Kaivopuisto",
+            "language": "fin",
+            "languageOfficiality": 1,
+            "languageDominance": 1,
+            "placeNameSource": 1,
+            "placeNameStatus": 5,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2008-12-05T22:00:00Z",
+            "placeNameDeletionTime": null
+          }
+        ],
+        "source": "geographic-names",
+        "gid": "nlsfi:geographic-names#1",
+        "distance": 0.0,
+        "rank": 1,
+        "country": "Suomi",
+        "country_gid": "whosonfirst:country:85633143",
+        "continent": "Eurooppa",
+        "continent_gid": "whosonfirst:continent:102191581",
+        "country_a": "FIN",
+        "label": "Kaivopuisto",
+        "match_type": "exact",
+        "accuracy": "point",
+        "confidence": 1.0,
+        "label:region": "Uusimaa",
+        "label:subregion": "Helsinki",
+        "label:municipality": "Helsinki",
+        "label:placeType": "Kaupunkialueen tai taajaman osa",
+        "label:placeTypeDescription": "Yleensä Suomen ympäristökeskuksen taajamarajaukseen sisältyvä asutuskeskittymän osa.",
+        "label:placeTypeCategory": "Asutus",
+        "label:placeTypeGroup": "Taajamanosat",
+        "label:placeTypeSubgroup": "Taajamanosat"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.9589938,
+          60.1579733
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "P_10342464",
+      "properties": {
+        "placeId": 10342464,
+        "placeVersionId": 2,
+        "placeType": 6010305,
+        "placeTypeDescription": 6010305,
+        "placeTypeCategory": 6,
+        "placeTypeGroup": 601,
+        "placeTypeSubgroup": 60103,
+        "placeElevation": 2,
+        "tm35MapSheet": "L4133C2",
+        "gslsMapSheet": "203406A",
+        "rescueGridSquare": "19O4A1",
+        "municipality": "091",
+        "subregion": "011",
+        "region": "01",
+        "scaleRelevance": 50000,
+        "placeCreationTime": "2008-12-05T22:00:00Z",
+        "placeModificationTime": "2017-11-10T09:14:35Z",
+        "placeDeletionTime": null,
+        "name": [
+          {
+            "placeNameId": 40342463,
+            "placeNameVersionId": 2,
+            "spelling": "Södra hamnen",
+            "language": "swe",
+            "languageOfficiality": 1,
+            "languageDominance": 2,
+            "placeNameSource": 1,
+            "placeNameStatus": 3,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2019-11-22T06:41:12Z",
+            "placeNameDeletionTime": null
+          },
+          {
+            "placeNameId": 40342464,
+            "placeNameVersionId": 2,
+            "spelling": "Eteläsatama",
+            "language": "fin",
+            "languageOfficiality": 1,
+            "languageDominance": 1,
+            "placeNameSource": 1,
+            "placeNameStatus": 3,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2019-11-22T06:41:12Z",
+            "placeNameDeletionTime": null
+          }
+        ],
+        "source": "geographic-names",
+        "gid": "nlsfi:geographic-names#2",
+        "distance": 0.34972782382507495,
+        "rank": 2,
+        "country": "Suomi",
+        "country_gid": "whosonfirst:country:85633143",
+        "continent": "Eurooppa",
+        "continent_gid": "whosonfirst:continent:102191581",
+        "country_a": "FIN",
+        "label": "Eteläsatama",
+        "match_type": "exact",
+        "accuracy": "point",
+        "confidence": 0.9455923251386673,
+        "label:region": "Uusimaa",
+        "label:subregion": "Helsinki",
+        "label:municipality": "Helsinki",
+        "label:placeType": "Satama",
+        "label:placeTypeDescription": "Ranta-alue laitureineen ym. rakennelmineen alusten lastaamista, purkamista, huoltoa tms. varten.",
+        "label:placeTypeCategory": "Liikenne",
+        "label:placeTypeGroup": "Liikennepaikat",
+        "label:placeTypeSubgroup": "Vesiliikennepaikat"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.9591354,
+          60.1611168
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "P_10342421",
+      "properties": {
+        "placeId": 10342421,
+        "placeVersionId": 2,
+        "placeType": 1010110,
+        "placeTypeDescription": 1010110,
+        "placeTypeCategory": 1,
+        "placeTypeGroup": 101,
+        "placeTypeSubgroup": 10101,
+        "placeElevation": 11,
+        "tm35MapSheet": "L4133C2",
+        "gslsMapSheet": "203406A",
+        "rescueGridSquare": "19O4A1",
+        "municipality": "091",
+        "subregion": "011",
+        "region": "01",
+        "scaleRelevance": 25000,
+        "placeCreationTime": "2008-12-05T22:00:00Z",
+        "placeModificationTime": "2016-03-03T08:45:14Z",
+        "placeDeletionTime": null,
+        "name": [
+          {
+            "placeNameId": 40342421,
+            "placeNameVersionId": 1,
+            "spelling": "Luoto",
+            "language": "fin",
+            "languageOfficiality": 1,
+            "languageDominance": 1,
+            "placeNameSource": 1,
+            "placeNameStatus": 5,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2008-12-05T22:00:00Z",
+            "placeNameDeletionTime": null
+          },
+          {
+            "placeNameId": 40342423,
+            "placeNameVersionId": 1,
+            "spelling": "Klippan",
+            "language": "swe",
+            "languageOfficiality": 1,
+            "languageDominance": 2,
+            "placeNameSource": 1,
+            "placeNameStatus": 5,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2008-12-05T22:00:00Z",
+            "placeNameDeletionTime": null
+          }
+        ],
+        "source": "geographic-names",
+        "gid": "nlsfi:geographic-names#3",
+        "distance": 0.4052348848616296,
+        "rank": 3,
+        "country": "Suomi",
+        "country_gid": "whosonfirst:country:85633143",
+        "continent": "Eurooppa",
+        "continent_gid": "whosonfirst:continent:102191581",
+        "country_a": "FIN",
+        "label": "Luoto",
+        "match_type": "exact",
+        "accuracy": "point",
+        "confidence": 0.9369570095485198,
+        "label:region": "Uusimaa",
+        "label:subregion": "Helsinki",
+        "label:municipality": "Helsinki",
+        "label:placeType": "Saari tai luoto",
+        "label:placeTypeDescription": "Veden kokonaan tai lähes kokonaan ympäröimä maa-alue meressä, järvessä tai joessa.",
+        "label:placeTypeCategory": "Maasto",
+        "label:placeTypeGroup": "Pinnanmuodot",
+        "label:placeTypeSubgroup": "Rannanmuodot"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.9655562,
+          60.1595891
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "P_10342662",
+      "properties": {
+        "placeId": 10342662,
+        "placeVersionId": 3,
+        "placeType": 3020105,
+        "placeTypeDescription": 3020105,
+        "placeTypeCategory": 3,
+        "placeTypeGroup": 302,
+        "placeTypeSubgroup": 30201,
+        "placeElevation": 2,
+        "tm35MapSheet": "L4133C2",
+        "gslsMapSheet": "203406A",
+        "rescueGridSquare": "19O4A1",
+        "municipality": "091",
+        "subregion": "011",
+        "region": "01",
+        "scaleRelevance": 50000,
+        "placeCreationTime": "2008-12-05T22:00:00Z",
+        "placeModificationTime": "2019-04-10T11:42:48Z",
+        "placeDeletionTime": null,
+        "name": [
+          {
+            "placeNameId": 40342662,
+            "placeNameVersionId": 1,
+            "spelling": "Merisatama",
+            "language": "fin",
+            "languageOfficiality": 1,
+            "languageDominance": 1,
+            "placeNameSource": 1,
+            "placeNameStatus": 5,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2008-12-05T22:00:00Z",
+            "placeNameDeletionTime": null
+          },
+          {
+            "placeNameId": 40342663,
+            "placeNameVersionId": 1,
+            "spelling": "Havshamnen",
+            "language": "swe",
+            "languageOfficiality": 1,
+            "languageDominance": 2,
+            "placeNameSource": 1,
+            "placeNameStatus": 5,
+            "placeNameCreationTime": "2008-12-05T22:00:00Z",
+            "placeNameModificationTime": "2008-12-05T22:00:00Z",
+            "placeNameDeletionTime": null
+          }
+        ],
+        "source": "geographic-names",
+        "gid": "nlsfi:geographic-names#4",
+        "distance": 0.5414940293381172,
+        "rank": 4,
+        "country": "Suomi",
+        "country_gid": "whosonfirst:country:85633143",
+        "continent": "Eurooppa",
+        "continent_gid": "whosonfirst:continent:102191581",
+        "country_a": "FIN",
+        "label": "Merisatama",
+        "match_type": "exact",
+        "accuracy": "point",
+        "confidence": 0.9157589728911101,
+        "label:region": "Uusimaa",
+        "label:subregion": "Helsinki",
+        "label:municipality": "Helsinki",
+        "label:placeType": "Kaupunkialueen tai taajaman osa",
+        "label:placeTypeDescription": "Yleensä Suomen ympäristökeskuksen taajamarajaukseen sisältyvä asutuskeskittymän osa.",
+        "label:placeTypeCategory": "Asutus",
+        "label:placeTypeGroup": "Taajamanosat",
+        "label:placeTypeSubgroup": "Taajamanosat"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.950498,
+          60.1555593
+        ]
+      }
+    }
+  ],
+  "geocoding": {
+    "status": "success",
+    "metadata": [],
+    "sources": {
+      "geographic-names": {
+        "status": "success",
+        "duration": 9,
+        "links": []
+      }
+    },
+    "query": {
+      "limit": 100,
+      "radius": 5000.0,
+      "focusPoint": {
+        "type": "Point",
+        "coordinates": [
+          24.9589938,
+          60.1579733
+        ]
+      },
+      "sources": "geographic-names",
+      "lang": "fin",
+      "scaleDenominator": 5000,
+      "excludesMaps": {},
+      "crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+      "requestCrs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+      "searchGeometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              25.049256761942335,
+              60.1579733
+            ],
+            [
+              25.046181126097448,
+              60.16960875428442
+            ],
+            [
+              25.03716381806289,
+              60.18045127158784
+            ],
+            [
+              25.02281935247941,
+              60.18976195227417
+            ],
+            [
+              25.004125280971166,
+              60.196906288841234
+            ],
+            [
+              24.98235557361804,
+              60.201397406558584
+            ],
+            [
+              24.9589938,
+              60.20292924317569
+            ],
+            [
+              24.935632026381956,
+              60.201397406558584
+            ],
+            [
+              24.91386231902883,
+              60.196906288841234
+            ],
+            [
+              24.895168247520587,
+              60.18976195227417
+            ],
+            [
+              24.880823781937107,
+              60.18045127158785
+            ],
+            [
+              24.87180647390255,
+              60.16960875428442
+            ],
+            [
+              24.86873083805766,
+              60.1579733
+            ],
+            [
+              24.87180647390255,
+              60.146337845715586
+            ],
+            [
+              24.880823781937107,
+              60.13549532841216
+            ],
+            [
+              24.895168247520587,
+              60.126184647725836
+            ],
+            [
+              24.91386231902883,
+              60.11904031115877
+            ],
+            [
+              24.935632026381956,
+              60.11454919344142
+            ],
+            [
+              24.9589938,
+              60.113017356824315
+            ],
+            [
+              24.98235557361804,
+              60.11454919344142
+            ],
+            [
+              25.004125280971166,
+              60.11904031115877
+            ],
+            [
+              25.02281935247941,
+              60.126184647725836
+            ],
+            [
+              25.03716381806289,
+              60.135495328412155
+            ],
+            [
+              25.046181126097448,
+              60.146337845715586
+            ],
+            [
+              25.049256761942335,
+              60.1579733
+            ]
+          ]
+        ]
+      }
+    },
+    "version": "2",
+    "attribution": "https://www.maanmittauslaitos.fi/en/opendata-licence-cc40",
+    "engine": {
+      "name": "maanmittauslaitos.fi/geocoding",
+      "author": "National Land Survey of Finland",
+      "version": "2"
+    },
+    "timestamp": 1791180075137
+  }
+}

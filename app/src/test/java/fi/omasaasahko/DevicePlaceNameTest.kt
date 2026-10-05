@@ -64,10 +64,10 @@ class DevicePlaceNameTest {
     }
 
     @Test fun `coarse permission and coarse accuracy allow municipality but suppress precise point`() = runTest {
-        val names = listOf(NearbyName("Brunnsparken", "Vantaa", 10.0))
+        val names = listOf(NearbyName("Brunnsparken", "Helsinki", 10.0))
         for ((fine, accuracy) in listOf(false to 10f, true to 201f)) {
             val result = DevicePlaceName({ names }, { null }, { fine }).describe(fix.copy(accuracyMeters = accuracy))
-            assertEquals("Vantaa", result.name)
+            assertEquals("Helsinki", result.name)
             assertNull(result.nearbyName)
         }
     }

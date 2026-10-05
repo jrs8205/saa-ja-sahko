@@ -20,9 +20,9 @@ import java.time.Instant
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class PlaceNamesTest {
-    private val lat = 60.2757625
-    private val lon = 24.8304846
-    // Public NLS name point, not a device location. Data: NLS Finland, CC BY 4.0, 17 Sep 2026.
+    private val lat = 60.1579733
+    private val lon = 24.9589938
+    // Public NLS name point (Kaivopuisto park, Helsinki), not a device location. Data: NLS Finland, CC BY 4.0, 5 Oct 2026, trimmed to the four nearest features.
     private fun fixture() = javaClass.getResource("/mml-kaivopuisto.json")!!.readText()
 
     private fun nearest(body: String, latitude: Double, longitude: Double): NearbyName? =
@@ -31,8 +31,8 @@ class PlaceNamesTest {
     @Test fun `official MML point runs through production naming and warning storage`() = runBlocking {
         val names = PlaceNames.nearby(PlaceNames.points(fixture()), lat, lon, PlaceNames.FALLBACK_RADIUS_METERS)
         val fix = Place(lat, lon, CURRENT_LOCATION_NAME, Instant.EPOCH, accuracyMeters = 10f, nameResolved = false, origin = PlaceOrigin.DEVICE)
-        val place = DevicePlaceName({ names }, { AddressName("Vantaa", "Tikkurila") }, { true }).describe(fix)
-        assertEquals("Vantaa", place.name)
+        val place = DevicePlaceName({ names }, { AddressName("Helsinki", "Ullanlinna") }, { true }).describe(fix)
+        assertEquals("Helsinki", place.name)
         assertEquals("Kaivopuisto", place.nearbyName)
         assertEquals(lat, place.latitude, 0.0)
         assertEquals(lon, place.longitude, 0.0)
@@ -134,6 +134,6 @@ class PlaceNamesTest {
         val result=MmlPlaceNames().reverseCandidates(lat,lon).firstOrNull()
         assertNotNull("Official reverse API did not return an eligible nearby name",result)
         assertEquals("Kaivopuisto",result!!.name)
-        assertEquals("Vantaa",result.municipality)
+        assertEquals("Helsinki",result.municipality)
     }
 }

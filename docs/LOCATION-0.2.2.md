@@ -48,7 +48,7 @@ $env:SAA_PRICE_CHECK = '0'
 **76 testiä: 75 läpi, 0 epäonnistunutta, 1 ohitettu.** Ohitettu testi on erillinen Nord Pool -hintavertailu. Molemmat APK-variantit kääntyivät. Molemmissa lint-ajoissa 0 virhettä ja 4 aiempaa riippuvuus-/Gradle-päivitysvaroitusta.
 
 - Paikalliset regressiot: Espoo → Porvoo alle 15 minuutissa, karkea verkko ennen tarkkaa GPS:ää, GPS:n aikakatkaisu, hidas ja myöhästynyt paikannimi, sulkeminen kesken nimen haun, suosikin ja ilmoituspaikan riippumattomuus, hakukilpailu, suosikin pysyvyys ja ilmoituksen paikkatekstin hiljainen korjaus.
-- MML:n oikeat haut: Porvoo, Espoo, Inari, Borgå, Nikunmäki Espoossa ja Kaivopuiston nimipiste. Pyyntöparametrit tarkistetaan testisäikeessä, mukaan lukien `size=100` ja `lang=fi`.
+- MML:n oikeat haut: Porvoo, Espoo, Inari, Borgå, Nikunmäki Espoossa ja Kaivopuiston nimipiste Helsingissä. Pyyntöparametrit tarkistetaan testisäikeessä, mukaan lukien `size=100` ja `lang=fi`.
 - FMI:n oikeat haut: Porvoon kuntapisteelle **Porvoo Harabacka, 3,3 km**, Inarin vertailupisteelle **Inari Kaamanen, 28,4 km**. Havainnot olivat tuoreita, ennustekoordinaatit säilyivät ja molemmat tiedot palautuivat välimuistista. Myös aiemmat FMI/Open-Meteo/Elering-verkkotestit ajettiin.
 - Windowsin Robolectric ajaa Androidin AtomicFilen Java-isäntäjärjestelmän päällä. Windowsin `File.renameTo` ei korvaa olemassa olevaa kohdetta Android/Linuxin tavoin. Kahden live-paikan ensimmäiset välimuistikierrokset testattiin siksi erillisissä testihakemistoissa. Tämä ei ole puhelimella todennettu välimuistivika.
 - Compose-testi käyttää oikeita tekstinsyöttö-, tähti-, paikanvalinta- ja paluupainikkeita. Kuvat `app/build/screenshots/place-search.png` ja `selected-place.png` tarkistettiin. Kuvat sisältävät testidataa.
