@@ -59,4 +59,4 @@ Ne sisältävät yksityisen avaimen ja sen käyttöön tarvittavat salasanat. Mo
 - Molemmat teemat, iso fontti, kaavion vieritys ja valinta, viikon lähdenimet, varoitusten päivät sekä ilmoitusasetukset tarkistettiin paikallisilla käyttöliittymätesteillä ja kuvista.
 - Molempien puhelimien asennus ja APK-tiivisteet varmennettiin. Lopullisen version kaikkia toimintoja tai tausta-ajastusten viivettä ei ole fyysisillä laitteilla käyty läpi; pitkäaikaista akkukulutusta ei ole mitattu.
 
-Tarkempi näyttö: [hintavarmennus](docs/PRICE-VERIFICATION.md), [sää- ja varoitusvarmennus](docs/WEATHER-VERIFICATION.md), [jatkotilanne](jatkomuistio). Ajonaikainen hintalähde on Elering; Nord Pool -vertailu on erikseen ajettava testi. Yksi tarkistus ei takaa ulkoisten palveluiden tulevien vastausten virheettömyyttä.
+Tarkempi näyttö: [hintavarmennus](docs/PRICE-VERIFICATION.md), [sää- ja varoitusvarmennus](docs/WEATHER-VERIFICATION.md). Ajonaikainen hintalähde on Elering; Nord Pool -vertailu on erikseen ajettava testi. Yksi tarkistus ei takaa ulkoisten palveluiden tulevien vastausten virheettömyyttä.

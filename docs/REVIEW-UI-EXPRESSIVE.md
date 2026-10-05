@@ -1,16 +1,16 @@
 # Pehmeä Expressive — katselmointi ja korjaukset 18.9.2026
 
-**Uusin kierros 19.9.2026:** [toisen katselmoinnin raportti](REVIEW-UI-EXPRESSIVE-ROUND2.md) käsittelee katselmoinnin uudet 15 kohtaa ja niiden paikalliset korjaukset. Alla oleva raportti kuvaa 18.9. tilannetta; erityisesti kohtien 6.4, 6.6 ja 6.12 siirtopäätökset eivät enää kuvaa nykyistä koodia.
+**Uusin kierros 19.9.2026:** [toisen katselmoinnin raportti](REVIEW-UI-EXPRESSIVE-ROUND2.md) käsittelee toisen katselmointikierroksen 15 kohtaa ja niiden paikalliset korjaukset. Alla oleva raportti kuvaa 18.9. tilannetta; erityisesti kohtien 6.4, 6.6 ja 6.12 siirtopäätökset eivät enää kuvaa nykyistä koodia.
 
 Kolme katselmoinnissa ilmoitettua P2-asetteluvirhettä toistettiin testeillä ja korjattiin. Yhteenvetohintojen numerot, sähkövalitsimien vaihtoehdot ja aurinkoajat mahtuvat nyt myös 320 dp:n näkymään. Korjaukset ovat paikallisessa `ui-pehmea-expressive`-haarassa. Fyysisen laitteen varmennus on edelleen avoin.
 
 ## Lähtötila ja rajaus
 
 - HEAD ennen korjauksia: `a891e15`, pohja `main` / `f6615ee`; kahdeksan käyttöliittymäcommittia.
-- Työn perustana olivat `katselmointipyyntö`, `docs/UI-EXPRESSIVE.md`, suunnitelman sitovat ehdot sekä käyttäjän välittämä katselmointi, jossa oli kolme P2-löydöstä.
+- Työn perustana olivat katselmointipyyntö, `docs/UI-EXPRESSIVE.md`, suunnitelman sitovat ehdot sekä käyttäjän välittämä katselmointi, jossa oli kolme P2-löydöstä.
 - Aiemman katselmoinnin ilmoittama lähtötulos oli 122 testiä, 0 epäonnistumista, 6 ohitettua sekä lint 0 virhettä / 4 varoitusta. Tätä ei esitetä uutena lähtötilan kokonaisajona.
-- Koodikorjaukset koskevat vain `ElectricityScreen.kt`:tä, `WeatherScreen.kt`:tä ja `ScreenTest.kt`:tä. Lisäksi laadittiin tämä raportti ja käyttäjän myöhemmällä nimenomaisella luvalla päivitettiin `jatkomuistio`.
-- Ennen viimeistä handoff-pyyntöä kaikki yhdeksän suojattua sijainti-/handoff-tiedostoa vastasivat työn alun SHA-256-tiivisteitä. Käyttäjä valtuutti sen jälkeen jatkomuistio-päivityksen sekä commitit ja pushin, mutta kielsi laitepäivitykset. jatkomuistion aiempi sisältö säilytettiin historiassa ja se sisällytettiin dokumentaatiocommittiin. Kahdeksan muuta sijaintitiedostoa, mukaan lukien `docs/LOCATION-PERFORMANCE.md`, säilyvät muuttamattomina ja commitoimattomina.
+- Koodikorjaukset koskevat vain `ElectricityScreen.kt`:tä, `WeatherScreen.kt`:tä ja `ScreenTest.kt`:tä. Lisäksi laadittiin tämä raportti ja käyttäjän myöhemmällä nimenomaisella luvalla päivitettiin jatkomuistio.
+- Ennen viimeistä jatkomuistiopyyntöä kaikki yhdeksän suojattua sijainti- ja muistiotiedostoa vastasivat työn alun SHA-256-tiivisteitä. Käyttäjä valtuutti sen jälkeen jatkomuistion päivityksen sekä commitit ja pushin, mutta kielsi laitepäivitykset. jatkomuistion aiempi sisältö säilytettiin historiassa ja se sisällytettiin dokumentaatiocommittiin. Kahdeksan muuta sijaintitiedostoa, mukaan lukien `docs/LOCATION-PERFORMANCE.md`, säilyvät muuttamattomina ja commitoimattomina.
 
 ## Korjatut löydökset
 
@@ -92,4 +92,4 @@ Puhelimeen ei tässä työssä asennettu mitään. Testaa erikseen:
 4. Vedä-päivittääksesi-ele, lataustila ja paikkahaun avaaminen/sulkeminen.
 5. TalkBackin välilehdet, paikkahaun kohdistus, otsikkorivin ylimääräiset kohteet, mittarien yksiköt ja aurinkoaikojen kuvaukset.
 
-Käyttäjä pyysi työn lopuksi commitit ja pushin GitHubiin sekä muistimerkinnän ja jatkomuistio-päivityksen. Toimitushaara on `origin/ui-pehmea-expressive`. Main-haaraan yhdistäminen, version nosto, release-APK ja laitepäivitykset eivät kuulu toimitukseen. Käyttäjä katselmoi koodin katselmoinnin kanssa 19.9.2026 ja toimittaa mahdolliset uudet löydökset. Paikallinen debug-varmennus ei korvaa laitekokeita.
+Työn lopuksi muutokset commitoitiin ja pushattiin GitHubiin. Toimitushaara on `origin/ui-pehmea-expressive`. Main-haaraan yhdistäminen, version nosto, release-APK ja laitepäivitykset eivät kuulu toimitukseen. Koodi katselmoitiin uudelleen 19.9.2026; löydökset on käsitelty toisen kierroksen raportissa. Paikallinen debug-varmennus ei korvaa laitekokeita.

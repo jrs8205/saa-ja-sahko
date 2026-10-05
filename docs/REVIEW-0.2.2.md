@@ -2,7 +2,7 @@
 
 Tämä on toisen kierroksen historiallinen tilanne. Uusin korjausraportti: [REVIEW-0.2.2-ROUND3.md](REVIEW-0.2.2-ROUND3.md). Kolmas kierros korvaa muun muassa alla kuvatun TTL-odotuksen ja paikannimen säilytystavan.
 
-Lähtötila: puhdas työpuu, HEAD `7cd2461`, toiminnalliset muutokset commitissa `2073661`. katselmoinnin raportti tarkistettiin lähdekoodista, tuotantopolkujen regressiotesteillä sekä debug/release-käännöksillä ja lintillä. Korjattu koodi ja testit ovat commitissa **`6a761fa`**. Alla oleva tilanne kuvaa tämän korjauskierroksen lopputulosta. Fyysisiä puhelimia tai Pebbleä ei käytetty.
+Lähtötila: puhdas työpuu, HEAD `7cd2461`, toiminnalliset muutokset commitissa `2073661`. Katselmointiraportti tarkistettiin lähdekoodista, tuotantopolkujen regressiotesteillä sekä debug/release-käännöksillä ja lintillä. Korjattu koodi ja testit ovat commitissa **`6a761fa`**. Alla oleva tilanne kuvaa tämän korjauskierroksen lopputulosta. Fyysisiä puhelimia tai Pebbleä ei käytetty.
 
 ## Uudet 15 kohtaa
 
@@ -23,7 +23,7 @@ Polut ovat `app/src/main/java/fi/omasaasahko/`-hakemiston alla, ellei muuta main
 | 12 | P3, tehokkuusparannus vahvistettu | Ajastimen koko päivän tarkistukset poistettiin `setNextScheduleTimeOverride`-ajoituksella. Seuraava ajo on hakuikkunassa aikaisintaan 15 minuutin päästä; ikkunan jälkeen tai ilmoituksen valmistuttua seuraavana päivänä klo 14. Ajoitus käyttää Suomen kalenteria myös kellonsiirtopäivinä. Työn sisäinen päivitys käyttää samaa työ-ID:tä, joten se ei voi luoda käyttäjän peruuttamaa työtä uudelleen. Myöhästyneen työn kellonaikaportti säilyy. Klo 16 jälkeistä taustahakua ei lisätty: käyttäjä nimenomaisesti rajasi haut klo 14–16:een. |
 | 13 | P3, vahvistettu | Varsinainen tuotantonimeäminen siirrettiin `DevicePlaceName.describe()`-polkuun, jota `DeviceLocation.describe()` kutsuu ja regressiotestit ajavat. Testeissä käsitellään myös aikakatkaisut, peruutus, Androidin eri kaupunginosat, kunnan kopio, väärän kunnan ehdokas ja tarkkuus/lupa. Vain testeissä käytetyt `PlaceNames.resolve`, `PlaceNames.parse` ja `MmlPlaceNames.reverse` poistettiin. Käyttöliittymä käyttää yhteistä etäisyysrajaa, Geocoderilta pyydetään yksi tulos. |
 | 14 | P3 / kohdan 3 rakenne, vahvistettu | `origin` ja `nameResolved` tallennetaan yhteisellä Place-JSON-muunnoksella. Välimuistin ohjaus ei riipu näkyvän paikannimen sanamuodosta. `CURRENT_LOCATION_NAME` on yhteinen teksti; vanhan välimuistin migraatio tunnistaa sen yhdessä paikassa. |
-| 15 | P3, vahvistettu | `jatkomuistio`:n seuraavan istunnon ohje päivitettiin nykyisiin committeihin ja molempiin 0.2.2-dokumentteihin. Historialliset 0.2.1:n tiedot on erotettu nykytilasta. |
+| 15 | P3, vahvistettu | jatkomuistio:n seuraavan istunnon ohje päivitettiin nykyisiin committeihin ja molempiin 0.2.2-dokumentteihin. Historialliset 0.2.1:n tiedot on erotettu nykytilasta. |
 
 Jos uusi paikannus epäonnistuu, seuranta jatkuu viimeksi saaduille laitekoordinaateille. Tätä ei esitetä uutena onnistuneena paikannuksena: käyttöliittymä näyttää virheen ja viimeisen sijainnin ajan. Taustapaikannusta ei lisätty.
 

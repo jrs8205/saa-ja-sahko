@@ -1,11 +1,11 @@
 # Expressive-käyttöliittymän toinen katselmointi — 19.9.2026
 
-katselmoinnin toimittaman raportin kaikki 15 kohtaa tarkistettiin nykyisestä koodista. Vahvistetut toimintaviat korjattiin, puuttuvaa testikattavuutta lisättiin ja ylläpidettävyyskohdat siivottiin. Käyttäjä valtuutti korjausten jälkeen testipuhelimen asennuksen sekä commitit ja GitHub-pushin `ui-pehmea-expressive`-haaraan. Sijaintityö on pushatussa commitissa `287b669` ja UI-korjaukset commitissa `3dcde84`. Käyttäjän lisäpyynnöstä rakennettiin myös allekirjoitettu release-APK hänen itse tehtäviä asennuksiaan varten. Uusin toimitustilanne: [jatkomuistio](../jatkomuistio).
+Katselmointiraportin kaikki 15 kohtaa tarkistettiin nykyisestä koodista. Vahvistetut toimintaviat korjattiin, puuttuvaa testikattavuutta lisättiin ja ylläpidettävyyskohdat siivottiin. Korjausten jälkeen tehtiin testipuhelimen asennus sekä commitit ja GitHub-push `ui-pehmea-expressive`-haaraan. Sijaintityö on pushatussa commitissa `287b669` ja UI-korjaukset commitissa `3dcde84`. Lisäksi rakennettiin allekirjoitettu release-APK muita asennuksia varten.
 
 ## Lähtötila ja rajaus
 
 - Haara `ui-pehmea-expressive`, HEAD `d0a66f2`, pohja `main` / `f6615ee`; 12 UI- ja dokumentaatiocommittia.
-- Työpuussa oli valmiiksi kahdeksan sijaintityön tiedostoa. Käyttäjä valtuutti tässä istunnossa kaikkien vahvistettujen löydösten paikallisen korjauksen. Tämä kattaa raportin kohdan 3, vaikka vanha `katselmointipyyntö` rajasi sijaintitiedostot ulos UI-työstä.
+- Työpuussa oli valmiiksi kahdeksan sijaintityön tiedostoa. Käyttäjä valtuutti tässä istunnossa kaikkien vahvistettujen löydösten paikallisen korjauksen. Tämä kattaa raportin kohdan 3, vaikka vanha katselmointipyyntö rajasi sijaintitiedostot ulos UI-työstä.
 - Sijaintityön lähdekoodista muutettiin tällä kierroksella vain `DeviceLocation.kt`:n lopputarkistusta. Sen regressio lisättiin `DeviceLocationTest.kt`:hen ja paikannuksen dokumentaatio täsmennettiin. Aiemmat `AppViewModel`-, `DevicePlaceName`- ja muut sijaintitestimuutokset säilytettiin.
 - `AppScreen(...)`-rajapinta, sovelluksen versio 0.2.2 / versionCode 6 ja Gradle-riippuvuudet säilyvät. Alkuperäinen korjausvaihe tehtiin paikallisesti; käyttäjän myöhempi pyyntö valtuutti tämän haaran commitit, pushin ja testipuhelimen päivityksen. Main-yhdistämistä tai GitHub-releasea ei tehty.
 
@@ -55,4 +55,4 @@ API-tukena käytettiin Androidin [TextAutoSize-viitettä](https://developer.andr
 
 ## Käyttäjän pyytämä release-APK
 
-`Saa-Sahko-0.2.2-expressive-2026-09-19-release.apk` on projektin juuressa toisen henkilön puhelimen / testipuhelimen omaa asennusta varten. `assembleRelease` ja `lintRelease` onnistuivat, lintissä 0 virhettä ja 4 aiempaa varoitusta. Paketti on `fi.omasaasahko`, 0.2.2 / versionCode 6, ja allekirjoitus vastaa alkuperäistä release-avainta. APK:n SHA-256: `AC04516B10456BC34E4C1859936BC2679E270B9240F855C6672091CACFFD9259`. Release rakennettiin commitin `3dcde84` lähteistä. Sitä ei asennettu muihin laitteisiin tässä istunnossa eikä julkaistu GitHub-releasena. Aiemmat APK:t säilytettiin.
+`Saa-Sahko-0.2.2-expressive-2026-09-19-release.apk` on projektin juuressa muiden puhelimien asennusta varten. `assembleRelease` ja `lintRelease` onnistuivat, lintissä 0 virhettä ja 4 aiempaa varoitusta. Paketti on `fi.omasaasahko`, 0.2.2 / versionCode 6, ja allekirjoitus vastaa alkuperäistä release-avainta. APK:n SHA-256: `AC04516B10456BC34E4C1859936BC2679E270B9240F855C6672091CACFFD9259`. Release rakennettiin commitin `3dcde84` lähteistä. Sitä ei asennettu muihin laitteisiin tässä istunnossa eikä julkaistu GitHub-releasena. Aiemmat APK:t säilytettiin.

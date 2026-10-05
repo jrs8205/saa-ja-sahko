@@ -1,8 +1,8 @@
 # Paikannuksen viiveen korjaus 18.9.2026
 
-**Toimitus 19.9.2026:** käyttäjä valtuutti testipuhelimen päivityksen sekä commitit ja GitHub-pushin. Sijaintikorjaukset toimitetaan omana committinaan haarassa `ui-pehmea-expressive`, UI-korjaukset erikseen. testipuhelimen uusi debug-asennus sisältää myös alla kuvatun 19.9. tuoreusrajankorjauksen; asennettu APK ja käynnistyminen on varmennettu. testipuhelimeen ei tehty tällä kierroksella päivitystä. Uusin toimitustilanne ja APK-tiiviste: [jatkomuistio](../jatkomuistio).
+**Toimitus 19.9.2026:** käyttäjä valtuutti testipuhelimen päivityksen sekä commitit ja GitHub-pushin. Sijaintikorjaukset toimitetaan omana committinaan haarassa `ui-pehmea-expressive`, UI-korjaukset erikseen. testipuhelimen uusi debug-asennus sisältää myös alla kuvatun 19.9. tuoreusrajankorjauksen; asennettu APK ja käynnistyminen on varmennettu. testipuhelimeen ei tehty tällä kierroksella päivitystä. Uusin toimitustilanne ja APK-tiiviste: jatkomuistio.md.
 
-Käyttäjä havaitsi paikannuksen hitautta erityisesti Wi-Fi-yhteydellä ja lievemmin mobiilissa. Lähdekoodista vahvistui kaksi tarpeetonta odotusta. Muutokset ovat paikallisia version 0.2.2 päälle. Käyttäjän myöhemmällä asennusluvalla testipuhelin ja testipuhelin päivitettiin korjaukseen 18.9.2026. Molempien asennetut APK:t ja käynnistyminen varmennettiin. Asennustiedot ja APK-tiivisteet: [jatkomuistio](../jatkomuistio).
+Käyttäjä havaitsi paikannuksen hitautta erityisesti Wi-Fi-yhteydellä ja lievemmin mobiilissa. Lähdekoodista vahvistui kaksi tarpeetonta odotusta. Muutokset ovat paikallisia version 0.2.2 päälle. Käyttäjän myöhemmällä asennusluvalla testipuhelin ja testipuhelin päivitettiin korjaukseen 18.9.2026. Molempien asennetut APK:t ja käynnistyminen varmennettiin. Asennustiedot ja APK-tiivisteet: jatkomuistio.md.
 
 ## Syy ja korjaus
 
@@ -32,6 +32,6 @@ $env:SAA_PRICE_CHECK = '0'
 .\gradlew.bat :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:lintDebug :app:lintRelease --console=plain
 ```
 
-Tämä on paikallinen ajoitus- ja toimintavarmennus, ei puhelimella mitattu nopeutus. MML:n uuden paikan nimihaku voi yhä kestää enintään kuusi sekuntia; sääpalveluiden verkkohaut kestävät erikseen. Puhelimien Wi-Fi-/mobiilivertailua, commitia, pushia tai julkaisua ei tehty. Myöhemmin luvitettu asennus ja käynnistystarkistus on dokumentoitu handoffiin. Projektin juuren aiemmat APK:t säilytettiin; korjatut paketit ovat erikseen nimillä `Saa-Sahko-0.2.2-paikannuskorjaus-release.apk` ja `Saa-Sahko-0.2.2-paikannuskorjaus-debug.apk`.
+Tämä on paikallinen ajoitus- ja toimintavarmennus, ei puhelimella mitattu nopeutus. MML:n uuden paikan nimihaku voi yhä kestää enintään kuusi sekuntia; sääpalveluiden verkkohaut kestävät erikseen. Puhelimien Wi-Fi-/mobiilivertailua, commitia, pushia tai julkaisua ei tehty. Myöhemmin luvitettu asennus ja käynnistystarkistus on dokumentoitu jatkomuistioiin. Projektin juuren aiemmat APK:t säilytettiin; korjatut paketit ovat erikseen nimillä `Saa-Sahko-0.2.2-paikannuskorjaus-release.apk` ja `Saa-Sahko-0.2.2-paikannuskorjaus-debug.apk`.
 
 Androidin pyyntö- ja peruutussopimus: [LocationManager.getCurrentLocation](https://developer.android.com/reference/android/location/LocationManager#getCurrentLocation(java.lang.String,%20android.os.CancellationSignal,%20java.util.concurrent.Executor,%20java.util.function.Consumer%3Candroid.location.Location%3E)).

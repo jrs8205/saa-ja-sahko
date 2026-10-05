@@ -10,3 +10,12 @@ captures/
 *.apk
 *.aab
 release-signing.properties
+
+# Paikalliset työmuistiinpanot ja suunnittelureferenssit, eivät kuulu julkiseen arkistoon
+jatkomuistio
+katselmointipyyntö
+.local/
+24h-saa.png
+saa-nyt.png
+sademaara.png
+viikko-saa.png

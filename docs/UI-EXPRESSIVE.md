@@ -1,10 +1,10 @@
 # Pehmeä Expressive -käyttöliittymä — 18.9.2026
 
-19.9. katselmointikorjaukset: [kaikkien 15 kohdan tulokset](REVIEW-UI-EXPRESSIVE-ROUND2.md), UI-commit `3dcde84` GitHubin `ui-pehmea-expressive`-haarassa. Tuotannon dynaaminen teemapolku on nyt myös paikallisissa SDK 33/35 -renderöinti- ja kontrastitesteissä. testipuhelimen asennus ja käyttäjälle toimitettu release-APK on kirjattu [jatkomuistioon](../jatkomuistio).
+19.9. katselmointikorjaukset: [kaikkien 15 kohdan tulokset](REVIEW-UI-EXPRESSIVE-ROUND2.md), UI-commit `3dcde84` GitHubin `ui-pehmea-expressive`-haarassa. Tuotannon dynaaminen teemapolku on nyt myös paikallisissa SDK 33/35 -renderöinti- ja kontrastitesteissä. testipuhelimen asennus ja allekirjoitettu release-APK tehtiin samalla.
 
 Sovelluksen ilme uudistettiin haarassa `ui-pehmea-expressive`. Muutos koskee vain `fi.omasaasahko.ui`-pakettia, resursseja ja käyttöliittymätestejä. Data, ViewModelit, taustatyöt ja ilmoitukset eivät muuttuneet, eikä `AppScreen(...)`-funktion allekirjoitus.
 
-Suunnitelma: (suunnitelma, ei julkinen). Mockupit: (suunnittelukangas, ei julkinen) (yksityinen kangas, rivit ”C · Pehmeä Expressive”).
+Suunnittelussa vertailtiin kolmea suuntaa, joista valittiin ”C · Pehmeä Expressive”. Sitovat arvot on kirjattu tähän dokumenttiin.
 
 ## Periaatteet
 
@@ -36,7 +36,7 @@ Kiinteä teema (`AppTheme(dynamic = false)`) sai uudet tokenit `surfaceContainer
 | `ui/Expressive.kt` | `Radius`, `PillShape`, `isDarkTheme`, `Block`, `SourceDot`, `TonePill`, `RefreshButton`, `LocationPill`, `SettingSwitchRow` |
 | `ui/BottomNav.kt` | `AppTab`, `NavTint`, `navTint`, `FloatingNavBar` |
 | `ui/WarningColors.kt` | `warningColors(level)` |
-| `ui/Components.kt` | `ChoiceRow` pillerivalitsimena, `Notice`, `SectionTitle`, säänsymbolit ennallaan |
+| `ui/Components.kt` | `ChoiceRow` pillerivalitsimena, `Notice`, `SectionTitle`, piirretyt sääsymbolit |
 
 `AppScreen` piirtää kiinteän otsikkorivin (sää ja varoitukset: sijaintipilleri, sähkö: otsikko ja hakuaika) sekä kelluvan alapalkin. Alapalkki piilotetaan paikkahaun ajaksi. Valitun välilehden pilleri sävyttyy sisällön mukaan: sää rauhallinen vihreä, sähkö nykyisen hintaluokan väri, varoitukset korkeimman paikallisen varoitustason väri.
 
@@ -55,3 +55,9 @@ Rakenna uusi pinta `Block`-komponentilla, valitse säde `Radius`-arvoista ja hae
 ## Varmennus
 
 `validate.ps1` 18.9.2026: `assembleDebug`, `testDebugUnitTest` (122 testiä, 0 virhettä, 6 ohitettua live-testiä) ja `lintDebug` (0 virhettä, 4 aiempaa versiovaroitusta). Kuvakaappaukset syntyvät testeistä kansioon `app/build/screenshots/`. Fyysisellä puhelimella ei ole vielä kokeiltu: dynaaminen väri, eleohjauksen ja alapalkin väli sekä vedä-päivittääksesi on tarkistettava laitteella.
+
+## 5.10.2026: kontrasti ja sääsymbolit
+
+- Kaikki kiinteät tekstivärit (teema, sää-, hinta- ja varoituskortit) täyttävät WCAG AAA:n 7:1 omilla taustoillaan ja Material 3:n sävyn 90/22 pinnoilla; kuvakkeet ja pylväät vähintään 3:1. `ui/Contrast.kt` nostaa myös puhelimen dynaamisen teeman tekstiroolit 7:1:een sävyä muuttamatta; `ThemeTest` valvoo kaikkia pareja.
+- Vaalean teeman sääsymbolit piirretään tummemmilla sävyillä ja aurinko saa tumman reunaviivan ja säteet, jotta ne erottuvat kirkkaassa valossa. Viivat ovat paksummat; tuntirivin symboli on 44 dp ja viikkokortin 52 dp.
+- Lämpötilat näytetään yhden desimaalin tarkkuudella (`temperature()`), ilman negatiivista nollaa.
