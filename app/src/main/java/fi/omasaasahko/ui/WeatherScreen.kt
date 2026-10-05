@@ -322,7 +322,7 @@ private fun HourColumns(timeWidth: Dp, modifier: Modifier = Modifier, time: (@Co
 private fun HourCell(hour: WeatherHour?, modifier: Modifier) {
     Column(modifier.semantics(mergeDescendants = true) {}) {
         FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
-            WeatherSymbol(hour?.condition ?: Condition.UNKNOWN, hour?.night ?: false, Modifier.size(34.dp), hour?.description ?: Condition.UNKNOWN.label)
+            WeatherSymbol(hour?.condition ?: Condition.UNKNOWN, hour?.night ?: false, Modifier.size(44.dp), hour?.description ?: Condition.UNKNOWN.label)
             Text(temperature(hour?.temperature), style = MaterialTheme.typography.titleMedium)
         }
         Text("${decimal(hour?.wind)} m/s", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -334,7 +334,7 @@ private fun HourCell(hour: WeatherHour?, modifier: Modifier) {
 private fun DaySummary(day: WeatherDay?, modifier: Modifier) {
     Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            WeatherSymbol(day?.condition ?: Condition.UNKNOWN, false, modifier = Modifier.size(42.dp), description = day?.description ?: Condition.UNKNOWN.label)
+            WeatherSymbol(day?.condition ?: Condition.UNKNOWN, false, modifier = Modifier.size(52.dp), description = day?.description ?: Condition.UNKNOWN.label)
             Column {
                 Text(temperature(day?.high), style = MaterialTheme.typography.titleMedium)
                 Text(temperature(day?.low), color = MaterialTheme.colorScheme.onSurfaceVariant)

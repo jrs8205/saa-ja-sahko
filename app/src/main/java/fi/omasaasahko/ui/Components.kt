@@ -30,12 +30,7 @@ import kotlin.math.sin
 
 @Composable
 fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, description: String = condition.label) {
-    val dark = isDarkTheme()
-    val cloud = if (dark) Color(0xFFD0E5F7) else Color(0xFF6589B3)
-    val rearCloud = if (dark) Color(0xFF7EAACF) else Color(0xFFAAC8E5)
-    val rain = if (dark) Color(0xFF61DBFF) else Color(0xFF087FB7)
-    val snow = if (dark) Color(0xFFE6F7FF) else Color(0xFF427CBB)
-    val sun = if (dark) Color(0xFFFFD16D) else Color(0xFFECAA1F)
+    val (cloud, rearCloud, rain, snow, sun, sunEdge) = symbolColors()
     Canvas(modifier.semantics { contentDescription = description + if (night) ", yö" else "" }) {
         scale(size.width / 100f, size.height / 100f, pivot = Offset.Zero) {
             fun sunshine(x: Float, y: Float, radius: Float) {
@@ -47,13 +42,15 @@ fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, desc
                         close()
                     }
                     drawPath(moon, sun)
+                    drawPath(moon, sunEdge, style = Stroke(3f, join = StrokeJoin.Round))
                 } else {
                     for (i in 0..7) {
                         val a = i * Math.PI / 4
-                        drawLine(sun, Offset(x + cos(a).toFloat() * (radius + 5), y + sin(a).toFloat() * (radius + 5)),
-                            Offset(x + cos(a).toFloat() * (radius + 11), y + sin(a).toFloat() * (radius + 11)), 3f, StrokeCap.Round)
+                        drawLine(sunEdge, Offset(x + cos(a).toFloat() * (radius + 5), y + sin(a).toFloat() * (radius + 5)),
+                            Offset(x + cos(a).toFloat() * (radius + 12), y + sin(a).toFloat() * (radius + 12)), 4.5f, StrokeCap.Round)
                     }
                     drawCircle(sun, radius, Offset(x, y))
+                    drawCircle(sunEdge, radius, Offset(x, y), style = Stroke(3f))
                 }
             }
             fun cloudShape(x: Float, y: Float, color: Color, scale: Float = 1f) {
@@ -67,14 +64,14 @@ fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, desc
                 drawPath(path, color)
             }
             when (condition) {
-                Condition.CLEAR -> sunshine(50f, 49f, 22f)
+                Condition.CLEAR -> sunshine(50f, 50f, 25f)
                 Condition.MOSTLY_CLEAR -> {
                     sunshine(43f, 40f, 21f)
                     cloudShape(44f, 57f, cloud, 0.55f)
                 }
                 Condition.UNKNOWN -> {
-                    drawCircle(rearCloud, 23f, Offset(50f, 48f), style = Stroke(2f))
-                    drawLine(cloud, Offset(42f, 48f), Offset(58f, 48f), 3f, StrokeCap.Round)
+                    drawCircle(rearCloud, 23f, Offset(50f, 48f), style = Stroke(3.5f))
+                    drawLine(cloud, Offset(42f, 48f), Offset(58f, 48f), 4.5f, StrokeCap.Round)
                 }
                 else -> {
                     if (condition == Condition.PARTLY_CLOUDY || condition == Condition.MOSTLY_CLOUDY)
@@ -83,42 +80,46 @@ fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, desc
                     cloudShape(19f, 42f, cloud)
                     when (condition) {
                         Condition.RAIN, Condition.FREEZING_RAIN -> for (i in 0..2) {
-                            drawLine(rain, Offset(31f + i * 18, 76f), Offset(27f + i * 18, 86f), 4f, StrokeCap.Round)
+                            drawLine(rain, Offset(31f + i * 18, 75f), Offset(26f + i * 18, 87f), 5f, StrokeCap.Round)
                         }
                         Condition.DRIZZLE, Condition.FREEZING_DRIZZLE -> for (i in 0..2) {
-                            drawCircle(rain, 2f, Offset(29f + i * 20, 79f))
-                            drawCircle(rain, 2f, Offset(26f + i * 20, 88f))
+                            drawCircle(rain, 3f, Offset(29f + i * 20, 79f))
+                            drawCircle(rain, 3f, Offset(26f + i * 20, 88f))
                         }
-                        Condition.HAIL -> for (i in 0..2) drawCircle(snow, 4f, Offset(29f + i * 20, 81f), style = Stroke(2.5f))
+                        Condition.HAIL -> for (i in 0..2) drawCircle(snow, 5f, Offset(29f + i * 20, 81f), style = Stroke(3f))
                         Condition.SLEET -> {
-                            drawLine(rain, Offset(31f, 76f), Offset(27f, 86f), 4f, StrokeCap.Round)
-                            drawLine(rain, Offset(67f, 76f), Offset(63f, 86f), 4f, StrokeCap.Round)
-                            drawLine(snow, Offset(44f, 81f), Offset(54f, 81f), 2f)
-                            drawLine(snow, Offset(49f, 76f), Offset(49f, 86f), 2f)
+                            drawLine(rain, Offset(31f, 75f), Offset(26f, 87f), 5f, StrokeCap.Round)
+                            drawLine(rain, Offset(68f, 75f), Offset(63f, 87f), 5f, StrokeCap.Round)
+                            drawLine(snow, Offset(43f, 81f), Offset(55f, 81f), 3f, StrokeCap.Round)
+                            drawLine(snow, Offset(49f, 75f), Offset(49f, 87f), 3f, StrokeCap.Round)
                         }
                         Condition.SNOW -> for (i in 0..2) {
                             val x = 29f + i * 20
-                            drawLine(snow, Offset(x - 4, 80f), Offset(x + 4, 80f), 2f, StrokeCap.Round)
-                            drawLine(snow, Offset(x, 76f), Offset(x, 84f), 2f, StrokeCap.Round)
+                            drawLine(snow, Offset(x - 5, 80f), Offset(x + 5, 80f), 3f, StrokeCap.Round)
+                            drawLine(snow, Offset(x, 75f), Offset(x, 85f), 3f, StrokeCap.Round)
                         }
-                        Condition.THUNDER, Condition.THUNDER_HAIL -> drawPath(Path().apply {
-                            moveTo(50f, 64f); lineTo(39f, 80f); lineTo(49f, 80f); lineTo(44f, 95f)
-                            lineTo(62f, 73f); lineTo(51f, 73f); close()
-                        }, sun)
+                        Condition.THUNDER, Condition.THUNDER_HAIL -> {
+                            val bolt = Path().apply {
+                                moveTo(50f, 64f); lineTo(39f, 80f); lineTo(49f, 80f); lineTo(44f, 95f)
+                                lineTo(62f, 73f); lineTo(51f, 73f); close()
+                            }
+                            drawPath(bolt, sun)
+                            drawPath(bolt, sunEdge, style = Stroke(2.5f, join = StrokeJoin.Round))
+                        }
                         Condition.FOG -> {
-                            drawLine(rearCloud, Offset(20f, 78f), Offset(77f, 78f), 3f, StrokeCap.Round)
-                            drawLine(rearCloud, Offset(30f, 86f), Offset(67f, 86f), 3f, StrokeCap.Round)
+                            drawLine(rearCloud, Offset(20f, 78f), Offset(77f, 78f), 4.5f, StrokeCap.Round)
+                            drawLine(rearCloud, Offset(30f, 87f), Offset(67f, 87f), 4.5f, StrokeCap.Round)
                         }
                         else -> Unit
                     }
                     if (condition == Condition.FREEZING_RAIN || condition == Condition.FREEZING_DRIZZLE) {
-                        drawLine(snow, Offset(28f, 94f), Offset(70f, 94f), 2.5f, StrokeCap.Round)
-                        drawLine(snow, Offset(37f, 91f), Offset(40f, 97f), 2f)
-                        drawLine(snow, Offset(57f, 91f), Offset(60f, 97f), 2f)
+                        drawLine(snow, Offset(28f, 94f), Offset(70f, 94f), 3f, StrokeCap.Round)
+                        drawLine(snow, Offset(37f, 91f), Offset(40f, 97f), 2.5f, StrokeCap.Round)
+                        drawLine(snow, Offset(57f, 91f), Offset(60f, 97f), 2.5f, StrokeCap.Round)
                     }
                     if (condition == Condition.THUNDER_HAIL) {
-                        drawCircle(snow, 4f, Offset(28f, 83f), style = Stroke(2.5f))
-                        drawCircle(snow, 4f, Offset(73f, 83f), style = Stroke(2.5f))
+                        drawCircle(snow, 5f, Offset(28f, 83f), style = Stroke(3f))
+                        drawCircle(snow, 5f, Offset(73f, 83f), style = Stroke(3f))
                     }
                 }
             }

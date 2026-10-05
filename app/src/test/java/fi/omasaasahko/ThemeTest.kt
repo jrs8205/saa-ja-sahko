@@ -28,8 +28,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.text.TextLayoutResult
+import fi.omasaasahko.ui.bestContrastOn
+import fi.omasaasahko.ui.contrastRatio
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.toArgb
+import fi.omasaasahko.ui.readable
+import fi.omasaasahko.ui.symbolColors
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -53,54 +59,112 @@ class ThemeTest {
 
     @Test
     @Config(sdk = [33, 35])
-    fun `production dynamic palettes and semantic surfaces retain text contrast`() {
-        val pairs = mutableListOf<Triple<String, Color, Color>>()
+    fun `production dynamic palettes and semantic surfaces reach WCAG AAA text and AA graphics contrast`() {
+        val text = mutableListOf<Triple<String, Color, Color>>()
+        val graphics = mutableListOf<Triple<String, Color, Color>>()
         val checks = mutableListOf<Pair<ColorScheme, ColorScheme>>()
         compose.setContent {
             val context = LocalContext.current
             for (dark in listOf(false, true)) AppTheme(dark = dark) {
                 val scheme = MaterialTheme.colorScheme
                 checks.add(scheme to if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context))
-                fun pair(name: String, ink: Color, background: Color) { pairs.add(Triple("$dark $name", ink, background)) }
-                for (surface in listOf(scheme.background, scheme.surfaceContainer, scheme.surfaceContainerLow,
-                    scheme.surfaceContainerHigh, scheme.surfaceContainerHighest)) {
+                fun pair(name: String, ink: Color, background: Color) { text.add(Triple("$dark $name", ink, background)) }
+                fun shape(name: String, fill: Color, background: Color) { graphics.add(Triple("$dark $name", fill, background)) }
+                val surfaces = listOf(scheme.background, scheme.surfaceContainer, scheme.surfaceContainerLow,
+                    scheme.surfaceContainerHigh, scheme.surfaceContainerHighest)
+                for (surface in surfaces) {
                     pair("surface", scheme.onSurface, surface)
                     pair("secondary text", scheme.onSurfaceVariant, surface)
                     pair("primary text", scheme.primary, surface)
+                    pair("error", scheme.error, surface)
                 }
                 pair("inverse", scheme.inverseOnSurface, scheme.inverseSurface)
                 pair("notice", scheme.onSecondaryContainer, scheme.secondaryContainer)
-                pair("error", scheme.error, scheme.background)
                 pair("selected", scheme.onPrimaryContainer, scheme.primaryContainer)
+                pair("on primary", scheme.onPrimary, scheme.primary)
+                pair("nav idle", if (dark) scheme.onSurfaceVariant else scheme.inverseOnSurface,
+                    if (dark) scheme.surfaceContainerHighest else scheme.inverseSurface)
                 for (colors in WeatherSource.entries.map { forecastColors(it) } + sunColors()) {
                     pair("weather ink", colors.ink, colors.top)
                     pair("weather muted", colors.muted, colors.top)
                     pair("weather accent", colors.accent, colors.top)
                 }
+                for (source in WeatherSource.entries) {
+                    val colors = forecastColors(source)
+                    for (surface in surfaces) pair("source label", colors.accent, surface)
+                    shape("source dot", colors.accent, scheme.surfaceContainerHigh)
+                }
                 for (band in PriceBand.entries) {
                     val colors = priceColors(band)
                     pair("price ink", colors.ink, colors.top)
+                    pair("price ink row", colors.ink, colors.bottom)
                     pair("price accent", colors.accent, colors.top)
+                    pair("price accent row", colors.accent, colors.bottom)
+                    for (surface in surfaces) pair("price label", colors.accent, surface)
+                    pair("price pill", if (dark) colors.bottom else Color.White, colors.accent)
+                    shape("price bar", colors.accent, scheme.surfaceContainerHigh)
+                    val nav = navTint(AppTab.PRICES, band, null)
+                    pair("price nav", nav.content, nav.container)
                 }
                 for (level in WarningLevel.entries) {
                     val colors = warningColors(level)
                     pair("warning ink", colors.ink, colors.container)
                     pair("warning muted", colors.muted, colors.container)
                     pair("warning pill", colors.onAccent, colors.accent)
-                    pair("warning time", colors.ink, colors.accent.copy(alpha = 0.16f).compositeOver(colors.container))
+                    pair("warning time", colors.ink, colors.pill)
+                    shape("warning badge", colors.accent, colors.container)
+                    val nav = navTint(AppTab.WARNINGS, null, level)
+                    pair("warning nav", nav.content, nav.container)
                 }
+                val calm = navTint(AppTab.WEATHER, null, null)
+                pair("calm nav", calm.content, calm.container)
+                val symbol = symbolColors()
+                val cards = surfaces + WeatherSource.entries.map { forecastColors(it).top }
+                for (card in cards) {
+                    shape("symbol cloud", symbol.cloud, card)
+                    shape("symbol rear cloud", symbol.rearCloud, card)
+                    shape("symbol rain", symbol.rain, card)
+                    shape("symbol snow", symbol.snow, card)
+                    shape("symbol sun edge", symbol.sunEdge, card)
+                    if (symbol.sun == symbol.sunEdge) shape("symbol sun", symbol.sun, card)
+                }
+                if (symbol.sun != symbol.sunEdge) shape("symbol sun fill against its edge", symbol.sun, symbol.sunEdge)
             }
         }
         compose.runOnIdle {
             checks.forEach { (actual, expected) ->
-                assertEquals(expected.primary, actual.primary)
+                assertEquals(expected.primaryContainer, actual.primaryContainer)
                 assertEquals(expected.surfaceContainerHigh, actual.surfaceContainerHigh)
             }
-            pairs.forEach { (name, ink, background) ->
-                val a = ink.luminance(); val b = background.luminance()
-                val contrast = (maxOf(a, b) + 0.05f) / (minOf(a, b) + 0.05f)
-                assertTrue("$name contrast $contrast", contrast >= 4.5f)
+            // Robolectric's stand-in system palette has mid-tone containers no colour can carry 7:1 on;
+            // real Material You containers are tone 90 / 30, where the lift always reaches AAA.
+            fun needed(background: Color) = minOf(7f, bestContrastOn(listOf(background)) - 0.01f)
+            val failures = text.filter { (_, ink, background) -> contrastRatio(ink, background) < needed(background) } +
+                graphics.filter { (_, fill, background) -> contrastRatio(fill, background) < 3f }
+            assertTrue(failures.joinToString("; ") { (name, ink, background) ->
+                "$name ${ink.hex()} on ${background.hex()} = ${contrastRatio(ink, background)}" }, failures.isEmpty())
+        }
+    }
+
+    @Test fun `dynamic schemes are lifted to AAA text contrast without losing their hue`() {
+        for (scheme in listOf(lightColorScheme(), darkColorScheme())) {
+            val fixed = scheme.readable()
+            val surfaces = listOf(fixed.background, fixed.surfaceContainerLow, fixed.surfaceContainer,
+                fixed.surfaceContainerHigh, fixed.surfaceContainerHighest)
+            for (surface in surfaces) for (ink in listOf(fixed.onSurface, fixed.onSurfaceVariant, fixed.primary, fixed.error)) {
+                assertTrue("$ink on $surface ${contrastRatio(ink, surface)}", contrastRatio(ink, surface) >= 7f)
             }
+            assertTrue(contrastRatio(fixed.onPrimary, fixed.primary) >= 7f)
+            assertTrue(contrastRatio(fixed.onPrimaryContainer, fixed.primaryContainer) >= 7f)
+            assertTrue(contrastRatio(fixed.onSecondaryContainer, fixed.secondaryContainer) >= 7f)
+            assertTrue(contrastRatio(fixed.inverseOnSurface, fixed.inverseSurface) >= 7f)
+            assertEquals(scheme.surfaceContainerHigh, fixed.surfaceContainerHigh)
+            assertEquals(scheme.primaryContainer, fixed.primaryContainer)
+            // Material's baseline light purple is only AA on its surfaces: the lift keeps it purple.
+            if (scheme.background.luminance() > 0.5f) assertTrue(scheme.primary != fixed.primary)
+            assertTrue(fixed.primary.blue > fixed.primary.green && fixed.primary.red > fixed.primary.green)
+            // Colours that already pass stay exactly as the system defined them.
+            assertEquals(scheme.onSurface, fixed.onSurface)
         }
     }
 
@@ -187,3 +251,5 @@ class ThemeTest {
         compose.onNodeWithTag("row").assertIsOff().performClick().assertIsOn()
     }
 }
+
+private fun Color.hex() = "#%06X".format(toArgb() and 0xFFFFFF)

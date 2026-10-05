@@ -35,14 +35,14 @@ fun priceColors(band: PriceBand?): PriceColors {
     val dark = isDarkTheme()
     return when (band) {
         PriceBand.CHEAP -> if (dark)
-            PriceColors(Color(0xFF184E39), Color(0xFF142F29), Color(0xFFE2F9EB), Color(0xFF87EDB5))
-        else PriceColors(Color(0xFFD3F2DF), Color(0xFFECF9EF), Color(0xFF183F2B), Color(0xFF14623C))
+            PriceColors(Color(0xFF184E39), Color(0xFF142F29), Color(0xFFE2F9EB), Color(0xFF98F0BF))
+        else PriceColors(Color(0xFFD3F2DF), Color(0xFFECF9EF), Color(0xFF183F2B), Color(0xFF105131))
         PriceBand.MODERATE -> warmColors(WarmTone.YELLOW).let { PriceColors(it.top, it.bottom, it.ink, it.accent) }
         PriceBand.EXPENSIVE -> warmColors(WarmTone.ORANGE).let { PriceColors(it.top, it.bottom, it.ink, it.accent) }
         PriceBand.VERY_EXPENSIVE -> warmColors(WarmTone.RED).let { PriceColors(it.top, it.bottom, it.ink, it.accent) }
         PriceBand.EXTREME -> if (dark)
-            PriceColors(Color(0xFF452D61), Color(0xFF2C2440), Color(0xFFF4E9FF), Color(0xFFD7AFFF))
-        else PriceColors(Color(0xFFEADBFF), Color(0xFFF6EFFF), Color(0xFF462363), Color(0xFF752EAB))
+            PriceColors(Color(0xFF452D61), Color(0xFF2C2440), Color(0xFFF4E9FF), Color(0xFFE0C1FF))
+        else PriceColors(Color(0xFFEADBFF), Color(0xFFF6EFFF), Color(0xFF462363), Color(0xFF632692))
         null -> PriceColors(theme.surfaceContainer, theme.surfaceContainerLow, theme.onSurface, theme.onSurfaceVariant)
     }
 }

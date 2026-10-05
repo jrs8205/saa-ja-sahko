@@ -15,25 +15,27 @@ import androidx.compose.ui.unit.sp
 import fi.omasaasahko.R
 
 private val Light = lightColorScheme(
-    primary = Color(0xFF286B5E), onPrimary = Color.White,
+    primary = Color(0xFF1D4D44), onPrimary = Color.White,
     primaryContainer = Color(0xFFC8F0DF), onPrimaryContainer = Color(0xFF113B32),
     secondary = Color(0xFF51665E), secondaryContainer = Color(0xFFE0EAE4),
     tertiary = Color(0xFF896A35), tertiaryContainer = Color(0xFFF7E3BE),
     background = Color(0xFFF3F5EF), surface = Color(0xFFF3F5EF),
     surfaceContainer = Color(0xFFEBEFEB), surfaceContainerLow = Color(0xFFEEF2ED),
     surfaceContainerHigh = Color(0xFFE4EBE4), surfaceContainerHighest = Color(0xFFDDE5DE),
-    onSurface = Color(0xFF18221D), onSurfaceVariant = Color(0xFF526159), outlineVariant = Color(0xFFD4DDD5),
+    onSurface = Color(0xFF18221D), onSurfaceVariant = Color(0xFF3F4A44), outlineVariant = Color(0xFFD4DDD5),
+    onSecondaryContainer = Color(0xFF13251D), error = Color(0xFF881D16), onError = Color.White,
     inverseSurface = Color(0xFF18221D), inverseOnSurface = Color(0xFFF3F5EF),
 )
 private val Dark = darkColorScheme(
-    primary = Color(0xFF9FD5C0), onPrimary = Color(0xFF0C3829),
+    primary = Color(0xFFA5D8C4), onPrimary = Color(0xFF0C3829),
     primaryContainer = Color(0xFF244E3D), onPrimaryContainer = Color(0xFFD1EFDE),
     secondary = Color(0xFFB7CDC0), secondaryContainer = Color(0xFF31463C),
     tertiary = Color(0xFFE2C38B), tertiaryContainer = Color(0xFF4E4027),
     background = Color(0xFF101713), surface = Color(0xFF101713),
     surfaceContainer = Color(0xFF1C2720), surfaceContainerLow = Color(0xFF172019),
     surfaceContainerHigh = Color(0xFF263129), surfaceContainerHighest = Color(0xFF313D34),
-    onSurface = Color(0xFFE0EBE1), onSurfaceVariant = Color(0xFFB3C2B6), outlineVariant = Color(0xFF37473C),
+    onSurface = Color(0xFFE0EBE1), onSurfaceVariant = Color(0xFFC4D0C6), outlineVariant = Color(0xFF37473C),
+    onSecondaryContainer = Color(0xFFDDEBE2), error = Color(0xFFF4C0BE), onError = Color(0xFF4A1210),
     inverseSurface = Color(0xFFE0EBE1), inverseOnSurface = Color(0xFF101713),
 )
 
@@ -70,5 +72,5 @@ fun AppTheme(dark: Boolean = isSystemInDarkTheme(), dynamic: Boolean = true, con
     val colors = if (dynamic) {
         if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (dark) Dark else Light
-    MaterialTheme(colorScheme = colors, typography = AppTypography, content = content)
+    MaterialTheme(colorScheme = colors.readable(), typography = AppTypography, content = content)
 }

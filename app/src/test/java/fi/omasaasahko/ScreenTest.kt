@@ -116,7 +116,7 @@ class ScreenTest {
             PriceSlot(start.plusSeconds(i * 900L), start.plusSeconds((i + 1) * 900L), BigDecimal(value))
         }
         compose.setContent { AppTheme(dark = false, dynamic = false) { PriceChart(rows, -1, -1, {}) } }
-        val accent = Color.rgb(0x14, 0x62, 0x3C)
+        val accent = Color.rgb(0x10, 0x51, 0x31)
         for (i in 0..2) {
             val bitmap = compose.onNodeWithTag("price-plot-$i", useUnmergedTree = true).captureToImage().asAndroidBitmap()
             // Axis is -10..20, with 8 dp inset in the 220 dp canvas.
@@ -138,7 +138,7 @@ class ScreenTest {
             RainBlock(rain, times, HELSINKI, WeatherSource.FMI) {}
         } }
         val bitmap = compose.onNodeWithTag("rain-plot").captureToImage().asAndroidBitmap()
-        val accent = Color.rgb(0x17, 0x66, 0x9E)
+        val accent = Color.rgb(0x10, 0x47, 0x6F)
         val painted = (0 until bitmap.height).count { bitmap.getPixel(bitmap.width / 48, it) == accent }
         assertTrue("0.1 mm was exaggerated to $painted pixels", painted in 1..4)
         screenshot("review-tablet-rain")

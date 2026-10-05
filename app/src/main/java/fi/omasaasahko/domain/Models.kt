@@ -18,7 +18,7 @@ fun updatedLabel(time: Instant?): String = time?.atZone(HELSINKI)
     ?.format(DateTimeFormatter.ofPattern("d.M. HH.mm", FINNISH)) ?: "–"
 fun decimal(value: Double?, places: Int = 1): String = value?.takeIf { it.isFinite() }
     ?.let { String.format(FINNISH, "%.${places}f", if (kotlin.math.abs(it) < 0.5 * Math.pow(10.0, -places.toDouble())) 0.0 else it) } ?: "–"
-fun temperature(value: Double?): String = value?.let { decimal(it, 0) + "°" } ?: "–"
+fun temperature(value: Double?): String = value?.let { decimal(it, 1) + "°" } ?: "–"
 
 enum class WeatherSource(val title: String) { FMI("Ilmatieteen laitos"), OPEN_METEO("Open-Meteo") }
 enum class Condition(val label: String) {

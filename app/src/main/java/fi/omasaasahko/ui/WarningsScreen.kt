@@ -111,7 +111,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                     Text(warning.event, style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(top = 12.dp))
                     Text(warning.localAreas(place!!).joinToString { it.name }, style = MaterialTheme.typography.titleSmall, color = colors.muted)
                     TonePill("${updatedLabel(warning.onset)} – ${updatedLabel(warning.expires)}",
-                        colors.accent.copy(alpha = 0.16f), colors.ink, Modifier.padding(top = 12.dp), R.drawable.ic_clock)
+                        colors.pill, colors.ink, Modifier.padding(top = 12.dp), R.drawable.ic_clock)
                     Text(warning.description, modifier = Modifier.padding(top = 12.dp))
                     if (warning.instruction.isNotBlank()) Text(warning.instruction, modifier = Modifier.padding(top = 8.dp))
                 }
