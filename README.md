@@ -4,6 +4,8 @@ Suomenkielinen Android-sovellus, joka näyttää Ilmatieteen laitoksen ja Open-M
 
 **Vaatimukset:** Android 13 tai uudempi (API 33). Kohdealusta Android 17 (API 37). Versio 0.3.0.
 
+**Rekisteröity Googlelle.** Paketin nimi ja allekirjoitusavain on rekisteröity Googlen Android Developer Consoleen, joten sovellus asentuu jatkossakin normaalisti, kun Googlen uudet [sivulataussäännöt](https://developer.android.com/developer-verification) tulevat voimaan.
+
 ## Ominaisuudet
 
 - **Sää.** FMI ja Open-Meteo rinnakkain: nykyhetki, 24 tunnin vertailu (lämpötila 0,1 °C:n tarkkuudella, tuuli, sade ja sateen riski), sademääräkaavio sekä viikon ennuste avattavine tunteineen. Lähimmän FMI-aseman tuore havainto ja auringon nousu- ja laskuajat.
