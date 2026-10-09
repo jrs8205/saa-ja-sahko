@@ -5,7 +5,7 @@ Korjausjulkaisu 9.10.2026: valittu paikka näkyy sääruudun otsikossa. Versio *
 - Kun haettu tai suosikkipaikka on valittuna, "VALITTU PAIKKA" -otsikon alla näkyy paikan nimi (suosikilla tähti, esim. "★ Porvoo") sekä laji ja lähde, esimerkiksi "Kunta · Maanmittauslaitos". Aiemmin nimi puuttui ja ainoa teksti oli paluunappi "Nykyinen sijainti", joka luki kuin paikan nimi. Nappi on nyt "Palaa nykyiseen sijaintiin". Sää haettiin jo ennenkin valitun paikan mukaan.
 - Release rakennettu `build-release.ps1`-skriptillä: R8, APK Signature Scheme v3, sama julkaisuvarmenne `C7:0B:B7:BE:…:FF:96:5E`. Symbolikartta talletettu varmuuskopiokansioon `mapping-0.3.1-8/`.
 - Tiedosto projektin juuressa: `Saa-Sahko-0.3.1-release.apk`, 3,2 MB, SHA-256 `6520DC530BE62CD75E7159AC03010A98F3242DC14970191A92E304825B176D02`.
-- Puhelinasennukset tehdään käsin myöhemmin; GitHub-julkaisua ei ole vielä tehty.
+- [GitHub-julkaisu v0.3.1](https://github.com/jrs8205/saa-ja-sahko/releases/tag/v0.3.1) sisältää APK:n, julkisen varmenteen ja RELEASE-INFO.txt-tiedoston. Puhelinasennukset tehdään käsin myöhemmin.
 
 ---
 
