@@ -154,8 +154,14 @@
     <string name="includes_vat">Includes 25.5% VAT</string>
     <string name="excludes_vat">Price excl. VAT · VAT 0%</string>
     <string name="tomorrow">Tomorrow</string>
-    <string name="quarter_prices_count">Quarter-hour prices · %1$d slots</string>
-    <string name="hour_averages_count">Hourly averages · %1$d hours</string>
+    <plurals name="quarter_prices_count">
+        <item quantity="one">Quarter-hour prices · %d slot</item>
+        <item quantity="other">Quarter-hour prices · %d slots</item>
+    </plurals>
+    <plurals name="hour_averages_count">
+        <item quantity="one">Hourly averages · %d hour</item>
+        <item quantity="other">Hourly averages · %d hours</item>
+    </plurals>
     <string name="loading_prices">Loading prices…</string>
     <string name="tomorrow_prices_unavailable">Tomorrow’s prices aren’t available yet. They’ll appear here once the price service publishes them.</string>
     <string name="prices_unavailable">No prices available. Refresh or check your network connection.</string>

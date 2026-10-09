@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -101,7 +102,7 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
         }
         item {
             SectionTitle(language.day(date),
-                stringResource(if (state.resolution == Resolution.QUARTER) R.string.quarter_prices_count else R.string.hour_averages_count, rows.size))
+                pluralStringResource(if (state.resolution == Resolution.QUARTER) R.plurals.quarter_prices_count else R.plurals.hour_averages_count, rows.size, rows.size))
         }
         if (available.isEmpty()) {
             item {

@@ -153,8 +153,14 @@
     <string name="includes_vat">Sisältää ALV 25,5 %</string>
     <string name="excludes_vat">Veroton hinta · ALV 0 %</string>
     <string name="tomorrow">Huomenna</string>
-    <string name="quarter_prices_count">Varttihinnat · %1$d varttia</string>
-    <string name="hour_averages_count">Tuntikeskiarvot · %1$d tuntia</string>
+    <plurals name="quarter_prices_count">
+        <item quantity="one">Varttihinnat · %d vartti</item>
+        <item quantity="other">Varttihinnat · %d varttia</item>
+    </plurals>
+    <plurals name="hour_averages_count">
+        <item quantity="one">Tuntikeskiarvot · %d tunti</item>
+        <item quantity="other">Tuntikeskiarvot · %d tuntia</item>
+    </plurals>
     <string name="loading_prices">Haetaan hintoja…</string>
     <string name="tomorrow_prices_unavailable">Huomisen hinnat eivät ole vielä saatavilla. Ne ilmestyvät tähän, kun ne julkaistaan hintapalvelussa.</string>
     <string name="prices_unavailable">Hintoja ei ole saatavilla. Päivitä näkymä tai tarkista verkkoyhteys.</string>

@@ -28,6 +28,8 @@ android {
         buildConfigField("String", "MML_API_KEY", "\"$mmlApiKey\"")
     }
     buildFeatures { compose = true; buildConfig = true }
+    // Only the languages the app ships; library resources in other languages would bloat the APK.
+    androidResources { localeFilters += listOf("en", "fi", "sv") }
     buildTypes {
         release {
             isMinifyEnabled = true

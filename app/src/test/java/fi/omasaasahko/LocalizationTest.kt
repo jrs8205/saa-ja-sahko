@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import fi.omasaasahko.data.*
 import fi.omasaasahko.domain.*
@@ -36,9 +37,7 @@ class LocalizationTest {
     @Test fun `navigation and place search speak Swedish`() {
         RuntimeEnvironment.setQualifiers("sv-rFI-w411dp-h891dp-xhdpi")
         compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
-        compose.onNodeWithText("Väder").assertIsDisplayed()
-        compose.onNodeWithText("Elpris").assertIsDisplayed()
-        compose.onNodeWithText("Varningar").assertIsDisplayed()
+        listOf("Väder", "Elpris", "Varningar").forEach { compose.onNodeWithText(it, useUnmergedTree = true).assertTextFits() }
         compose.onNodeWithContentDescription("Uppdatera").assertIsDisplayed()
         compose.onNodeWithTag("open-place-search").performClick()
         compose.onNodeWithText("Sök ort").assertIsDisplayed()
@@ -50,8 +49,7 @@ class LocalizationTest {
 
     @Test fun `navigation and place search speak English`() {
         compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
-        compose.onNodeWithText("Warnings").assertIsDisplayed()
-        compose.onNodeWithText("Electricity").assertIsDisplayed()
+        listOf("Weather", "Electricity", "Warnings").forEach { compose.onNodeWithText(it, useUnmergedTree = true).assertTextFits() }
         compose.onNodeWithTag("open-place-search").performClick()
         compose.onNodeWithText("Find a place").assertIsDisplayed()
         compose.onNodeWithText("Municipality or place name").assertIsDisplayed()
@@ -186,6 +184,44 @@ class LocalizationTest {
         compose.onNodeWithTag("tab-warnings").performClick()
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Tracking: Current location · 16 Sep 12:10"))
         compose.onNodeWithText("Tracking: Current location · 16 Sep 12:10").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "sv-rFI-w320dp-h891dp-xhdpi")
+    fun `narrow Swedish electricity screen keeps selectors and summaries whole`() {
+        var state by mutableStateOf(PreviewData.state)
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {}, { state = state.copy(resolution = it) }) } }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("sun-source"))
+        compose.onNodeWithTag("sun-source").assertTextFits()
+        compose.onNodeWithTag("tab-prices").performClick()
+        listOf("I dag", "I morgon", "Kvart", "Timme").forEach { label ->
+            compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText(label))
+            compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits()
+            compose.onNodeWithText(label).assertHeightIsAtLeast(44.dp).performClick().assertIsSelected()
+        }
+        listOf("Billigast", "Medelpris", "Dyrast").forEach { label ->
+            compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText(label))
+            compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits(singleLine = false)
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "en-rGB-w320dp-h891dp-xhdpi")
+    fun `narrow English electricity screen keeps selectors and summaries whole`() {
+        var state by mutableStateOf(PreviewData.state)
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {}, { state = state.copy(resolution = it) }) } }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("sun-source"))
+        compose.onNodeWithTag("sun-source").assertTextFits()
+        compose.onNodeWithTag("tab-prices").performClick()
+        listOf("Today", "Tomorrow", "Quarter hour", "Hour").forEach { label ->
+            compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText(label))
+            compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits()
+            compose.onNodeWithText(label).assertHeightIsAtLeast(44.dp).performClick().assertIsSelected()
+        }
+        listOf("Cheapest", "Average", "Most expensive").forEach { label ->
+            compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText(label))
+            compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits(singleLine = false)
+        }
     }
 
     @Test fun `English phone sees English clock punctuation`() {

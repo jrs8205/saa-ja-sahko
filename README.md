@@ -1,6 +1,6 @@
 # Sää & Sähkö
 
-Suomenkielinen Android-sovellus, joka näyttää Ilmatieteen laitoksen ja Open-Meteon sääennusteet rinnakkain, Suomen pörssisähkön hinnat ja FMI:n säävaroitukset. Toteutettu Kotlinilla, Jetpack Composella ja Material 3:lla.
+Android-sovellus, joka näyttää Ilmatieteen laitoksen ja Open-Meteon sääennusteet rinnakkain, Suomen pörssisähkön hinnat ja FMI:n säävaroitukset. Käyttöliittymä on suomeksi, ruotsiksi ja englanniksi. Toteutettu Kotlinilla, Jetpack Composella ja Material 3:lla.
 
 **Vaatimukset:** Android 13 tai uudempi (API 33). Kohdealusta Android 17 (API 37). Versio 0.3.0.
 
@@ -12,6 +12,7 @@ Suomenkielinen Android-sovellus, joka näyttää Ilmatieteen laitoksen ja Open-M
 - **Sähkö.** Tämän ja huomisen päivän varttihinnat ja tuntikeskiarvot, päivän tilastot, vieritettävä kaavio ja viisi hintaluokkaa väreineen. ALV 25,5 % -kytkin, hinnat kolmella desimaalilla. Valinnainen ilmoitus huomisen hinnoista, kun ne on julkaistu (taustahaku klo 14–16).
 - **Varoitukset.** Sijaintiin osuvat FMI:n keltaiset, oranssit ja punaiset varoitukset viideksi päiväksi, alue ratkaistaan virallisista CAP-polygoneista. Valinnaiset taustailmoitukset 15, 30 tai 60 minuutin välein.
 - **Paikka.** Puhelimen sijainti tai Maanmittauslaitoksen paikkahaku ja suosikit (enintään 50).
+- **Kielet.** Suomi, ruotsi ja englanti puhelimen kielen mukaan: suomi ja ruotsi omalla kielellään, muut kielet englanniksi. Kielen voi vaihtaa sovelluskohtaisesti Androidin asetuksista. Kellonajat, päivämäärät ja desimaalierotin seuraavat kieltä, FMI:n varoitustekstit ja Maanmittauslaitoksen paikannimet haetaan sovelluksen kielellä. Tarkemmin: [docs/LOCALIZATION.md](docs/LOCALIZATION.md).
 - **Ulkoasu.** Vaalea ja tumma teema sekä puhelimen Material You -värit. Tekstien kontrasti nostetaan WCAG AAA -tasolle (7:1) ja kuvakkeiden vähintään 3:1:een myös puhelimen omilla väreillä, jotta näkymä erottuu kirkkaassa auringonvalossa.
 - **Yksityisyys.** Ei käyttäjätiliä, analytiikkaa, taustapaikannusta eikä omaa palvelinta. Koordinaatit lähetetään vain FMI:lle, Open-Meteolle ja MML:lle hakuja varten. Välimuisti pysyy sovelluksen omassa tallennustilassa.
 
@@ -47,6 +48,7 @@ $env:SAA_LIVE_API_TESTS = '1'
 - `domain`: ennuste- ja hintamallit, aikajaksot ja BigDecimal-hintalaskenta.
 - `data`: FMI-, Open-Meteo-, Elering- ja MML-haut, atominen välimuisti, varoitusten tulkinta.
 - `ui`: teema ja kontrastin varmistus, piirretyt sääsymbolit, sää-, sähkö- ja varoitusnäkymät.
+- `res/values`, `values-fi`, `values-sv`: käyttöliittymän tekstit englanniksi (oletus), suomeksi ja ruotsiksi.
 - `AppViewModel` ja `WarningsViewModel`: tilat, päivitykset ja WorkManager-taustahaut.
 
 Tarkemmat kuvaukset: [sään ja varoitusten varmennus](docs/WEATHER-VERIFICATION.md), [hintavarmennus](docs/PRICE-VERIFICATION.md), [käyttöliittymä](docs/UI-EXPRESSIVE.md) ja [paikannus](docs/LOCATION-0.2.2.md).

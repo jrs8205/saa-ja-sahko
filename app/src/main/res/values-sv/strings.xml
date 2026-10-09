@@ -153,8 +153,14 @@
     <string name="includes_vat">Inkl. moms 25,5 %</string>
     <string name="excludes_vat">Pris utan moms · moms 0 %</string>
     <string name="tomorrow">I morgon</string>
-    <string name="quarter_prices_count">Kvartspriser · %1$d kvartar</string>
-    <string name="hour_averages_count">Timmedelpriser · %1$d timmar</string>
+    <plurals name="quarter_prices_count">
+        <item quantity="one">Kvartspriser · %d kvart</item>
+        <item quantity="other">Kvartspriser · %d kvartar</item>
+    </plurals>
+    <plurals name="hour_averages_count">
+        <item quantity="one">Timmedelpriser · %d timme</item>
+        <item quantity="other">Timmedelpriser · %d timmar</item>
+    </plurals>
     <string name="loading_prices">Hämtar priser…</string>
     <string name="tomorrow_prices_unavailable">Morgondagens priser är inte tillgängliga ännu. De visas här när pristjänsten har publicerat dem.</string>
     <string name="prices_unavailable">Inga priser tillgängliga. Uppdatera vyn eller kontrollera nätverksanslutningen.</string>
