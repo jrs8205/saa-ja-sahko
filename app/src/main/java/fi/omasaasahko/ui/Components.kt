@@ -31,7 +31,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, description: String = condition.label) {
+fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, description: String = condition.text.label()) {
     val (cloud, rearCloud, rain, snow, sun, sunEdge) = symbolColors()
     val label = if (night) stringResource(R.string.symbol_night, description) else description
     Canvas(modifier.semantics { contentDescription = label }) {

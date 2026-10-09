@@ -259,7 +259,7 @@ class ScreenTest {
         for (night in listOf(false, true)) for (provider in WeatherSource.entries) for (scale in listOf(1f, 1.25f, 1.6f)) {
             compose.runOnIdle { dark = night; source = provider; fontScale = scale }
             compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("sun-source"))
-            compose.onNodeWithTag("sun-source").assertTextEquals(provider.title).assertTextFits()
+            compose.onNodeWithTag("sun-source").assertTextEquals(if (provider == WeatherSource.FMI) "Ilmatieteen laitos" else "Open-Meteo").assertTextFits()
             compose.onNode(hasScrollAction()).performScrollToNode(hasContentDescription("Auringonnousu 06.50"))
             compose.onNodeWithContentDescription("Auringonnousu 06.50").assertTextFits()
             compose.onNode(hasScrollAction()).performScrollToNode(hasContentDescription("Auringonlasku 19.39"))

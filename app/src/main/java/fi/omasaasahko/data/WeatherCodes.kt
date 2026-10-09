@@ -1,12 +1,14 @@
 package fi.omasaasahko.data
 
 import fi.omasaasahko.domain.Condition
+import fi.omasaasahko.domain.WeatherText
+import fi.omasaasahko.domain.WeatherText.*
 
-data class WeatherCode(val condition: Condition, val description: String, val night: Boolean = false)
+data class WeatherCode(val condition: Condition, val description: WeatherText, val night: Boolean = false)
 
 /** Official FMI and Open-Meteo code tables checked on 2026-09-16. */
 object WeatherCodes {
-    private fun code(condition: Condition, description: String = condition.label) = WeatherCode(condition, description)
+    private fun code(condition: Condition, description: WeatherText = condition.text) = WeatherCode(condition, description)
     private val unknown = code(Condition.UNKNOWN)
     // https://en.ilmatieteenlaitos.fi/weather-symbols (codes in the linked SVG names).
     private val fmi = buildMap {
@@ -14,25 +16,22 @@ object WeatherCodes {
         put(4, code(Condition.PARTLY_CLOUDY)); put(6, code(Condition.MOSTLY_CLOUDY)); put(7, code(Condition.CLOUDY))
         put(9, code(Condition.FOG)); put(11, code(Condition.DRIZZLE))
         put(14, code(Condition.FREEZING_DRIZZLE)); put(17, code(Condition.FREEZING_RAIN))
-        put(21, code(Condition.RAIN, "Yksittäisiä sadekuuroja"))
-        put(24, code(Condition.RAIN, "Paikoin sadekuuroja")); put(27, code(Condition.RAIN, "Sadekuuroja"))
-        val intensity = listOf("heikkoa", "kohtalaista", "voimakasta")
-        val plural = listOf("heikkoja", "kohtalaisia", "voimakkaita")
-        for (i in 0..2) {
-            put(31 + i, code(Condition.RAIN, "Puolipilvistä ja ajoittain ${intensity[i]} sadetta"))
-            put(34 + i, code(Condition.RAIN, "Melkein pilvistä ja ajoittain ${intensity[i]} sadetta"))
-            put(37 + i, code(Condition.RAIN, "${intensity[i].replaceFirstChar { it.titlecase() }} vesisadetta"))
-            put(41 + i, code(Condition.SLEET, "Yksittäisiä ${plural[i]} räntäkuuroja"))
-            put(44 + i, code(Condition.SLEET, "Paikoin ${plural[i]} räntäkuuroja"))
-            put(47 + i, code(Condition.SLEET, "${intensity[i].replaceFirstChar { it.titlecase() }} räntäsadetta"))
-            put(51 + i, code(Condition.SNOW, "Yksittäisiä ${plural[i]} lumikuuroja"))
-            put(54 + i, code(Condition.SNOW, "Paikoin ${plural[i]} lumikuuroja"))
-            put(57 + i, code(Condition.SNOW, "${intensity[i].replaceFirstChar { it.titlecase() }} lumisadetta"))
-        }
-        put(61, code(Condition.HAIL, "Yksittäisiä raekuuroja"))
-        put(64, code(Condition.HAIL, "Paikoin raekuuroja")); put(67, code(Condition.HAIL, "Raekuuroja"))
-        put(71, code(Condition.THUNDER, "Yksittäisiä ukkoskuuroja"))
-        put(74, code(Condition.THUNDER, "Paikoin ukkoskuuroja")); put(77, code(Condition.THUNDER, "Ukkoskuuroja"))
+        put(21, code(Condition.RAIN, ISOLATED_SHOWERS))
+        put(24, code(Condition.RAIN, SCATTERED_SHOWERS)); put(27, code(Condition.RAIN, SHOWERS))
+        // Codes 31..59 come in light/moderate/heavy triplets.
+        listOf(PARTLY_CLOUDY_LIGHT_RAIN, PARTLY_CLOUDY_MODERATE_RAIN, PARTLY_CLOUDY_HEAVY_RAIN).forEachIndexed { i, text -> put(31 + i, code(Condition.RAIN, text)) }
+        listOf(MOSTLY_CLOUDY_LIGHT_RAIN, MOSTLY_CLOUDY_MODERATE_RAIN, MOSTLY_CLOUDY_HEAVY_RAIN).forEachIndexed { i, text -> put(34 + i, code(Condition.RAIN, text)) }
+        listOf(LIGHT_RAIN, MODERATE_RAIN, HEAVY_RAIN).forEachIndexed { i, text -> put(37 + i, code(Condition.RAIN, text)) }
+        listOf(ISOLATED_LIGHT_SLEET_SHOWERS, ISOLATED_MODERATE_SLEET_SHOWERS, ISOLATED_HEAVY_SLEET_SHOWERS).forEachIndexed { i, text -> put(41 + i, code(Condition.SLEET, text)) }
+        listOf(SCATTERED_LIGHT_SLEET_SHOWERS, SCATTERED_MODERATE_SLEET_SHOWERS, SCATTERED_HEAVY_SLEET_SHOWERS).forEachIndexed { i, text -> put(44 + i, code(Condition.SLEET, text)) }
+        listOf(LIGHT_SLEET, MODERATE_SLEET, HEAVY_SLEET).forEachIndexed { i, text -> put(47 + i, code(Condition.SLEET, text)) }
+        listOf(ISOLATED_LIGHT_SNOW_SHOWERS, ISOLATED_MODERATE_SNOW_SHOWERS, ISOLATED_HEAVY_SNOW_SHOWERS).forEachIndexed { i, text -> put(51 + i, code(Condition.SNOW, text)) }
+        listOf(SCATTERED_LIGHT_SNOW_SHOWERS, SCATTERED_MODERATE_SNOW_SHOWERS, SCATTERED_HEAVY_SNOW_SHOWERS).forEachIndexed { i, text -> put(54 + i, code(Condition.SNOW, text)) }
+        listOf(LIGHT_SNOW, MODERATE_SNOW, HEAVY_SNOW).forEachIndexed { i, text -> put(57 + i, code(Condition.SNOW, text)) }
+        put(61, code(Condition.HAIL, ISOLATED_HAIL_SHOWERS))
+        put(64, code(Condition.HAIL, SCATTERED_HAIL_SHOWERS)); put(67, code(Condition.HAIL, HAIL_SHOWERS))
+        put(71, code(Condition.THUNDER, ISOLATED_THUNDER_SHOWERS))
+        put(74, code(Condition.THUNDER, SCATTERED_THUNDER_SHOWERS)); put(77, code(Condition.THUNDER, THUNDER_SHOWERS))
     }
 
     fun fmi(symbol: Int?): WeatherCode {
@@ -49,29 +48,29 @@ object WeatherCodes {
         2 -> code(Condition.PARTLY_CLOUDY)
         3 -> code(Condition.CLOUDY)
         45 -> code(Condition.FOG)
-        48 -> code(Condition.FOG, "Huurresumua")
-        51 -> code(Condition.DRIZZLE, "Heikkoa tihkusadetta")
-        53 -> code(Condition.DRIZZLE, "Kohtalaista tihkusadetta")
-        55 -> code(Condition.DRIZZLE, "Voimakasta tihkusadetta")
-        56 -> code(Condition.FREEZING_DRIZZLE, "Heikkoa jäätävää tihkua")
-        57 -> code(Condition.FREEZING_DRIZZLE, "Voimakasta jäätävää tihkua")
-        61 -> code(Condition.RAIN, "Heikkoa vesisadetta")
-        63 -> code(Condition.RAIN, "Kohtalaista vesisadetta")
-        65 -> code(Condition.RAIN, "Voimakasta vesisadetta")
-        66 -> code(Condition.FREEZING_RAIN, "Heikkoa jäätävää sadetta")
-        67 -> code(Condition.FREEZING_RAIN, "Voimakasta jäätävää sadetta")
-        71 -> code(Condition.SNOW, "Heikkoa lumisadetta")
-        73 -> code(Condition.SNOW, "Kohtalaista lumisadetta")
-        75 -> code(Condition.SNOW, "Voimakasta lumisadetta")
-        77 -> code(Condition.SNOW, "Lumijyväsiä")
-        80 -> code(Condition.RAIN, "Heikkoja sadekuuroja")
-        81 -> code(Condition.RAIN, "Kohtalaisia sadekuuroja")
-        82 -> code(Condition.RAIN, "Voimakkaita sadekuuroja")
-        85 -> code(Condition.SNOW, "Heikkoja lumikuuroja")
-        86 -> code(Condition.SNOW, "Voimakkaita lumikuuroja")
+        48 -> code(Condition.FOG, FREEZING_FOG)
+        51 -> code(Condition.DRIZZLE, LIGHT_DRIZZLE)
+        53 -> code(Condition.DRIZZLE, MODERATE_DRIZZLE)
+        55 -> code(Condition.DRIZZLE, DENSE_DRIZZLE)
+        56 -> code(Condition.FREEZING_DRIZZLE, LIGHT_FREEZING_DRIZZLE)
+        57 -> code(Condition.FREEZING_DRIZZLE, DENSE_FREEZING_DRIZZLE)
+        61 -> code(Condition.RAIN, LIGHT_RAIN)
+        63 -> code(Condition.RAIN, MODERATE_RAIN)
+        65 -> code(Condition.RAIN, HEAVY_RAIN)
+        66 -> code(Condition.FREEZING_RAIN, LIGHT_FREEZING_RAIN)
+        67 -> code(Condition.FREEZING_RAIN, HEAVY_FREEZING_RAIN)
+        71 -> code(Condition.SNOW, LIGHT_SNOW)
+        73 -> code(Condition.SNOW, MODERATE_SNOW)
+        75 -> code(Condition.SNOW, HEAVY_SNOW)
+        77 -> code(Condition.SNOW, SNOW_GRAINS)
+        80 -> code(Condition.RAIN, LIGHT_RAIN_SHOWERS)
+        81 -> code(Condition.RAIN, MODERATE_RAIN_SHOWERS)
+        82 -> code(Condition.RAIN, HEAVY_RAIN_SHOWERS)
+        85 -> code(Condition.SNOW, LIGHT_SNOW_SHOWERS)
+        86 -> code(Condition.SNOW, HEAVY_SNOW_SHOWERS)
         95 -> code(Condition.THUNDER)
-        96 -> code(Condition.THUNDER_HAIL, "Ukkosta ja heikkoja rakeita")
-        99 -> code(Condition.THUNDER_HAIL, "Ukkosta ja voimakkaita rakeita")
+        96 -> code(Condition.THUNDER_HAIL, THUNDER_LIGHT_HAIL)
+        99 -> code(Condition.THUNDER_HAIL, THUNDER_HEAVY_HAIL)
         else -> unknown
     }
 }

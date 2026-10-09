@@ -34,6 +34,11 @@ class WeatherCodesTest {
         assertEquals(28, families.values.sumOf { it.size })
         families.forEach { (condition, codes) -> codes.forEach { assertEquals("WMO $it", condition, WeatherCodes.wmo(it).condition) } }
         assertNotEquals(WeatherCodes.wmo(61).description, WeatherCodes.wmo(65).description)
+        assertEquals(WeatherText.LIGHT_RAIN, WeatherCodes.wmo(61).description)
+        assertEquals(WeatherText.LIGHT_RAIN, WeatherCodes.fmi(37).description)
+        assertEquals(WeatherText.SCATTERED_LIGHT_SNOW_SHOWERS, WeatherCodes.fmi(154).description)
+        assertEquals(WeatherText.THUNDER_HEAVY_HAIL, WeatherCodes.wmo(99).description)
+        assertEquals(WeatherText.CLEAR, WeatherCodes.wmo(0).description)
         assertNotEquals(WeatherCodes.fmi(31).description, WeatherCodes.fmi(39).description)
         assertEquals(Condition.UNKNOWN, WeatherCodes.wmo(100).condition)
     }

@@ -17,13 +17,14 @@ fun decimal(value: Double?, language: AppLanguage, places: Int = 1): String = va
     ?.let { language.number(if (kotlin.math.abs(it) < 0.5 * Math.pow(10.0, -places.toDouble())) 0.0 else it, places) } ?: "–"
 fun temperature(value: Double?, language: AppLanguage): String = value?.let { decimal(it, language) + "°" } ?: "–"
 
-enum class WeatherSource(val title: String) { FMI("Ilmatieteen laitos"), OPEN_METEO("Open-Meteo") }
-enum class Condition(val label: String) {
-    CLEAR("Selkeää"), MOSTLY_CLEAR("Melkein selkeää"), PARTLY_CLOUDY("Puolipilvistä"),
-    MOSTLY_CLOUDY("Melkein pilvistä"), CLOUDY("Pilvistä"),
-    DRIZZLE("Tihkusadetta"), FREEZING_DRIZZLE("Jäätävää tihkua"), FREEZING_RAIN("Jäätävää sadetta"),
-    RAIN("Vesisadetta"), SLEET("Räntää"), SNOW("Lumisadetta"),
-    HAIL("Rakeita"), THUNDER("Ukkosta"), THUNDER_HAIL("Ukkosta ja rakeita"), FOG("Sumua"), UNKNOWN("Säätieto puuttuu")
+enum class WeatherSource { FMI, OPEN_METEO }
+/** Symbol families; [text] is the plain description when a code table has nothing more specific. */
+enum class Condition(val text: WeatherText) {
+    CLEAR(WeatherText.CLEAR), MOSTLY_CLEAR(WeatherText.MOSTLY_CLEAR), PARTLY_CLOUDY(WeatherText.PARTLY_CLOUDY),
+    MOSTLY_CLOUDY(WeatherText.MOSTLY_CLOUDY), CLOUDY(WeatherText.CLOUDY),
+    DRIZZLE(WeatherText.DRIZZLE), FREEZING_DRIZZLE(WeatherText.FREEZING_DRIZZLE), FREEZING_RAIN(WeatherText.FREEZING_RAIN),
+    RAIN(WeatherText.RAIN), SLEET(WeatherText.SLEET), SNOW(WeatherText.SNOW),
+    HAIL(WeatherText.HAIL), THUNDER(WeatherText.THUNDER), THUNDER_HAIL(WeatherText.THUNDER_HAIL), FOG(WeatherText.FOG), UNKNOWN(WeatherText.UNKNOWN)
 }
 const val CURRENT_LOCATION_NAME = "Nykyinen sijainti"
 enum class PlaceOrigin { DEVICE, SELECTED, UNKNOWN }
@@ -53,14 +54,14 @@ data class WeatherHour(
     val wind: Double? = null, val windDirection: Double? = null, val rain: Double? = null,
     val rainProbability: Double? = null, val condition: Condition = Condition.UNKNOWN,
     val night: Boolean = false,
-    val description: String = condition.label,
+    val description: WeatherText = condition.text,
 )
 data class WeatherDay(
     val date: LocalDate, val low: Double?, val high: Double?, val rain: Double?,
     val probability: Double?, val wind: Double?, val condition: Condition,
     val sunrise: Instant? = null, val sunset: Instant? = null, val uvMax: Double? = null,
     val complete: Boolean = true,
-    val description: String = condition.label,
+    val description: WeatherText = condition.text,
 )
 data class Forecast(
     val source: WeatherSource, val place: Place, val fetchedAt: Instant,
@@ -93,7 +94,7 @@ fun dailyForecast(hours: List<WeatherHour>, zone: ZoneId): List<WeatherDay> {
             rows.mapNotNull { it.wind }.maxOrNull(),
             symbol?.condition ?: Condition.UNKNOWN,
             complete = complete && rainHours.all { it != null },
-            description = symbol?.description ?: Condition.UNKNOWN.label)
+            description = symbol?.description ?: WeatherText.UNKNOWN)
     }
 }
 
