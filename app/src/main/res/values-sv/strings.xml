@@ -249,4 +249,13 @@ Källa: Elering / Nord Pool, Finland. %2$s Priset inkluderar inte försäljarens
     <string name="warning_test_text">Detta är ett test, inte en vädervarning från FMI. Om du ser detta i klockan fungerar vädervarningskanalens vidarebefordran.</string>
     <string name="warning_channel">Vädervarningar för ditt område</string>
     <string name="warning_channel_description">FMI:s gula, orange och röda varningar samt kommande dagar</string>
+    <string name="message_weather_refresh_failed">Uppdateringen misslyckades. Försök igen.</string>
+    <string name="message_prices_refresh_failed">Prisuppdateringen misslyckades. Senast hämtade priser visas om de finns.</string>
+    <string name="message_place_search_failed">Ortsökningen misslyckades. Kontrollera anslutningen och försök igen.</string>
+    <string name="message_location_permission">Tillåt platsåtkomst för att se vädret i närheten.</string>
+    <string name="message_location_disabled">Slå på telefonens platstjänster.</string>
+    <string name="message_location_unavailable">Positionering är inte tillgänglig.</string>
+    <string name="message_location_stale">Ingen aktuell position hittades. Försök igen.</string>
+    <string name="message_warnings_targeting_failed">Kunde inte rikta varningarna. Försök uppdatera igen.</string>
+    <string name="message_warnings_refresh_failed">Uppdateringen av varningarna misslyckades. Tidigare uppgifter kan vara föråldrade.</string>
 </resources>

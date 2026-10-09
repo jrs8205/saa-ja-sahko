@@ -250,4 +250,13 @@ Source: Elering / Nord Pool, Finland. %2$s The price excludes the retailer’s m
     <string name="warning_test_text">This is a test, not an FMI weather warning. If you can see this on your watch, the weather warning channel is relayed correctly.</string>
     <string name="warning_channel">Weather warnings for your area</string>
     <string name="warning_channel_description">FMI’s yellow, orange and red warnings, including upcoming days</string>
+    <string name="message_weather_refresh_failed">Update failed. Try again.</string>
+    <string name="message_prices_refresh_failed">Price update failed. Showing the last fetched prices, if any.</string>
+    <string name="message_place_search_failed">Place search failed. Check your connection and try again.</string>
+    <string name="message_location_permission">Allow location access to see the weather near you.</string>
+    <string name="message_location_disabled">Turn on the phone’s location.</string>
+    <string name="message_location_unavailable">Location is not available.</string>
+    <string name="message_location_stale">Couldn’t get a fresh location. Try again.</string>
+    <string name="message_warnings_targeting_failed">Couldn’t target the warnings. Try refreshing again.</string>
+    <string name="message_warnings_refresh_failed">Warning update failed. Earlier data may be out of date.</string>
 </resources>

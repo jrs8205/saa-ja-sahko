@@ -85,7 +85,7 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
                 }
             }
         }
-        state.pricesError?.let { item { Notice(it) } }
+        state.pricesError?.let { item { Notice(it.text()) } }
         item {
             val dayLabels = listOf(stringResource(R.string.today), stringResource(R.string.tomorrow))
             val unitLabels = Resolution.entries.map { stringResource(it.labelRes()) }

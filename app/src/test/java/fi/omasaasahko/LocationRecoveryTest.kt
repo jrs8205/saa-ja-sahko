@@ -42,7 +42,7 @@ class LocationRecoveryTest {
             var pending = false
             val model = AppViewModel(Repo(), object : LocationProvider {
                 override suspend fun locate(): Place {
-                    if (fail) throw LocationFailure("Ota puhelimen sijainti käyttöön.")
+                    if (fail) throw LocationFailure(AppMessage.LOCATION_DISABLED)
                     return device
                 }
             }, ioDispatcher = dispatcher, onDeviceLocationStart = { pending = true }, onDeviceLocationEnd = { pending = false })
@@ -51,7 +51,7 @@ class LocationRecoveryTest {
             assertEquals(device, model.state.value.place)
             assertTrue(model.state.value.weather.values.all { it.forecast?.place == device })
             runCurrent()
-            assertEquals("Ota puhelimen sijainti käyttöön.", model.state.value.locationError)
+            assertEquals(AppMessage.LOCATION_DISABLED, model.state.value.locationError)
             assertEquals(device, model.state.value.place)
             assertFalse(pending)
             assertTrue(model.state.value.weather.values.all { it.forecast?.place == device })

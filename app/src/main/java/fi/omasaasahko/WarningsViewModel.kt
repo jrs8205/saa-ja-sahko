@@ -10,7 +10,7 @@ import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-data class WarningsState(val snapshot: WarningSnapshot? = null, val loading: Boolean = false, val error: String? = null,
+data class WarningsState(val snapshot: WarningSnapshot? = null, val loading: Boolean = false, val error: AppMessage? = null,
     val enabled: Boolean = false, val allowed: Boolean = false, val intervalMinutes: Int = 30, val testPending: Boolean = false)
 
 class WarningsViewModel(application: Application, private val feed: WarningFeed) : AndroidViewModel(application) {
@@ -22,8 +22,8 @@ class WarningsViewModel(application: Application, private val feed: WarningFeed)
         { if (feed.enabled) feed.testNotification() })
     private var loop: Job? = null
     private var fetch: Job? = null
-    private var refreshError: String? = null
-    private var evaluationError: String? = null
+    private var refreshError: AppMessage? = null
+    private var evaluationError: AppMessage? = null
     init { viewModelScope.launch { val cache = feed.cached(); mutable.update { it.copy(snapshot = it.snapshot ?: cache) } } }
     fun place(place: Place?) {
         if (place == null) return
@@ -37,7 +37,7 @@ class WarningsViewModel(application: Application, private val feed: WarningFeed)
             }
             catch (e: CancellationException) { throw e }
             catch (_: Exception) {
-                evaluationError = "Varoitusten kohdistus epäonnistui. Yritä päivittää uudelleen."
+                evaluationError = AppMessage.WARNINGS_TARGETING_FAILED
                 mutable.update { it.copy(error = refreshError ?: evaluationError) }
             }
         }
@@ -60,7 +60,7 @@ class WarningsViewModel(application: Application, private val feed: WarningFeed)
             try { val data = feed.refresh(); ensureActive(); evaluationError = null; mutable.update { it.copy(snapshot = data, loading = false, error = null) } }
             catch (e: CancellationException) { throw e }
             catch (_: Exception) {
-                refreshError = "Varoitusten päivitys epäonnistui. Aiemmat tiedot voivat olla vanhentuneita."
+                refreshError = AppMessage.WARNINGS_REFRESH_FAILED
                 mutable.update { it.copy(loading = false, error = refreshError) }
             }
         }

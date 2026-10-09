@@ -87,7 +87,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                 TextButton(onClick = onPermission) { Text(stringResource(R.string.allow_location)) }
             }
         }
-        state.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error) } }
+        state.error?.let { error -> item { Text(error.text(), color = MaterialTheme.colorScheme.error) } }
         if (stale) item { Text(stringResource(R.string.warnings_stale), color = MaterialTheme.colorScheme.error) }
         if (snapshot?.partial == true) item { Text(stringResource(R.string.warnings_partial), color = MaterialTheme.colorScheme.error) }
         if (snapshot == null && !state.loading) item { Text(stringResource(R.string.warnings_not_yet)) }
@@ -128,7 +128,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                     Text(stringResource(R.string.notifications_follow_phone), style = MaterialTheme.typography.bodySmall)
                     notificationPlace?.let { Text(stringResource(R.string.tracking, it.name, updatedLabel(it.locatedAt, language)), style = MaterialTheme.typography.bodySmall) }
                     if (app.locating || app.namingLocation) Text(stringResource(R.string.updating_notification_location), style = MaterialTheme.typography.bodySmall)
-                    app.locationError?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                    app.locationError?.let { Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                     TextButton(onClick = { settingsOpen = !settingsOpen }) { Text(if (settingsOpen) stringResource(R.string.close_notification_settings) else stringResource(R.string.notification_settings_interval, state.intervalMinutes)) }
                     if (settingsOpen) {
                         val intervals = listOf(15, 30, 60)

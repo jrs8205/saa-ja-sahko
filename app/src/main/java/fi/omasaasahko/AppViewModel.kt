@@ -10,7 +10,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
-data class SourceState(val forecast: Forecast? = null, val loading: Boolean = false, val error: String? = null)
+data class SourceState(val forecast: Forecast? = null, val loading: Boolean = false, val error: AppMessage? = null)
 data class AppState(
     val now: Instant = Instant.now(),
     val place: Place? = null,
@@ -20,14 +20,14 @@ data class AppState(
     val searchQuery: String = "",
     val searchResults: List<PlaceResult> = emptyList(),
     val searching: Boolean = false,
-    val searchError: String? = null,
+    val searchError: AppMessage? = null,
     val namingLocation: Boolean = false,
     val locating: Boolean = false,
-    val locationError: String? = null,
+    val locationError: AppMessage? = null,
     val weather: Map<WeatherSource, SourceState> = WeatherSource.entries.associateWith { SourceState() },
     val prices: PriceData? = null,
     val pricesLoading: Boolean = false,
-    val pricesError: String? = null,
+    val pricesError: AppMessage? = null,
     val resolution: Resolution = Resolution.QUARTER,
     val includeVat: Boolean = true,
 ) {
@@ -142,7 +142,7 @@ class AppViewModel(
                 if (generation == searchGeneration) mutable.update { it.copy(searchResults = results, searching = false) }
             } catch (e: CancellationException) { throw e }
             catch (_: Exception) { if (generation == searchGeneration) mutable.update { it.copy(searching = false,
-                searchError = "Paikkahaku epäonnistui. Tarkista yhteys ja yritä uudelleen.") } }
+                searchError = AppMessage.PLACE_SEARCH_FAILED) } }
         }
     }
 
@@ -221,8 +221,8 @@ class AppViewModel(
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { if (generation == locationGeneration) {
                 mutable.update { it.copy(locating = false,
-                namingLocation = false, locationError = (e as? LocationFailure)?.message
-                    ?: "Tuoretta sijaintia ei saatu. Yritä uudelleen.") }
+                namingLocation = false, locationError = (e as? LocationFailure)?.reason
+                    ?: AppMessage.LOCATION_STALE) }
                 if (mutable.value.selectedPlace == null) mutable.value.devicePlace?.let(::loadWeather)
             } }
             finally { if (generation == locationGeneration && !namingStarted) onDeviceLocationEnd() }
@@ -256,7 +256,7 @@ class AppViewModel(
                         }
                     } catch (e: CancellationException) { throw e }
                     catch (_: Exception) { if (generation == weatherGeneration) mutable.update { s -> s.copy(weather = s.weather +
-                        (source to s.weather.getValue(source).copy(loading = false, error = "Päivitys epäonnistui. Yritä uudelleen."))) } }
+                        (source to s.weather.getValue(source).copy(loading = false, error = AppMessage.WEATHER_REFRESH_FAILED))) } }
                 } }
             }
         }
@@ -277,7 +277,7 @@ class AppViewModel(
             } catch (e: CancellationException) { throw e }
             catch (_: Exception) {
                 if (generation == priceGeneration) mutable.update { it.copy(pricesLoading = false,
-                    pricesError = "Hintojen päivitys epäonnistui. Näytetään viimeksi haetut tiedot, jos niitä on.") }
+                    pricesError = AppMessage.PRICES_REFRESH_FAILED) }
             }
         }
     }

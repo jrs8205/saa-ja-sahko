@@ -103,7 +103,7 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
             TextButton(onClick = onSettings) { Text(stringResource(R.string.open_app_settings)) }
         }
         state.locationError?.takeIf { state.selectedPlace == null }?.let { error -> item {
-            Notice(error, stringResource(R.string.location_settings), onLocationSettings)
+            Notice(error.text(), stringResource(R.string.location_settings), onLocationSettings)
         } }
         if (state.selectedPlace == null && state.place != null && (!permitted || state.locationError != null)) item {
             Text(stringResource(R.string.last_location, updatedLabel(state.place.locatedAt, language)), style = MaterialTheme.typography.bodySmall)
@@ -272,7 +272,7 @@ private fun CurrentBlock(source: WeatherSource, state: SourceState, now: Instant
             if (source == WeatherSource.OPEN_METEO) stringResource(R.string.uv_max, decimal(uv, language)) else null,
             stringResource(if (stale) R.string.stale_forecast else R.string.updated_at, updated)).joinToString(" · "),
             style = MaterialTheme.typography.labelSmall, color = colors.muted, modifier = Modifier.padding(top = 10.dp))
-        if (state.error != null) Text(state.error, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp))
+        if (state.error != null) Text(state.error.text(), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp))
     }
 }
 

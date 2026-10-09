@@ -5,6 +5,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.res.stringResource
 import fi.omasaasahko.R
 import fi.omasaasahko.domain.AppLanguage
+import fi.omasaasahko.domain.AppMessage
 import fi.omasaasahko.domain.WeatherSource
 import fi.omasaasahko.domain.WeatherText
 import fi.omasaasahko.res
@@ -15,4 +16,6 @@ val LocalAppLanguage = staticCompositionLocalOf { AppLanguage.FI }
 @Composable fun WeatherSource.title(): String = stringResource(titleRes())
 
 @Composable fun WeatherText.label(): String = stringResource(res())
+
+@Composable fun AppMessage.text(): String = stringResource(res())
 

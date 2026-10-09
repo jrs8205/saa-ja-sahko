@@ -28,7 +28,7 @@ internal fun PlacePicker(state: AppState, onQuery: (String) -> Unit, onSelect: (
                 OutlinedTextField(value = state.searchQuery, onValueChange = onQuery, singleLine = true, shape = PillShape,
                     label = { Text(stringResource(R.string.place_search_label)) }, modifier = Modifier.fillMaxWidth().testTag("place-search"))
                 if (state.searching) LinearProgressIndicator(Modifier.fillMaxWidth())
-                state.searchError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                state.searchError?.let { Text(it.text(), color = MaterialTheme.colorScheme.error) }
                 LazyColumn(Modifier.weight(1f).testTag("place-results"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (state.favorites.isNotEmpty()) {
                         item { Text(stringResource(R.string.favourites), style = MaterialTheme.typography.titleLarge) }

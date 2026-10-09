@@ -163,6 +163,21 @@ class LocalizationTest {
         assertEquals("Weather warning test", notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString())
     }
 
+    @Test fun `error messages are translated by the screen`() {
+        val state = PreviewData.state.copy(locationError = AppMessage.LOCATION_DISABLED, pricesError = AppMessage.PRICES_REFRESH_FAILED,
+            searchError = AppMessage.PLACE_SEARCH_FAILED, searchQuery = "Po")
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {}, {},
+            warnings = WarningsState(error = AppMessage.WARNINGS_REFRESH_FAILED)) } }
+        compose.onNodeWithText("Turn on the phone’s location.").assertIsDisplayed()
+        compose.onNodeWithTag("tab-prices").performClick()
+        compose.onNodeWithText("Price update failed. Showing the last fetched prices, if any.").assertIsDisplayed()
+        compose.onNodeWithTag("tab-warnings").performClick()
+        compose.onNodeWithText("Warning update failed. Earlier data may be out of date.").assertIsDisplayed()
+        compose.onNodeWithTag("tab-weather").performClick()
+        compose.onNodeWithTag("open-place-search").performClick()
+        compose.onNodeWithText("Place search failed. Check your connection and try again.").assertIsDisplayed()
+    }
+
     @Test fun `English phone sees English clock punctuation`() {
         compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
         compose.onNodeWithTag("current-time").assertTextContains("12:10", substring = true)

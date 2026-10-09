@@ -249,4 +249,13 @@ Lähde: Elering / Nord Pool, Suomi. %2$s Hinta ei sisällä myyjän marginaalia 
     <string name="warning_test_text">Tämä on testi, ei FMI:n säävaroitus. Jos näet tämän kellossa, säävaroituskanavan välitys toimii.</string>
     <string name="warning_channel">Oman alueen säävaroitukset</string>
     <string name="warning_channel_description">FMI:n keltaiset, oranssit ja punaiset varoitukset sekä tulevat päivät</string>
+    <string name="message_weather_refresh_failed">Päivitys epäonnistui. Yritä uudelleen.</string>
+    <string name="message_prices_refresh_failed">Hintojen päivitys epäonnistui. Näytetään viimeksi haetut tiedot, jos niitä on.</string>
+    <string name="message_place_search_failed">Paikkahaku epäonnistui. Tarkista yhteys ja yritä uudelleen.</string>
+    <string name="message_location_permission">Salli sijainti, jotta näet lähialueesi sään.</string>
+    <string name="message_location_disabled">Ota puhelimen sijainti käyttöön.</string>
+    <string name="message_location_unavailable">Paikannus ei ole käytettävissä.</string>
+    <string name="message_location_stale">Tuoretta sijaintia ei saatu. Yritä uudelleen.</string>
+    <string name="message_warnings_targeting_failed">Varoitusten kohdistus epäonnistui. Yritä päivittää uudelleen.</string>
+    <string name="message_warnings_refresh_failed">Varoitusten päivitys epäonnistui. Aiemmat tiedot voivat olla vanhentuneita.</string>
 </resources>

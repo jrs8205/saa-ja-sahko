@@ -7,6 +7,18 @@ import fi.omasaasahko.domain.*
 /** The resources decide the language; this keeps code and text in the same language. */
 fun AppLanguage.Companion.of(context: Context): AppLanguage = fromTag(context.getString(R.string.language_tag))
 
+@StringRes fun AppMessage.res(): Int = when (this) {
+    AppMessage.WEATHER_REFRESH_FAILED -> R.string.message_weather_refresh_failed
+    AppMessage.PRICES_REFRESH_FAILED -> R.string.message_prices_refresh_failed
+    AppMessage.PLACE_SEARCH_FAILED -> R.string.message_place_search_failed
+    AppMessage.LOCATION_PERMISSION_MISSING -> R.string.message_location_permission
+    AppMessage.LOCATION_DISABLED -> R.string.message_location_disabled
+    AppMessage.LOCATION_UNAVAILABLE -> R.string.message_location_unavailable
+    AppMessage.LOCATION_STALE -> R.string.message_location_stale
+    AppMessage.WARNINGS_TARGETING_FAILED -> R.string.message_warnings_targeting_failed
+    AppMessage.WARNINGS_REFRESH_FAILED -> R.string.message_warnings_refresh_failed
+}
+
 @StringRes fun WeatherSource.titleRes(): Int = when (this) {
     WeatherSource.FMI -> R.string.source_fmi
     WeatherSource.OPEN_METEO -> R.string.source_open_meteo

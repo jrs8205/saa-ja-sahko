@@ -180,8 +180,8 @@ class ScreenTest {
         compose.setContent { AppTheme(dynamic = false) {
             WarningsScreen(app.copy(place = place), state, permitted, rememberLazyListState(), {}, {}, {}, {}, {})
         } }
-        val unknown = listOf(WarningsState(), WarningsState(loading = true), WarningsState(error = "Ei verkkoa"),
-            WarningsState(snapshot = snapshot, error = "Ei verkkoa"), WarningsState(snapshot = snapshot.copy(partial = true)),
+        val unknown = listOf(WarningsState(), WarningsState(loading = true), WarningsState(error = AppMessage.WARNINGS_REFRESH_FAILED),
+            WarningsState(snapshot = snapshot, error = AppMessage.WARNINGS_REFRESH_FAILED), WarningsState(snapshot = snapshot.copy(partial = true)),
             WarningsState(snapshot = snapshot.copy(fetchedAt = app.now.minusSeconds(7200))))
         for (value in unknown) {
             compose.runOnIdle { state = value }
@@ -462,7 +462,7 @@ class ScreenTest {
             val fmi = state.weather.getValue(WeatherSource.FMI)
             state = state.copy(weather = state.weather + (WeatherSource.FMI to fmi.copy(
                 forecast = fmi.forecast!!.copy(observation = WeatherHour(state.now, 15.0)),
-                error = "Päivitys epäonnistui. Näytetään viimeisin onnistunut ennuste.")))
+                error = AppMessage.WEATHER_REFRESH_FAILED)))
         }
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Lähimmän FMI-aseman havainto"))
         compose.onNodeWithText("Lähimmän FMI-aseman havainto").assertIsDisplayed()

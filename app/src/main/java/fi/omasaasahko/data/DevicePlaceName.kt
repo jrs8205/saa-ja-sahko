@@ -46,4 +46,4 @@ internal class DevicePlaceName(
     }
 }
 
-internal class LocationFailure(message: String) : IllegalStateException(message)
+internal class LocationFailure(val reason: AppMessage) : IllegalStateException(reason.name)

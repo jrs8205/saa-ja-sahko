@@ -24,12 +24,12 @@ class DeviceLocation(private val context: Context) : LocationProvider {
 
     @android.annotation.SuppressLint("MissingPermission")
     override suspend fun locate(): Place = coroutineScope {
-        if (!permitted()) throw LocationFailure("Salli sijainti, jotta näet lähialueesi sään.")
+        if (!permitted()) throw LocationFailure(AppMessage.LOCATION_PERMISSION_MISSING)
         val manager = context.getSystemService(LocationManager::class.java)
-        if (!manager.isLocationEnabled) throw LocationFailure("Ota puhelimen sijainti käyttöön.")
+        if (!manager.isLocationEnabled) throw LocationFailure(AppMessage.LOCATION_DISABLED)
         val providers = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER)
             .filter { manager.isProviderEnabled(it) }
-        if (providers.isEmpty()) throw LocationFailure("Paikannus ei ole käytettävissä.")
+        if (providers.isEmpty()) throw LocationFailure(AppMessage.LOCATION_UNAVAILABLE)
         val replies = Channel<Location?>(providers.size)
         val jobs = providers.map { provider -> launch {
             val location = try { current(manager, provider) }
@@ -57,7 +57,7 @@ class DeviceLocation(private val context: Context) : LocationProvider {
         // Freshness was checked on receipt. Optional refinement must not invalidate
         // an accepted fix; retain its original timestamp below, including the wait.
         val fix = location
-            ?: throw LocationFailure("Tuoretta sijaintia ei saatu. Yritä uudelleen.")
+            ?: throw LocationFailure(AppMessage.LOCATION_STALE)
         val ageMillis = ((SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos) / 1_000_000).coerceAtLeast(0)
         Place(fix.latitude, fix.longitude, CURRENT_LOCATION_NAME, java.time.Instant.now().minusMillis(ageMillis),
             accuracyMeters = fix.accuracy, origin = PlaceOrigin.DEVICE, nameResolved = false)
