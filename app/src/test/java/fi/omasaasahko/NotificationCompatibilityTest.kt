@@ -16,7 +16,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk=[35])
+@Config(sdk=[35], qualifiers="fi")
 class NotificationCompatibilityTest {
     @Test fun `both channel tests expose title and full text to Pebble without consuming real price alert`() {
         val app=ApplicationProvider.getApplicationContext<Application>()

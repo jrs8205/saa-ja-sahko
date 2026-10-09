@@ -1,17 +1,19 @@
 package fi.omasaasahko.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import fi.omasaasahko.R
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-enum class PriceBand(val label: String, val range: String) {
-    CHEAP("Halpaa", "Alle 5,000"),
-    MODERATE("Kohtuullista", "5,000–9,999"),
-    EXPENSIVE("Melko kallista", "10,000–14,999"),
-    VERY_EXPENSIVE("Todella kallista", "15,000–19,999"),
-    EXTREME("Poikkeuksellisen kallista", "Vähintään 20,000"),
+enum class PriceBand(@StringRes val label: Int, @StringRes val range: Int) {
+    CHEAP(R.string.band_cheap, R.string.range_cheap),
+    MODERATE(R.string.band_moderate, R.string.range_moderate),
+    EXPENSIVE(R.string.band_expensive, R.string.range_expensive),
+    VERY_EXPENSIVE(R.string.band_very_expensive, R.string.range_very_expensive),
+    EXTREME(R.string.band_extreme, R.string.range_extreme),
 }
 
 /** Classify the displayed price, after VAT/averaging and the same rounding as Prices.format. */

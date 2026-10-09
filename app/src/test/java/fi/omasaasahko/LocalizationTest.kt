@@ -1,9 +1,11 @@
 package fi.omasaasahko
 
 import android.app.Application
+import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
+import fi.omasaasahko.data.*
 import fi.omasaasahko.domain.*
 import fi.omasaasahko.ui.*
 import org.junit.Assert.assertEquals
@@ -94,6 +96,36 @@ class LocalizationTest {
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Kommande 24 timmar"))
         compose.onNodeWithText("Kommande 24 timmar").assertIsDisplayed()
         compose.onNodeWithText("Temperatur · vind · nederbörd").assertIsDisplayed()
+    }
+
+    @Test fun `electricity screen speaks Swedish`() {
+        RuntimeEnvironment.setQualifiers("sv-rFI-w411dp-h891dp-xhdpi")
+        var state by mutableStateOf(PreviewData.state)
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(state, true, {}, {}, {}, {}, {}, { state = state.copy(resolution = it) }) } }
+        compose.onNodeWithTag("tab-prices").performClick()
+        compose.onNodeWithText("AKTUELL KVART").assertIsDisplayed()
+        compose.onNodeWithText("Inkl. moms 25,5 %").assertIsDisplayed()
+        compose.onNodeWithText("Timme").performClick()
+        compose.onNodeWithText("AKTUELL TIMMES MEDELPRIS").assertIsDisplayed()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Billigast"))
+        compose.onNodeWithText("Billigast").assertIsDisplayed()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Prisfärger · c/kWh"))
+        compose.onNodeWithText("Prisfärger · c/kWh").assertIsDisplayed()
+    }
+
+    @Test fun `price notifications speak English with English numbers`() {
+        val day = java.time.LocalDate.of(2026, 9, 17)
+        val from = day.atStartOfDay(HELSINKI).toInstant()
+        val prices = PriceData(from, generateSequence(from) { it.plusSeconds(900) }.takeWhile { it < day.plusDays(1).atStartOfDay(HELSINKI).toInstant() }
+            .map { QuarterPrice(it, java.math.BigDecimal("40.123")) }.toList())
+        val text = tomorrowPriceMessage(prices, day.minusDays(1).atTime(15, 0).atZone(HELSINKI).toInstant(), true, app)!!
+        assertTrue(text, text.startsWith("Thu 17 Sep · VAT 25.5%"))
+        assertTrue(text, text.contains("Average 5.035 c/kWh"))
+        assertTrue(text, text.contains("Cheapest hour 00:00–01:00: 5.035 c/kWh"))
+        org.robolectric.Shadows.shadowOf(app).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        PriceAlerts(app).testNotification()
+        val notification = app.getSystemService(android.app.NotificationManager::class.java).activeNotifications.single().notification
+        assertEquals("Electricity price test", notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString())
     }
 
     @Test fun `English phone sees English clock punctuation`() {

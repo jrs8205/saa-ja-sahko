@@ -52,16 +52,18 @@ internal fun priceWork(next: Instant, id: UUID? = null): PeriodicWorkRequest =
         .apply { if (id != null) setId(id) }.build()
 
 /** Notification only after every quarter of the Finnish next day is available (92/96/100). */
-fun tomorrowPriceMessage(data: PriceData, now: Instant, includeVat: Boolean, language: AppLanguage): String? {
+fun tomorrowPriceMessage(data: PriceData, now: Instant, includeVat: Boolean, context: Context): String? {
+    val language = AppLanguage.of(context)
+    val unit = context.getString(R.string.price_unit)
     val tomorrow = now.atZone(HELSINKI).toLocalDate().plusDays(1)
     val hours = Prices.slots(data.quarters,tomorrow,Resolution.HOUR,includeVat)
     val average = Prices.average(hours) ?: return null
     val cheapest = hours.minBy { it.centsPerKwh!! }; val highest = hours.maxBy { it.centsPerKwh!! }
     fun interval(slot: PriceSlot) = "${clockLabel(slot.start, language)}–${clockLabel(slot.end, language)}"
-    return "${language.weekday(tomorrow)} ${language.shortDate(tomorrow)} · ${if (includeVat) "ALV 25,5 %" else "ALV 0 %"}\n" +
-        "Keskihinta ${Prices.format(average, language)} snt/kWh\n" +
-        "Halvin tunti ${interval(cheapest)}: ${Prices.format(cheapest.centsPerKwh, language)} snt/kWh\n" +
-        "Kallein tunti ${interval(highest)}: ${Prices.format(highest.centsPerKwh, language)} snt/kWh"
+    return "${language.weekday(tomorrow)} ${language.shortDate(tomorrow)} · ${context.getString(if (includeVat) R.string.vat_switch else R.string.vat_zero)}\n" +
+        context.getString(R.string.price_message_average, Prices.format(average, language), unit) + "\n" +
+        context.getString(R.string.price_message_cheapest, interval(cheapest), Prices.format(cheapest.centsPerKwh, language), unit) + "\n" +
+        context.getString(R.string.price_message_highest, interval(highest), Prices.format(highest.centsPerKwh, language), unit)
 }
 
 class PriceAlerts(context: Context, private val scheduleClock: Clock = Clock.systemUTC()) {
@@ -110,10 +112,10 @@ class PriceAlerts(context: Context, private val scheduleClock: Clock = Clock.sys
     fun consider(prices: PriceData, now: Instant) = synchronized(notificationLock) {
         if (!needsCheck(now)) return@synchronized
         val vat = context.getSharedPreferences("preferences",Context.MODE_PRIVATE).getBoolean("includeVat",true)
-        val text = tomorrowPriceMessage(prices,now,vat,AppLanguage.of(context)) ?: return@synchronized
+        val text = tomorrowPriceMessage(prices,now,vat,context) ?: return@synchronized
         if (!needsCheck(now)) return@synchronized
         val expiry = now.atZone(HELSINKI).toLocalDate().plusDays(2).atStartOfDay(HELSINKI).toInstant()
-        val notification = notification("Huomisen sähköhinnat julkaistu", text, tomorrow(now))
+        val notification = notification(context.getString(R.string.tomorrow_prices_published), text, tomorrow(now))
             .setTimeoutAfter(expiry.toEpochMilli()-now.toEpochMilli()).build()
         NotificationManagerCompat.from(context).notify("tomorrow-prices",3,notification)
         prefs.edit(commit=true) { putString("lastDay",tomorrow(now)) }
@@ -122,7 +124,7 @@ class PriceAlerts(context: Context, private val scheduleClock: Clock = Clock.sys
     fun testNotification() {
         if (!allowed()) return
         NotificationManagerCompat.from(context).notify("price-test",4,
-            notification("Sähköhintojen testi", "Tämä on testi, ei hintatieto. Jos näet tämän kellossa, sähköhintakanavan välitys toimii.")
+            notification(context.getString(R.string.price_test_title), context.getString(R.string.price_test_text))
                 .setTimeoutAfter(60_000).build())
     }
     private fun notification(title: String, text: String, day: String? = null): NotificationCompat.Builder {
@@ -140,7 +142,7 @@ class PriceAlerts(context: Context, private val scheduleClock: Clock = Clock.sys
     }
     fun channel() {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL,"Huomisen sähköhinnat",NotificationManager.IMPORTANCE_DEFAULT))
+            NotificationChannel(CHANNEL,context.getString(R.string.price_channel),NotificationManager.IMPORTANCE_DEFAULT))
     }
     companion object {
         const val CHANNEL = "tomorrow-electricity"

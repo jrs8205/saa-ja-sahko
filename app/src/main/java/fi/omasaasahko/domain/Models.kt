@@ -103,7 +103,7 @@ data class PriceSlot(val start: Instant, val end: Instant, val centsPerKwh: BigD
     fun contains(now: Instant): Boolean = !now.isBefore(start) && now.isBefore(end)
 }
 data class PriceData(val fetchedAt: Instant, val quarters: List<QuarterPrice>)
-enum class Resolution(val label: String) { QUARTER("Vartti"), HOUR("Tunti") }
+enum class Resolution { QUARTER, HOUR }
 
 object Prices {
     private val vat = BigDecimal("1.255")
