@@ -61,7 +61,15 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
         item {
             Column {
                 Text(if (state.selectedPlace != null) "VALITTU PAIKKA" else if (state.locating) "PAIKANNETAAN…" else "SIJAINTISI", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                state.place?.nearbyName?.let { name ->
+                val selected = state.selectedPlace
+                if (selected != null) {
+                    val favorite = state.favorites.any { it.id == selected.id }
+                    Text((if (favorite) "★ " else "") + selected.label, style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.testTag("selected-place-name")
+                            .then(if (favorite) Modifier.semantics { contentDescription = "Suosikki ${selected.label}" } else Modifier))
+                    Text("${selected.kind.ifBlank { "Paikkahaku" }} · Maanmittauslaitos", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else state.place?.nearbyName?.let { name ->
                     Text(name, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                     Text("Lähin paikannimi · Maanmittauslaitos", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -77,7 +85,7 @@ fun WeatherScreen(state: AppState, permitted: Boolean, onPermission: () -> Unit,
                 }
                 if (state.selectedPlace != null) TextButton(onClick = {
                     onCurrentLocation(); if (!permitted) onPermission()
-                }) { Text("Nykyinen sijainti") }
+                }) { Text("Palaa nykyiseen sijaintiin") }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.padding(top = 4.dp)) {
                     Text(today.format(DateTimeFormatter.ofPattern("EEEE d. MMMM", FINNISH)).replaceFirstChar { it.titlecase(FINNISH) },

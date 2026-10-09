@@ -611,10 +611,14 @@ class ScreenTest {
         screenshot("place-search")
         compose.onAllNodesWithTag("place-choice-${porvoo.id}").onFirst().performClick()
         compose.onNodeWithText("VALITTU PAIKKA").assertIsDisplayed()
+        compose.onNodeWithText("★ Porvoo").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Suosikki Porvoo").assertIsDisplayed()
+        compose.onNodeWithText("Nykyinen sijainti").assertDoesNotExist()
         assertEquals(current, state.devicePlace)
         screenshot("selected-place")
-        compose.onNodeWithText("Nykyinen sijainti").performClick()
+        compose.onNodeWithText("Palaa nykyiseen sijaintiin").performClick()
         compose.onNodeWithText(current.name).assertIsDisplayed()
+        compose.onNodeWithText("★ Porvoo").assertDoesNotExist()
         compose.onNodeWithTag("open-place-search").performClick()
         compose.onNodeWithText("Suosikit").assertIsDisplayed()
         compose.onAllNodesWithContentDescription("Poista suosikki Porvoo").onFirst().performClick()
@@ -644,6 +648,8 @@ class ScreenTest {
             AppTheme(dynamic = false) { AppScreen(state, false, {}, {}, {}, {}, {}, {},
                 warnings = WarningsState(snapshot = WarningSnapshot(state.now, state.now, emptyList()))) }
         }
+        compose.onNodeWithTag("selected-place-name").assertIsDisplayed().assertTextEquals("Porvoo")
+        compose.onNodeWithText("★ Porvoo").assertDoesNotExist()
         compose.onNodeWithTag("tab-warnings").performClick()
         compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("FMI:n viimeisimmässä syötteessä ei ole tälle sijainnille voimassa olevia tai tulevia varoituksia."))
         compose.onNodeWithText("FMI:n viimeisimmässä syötteessä ei ole tälle sijainnille voimassa olevia tai tulevia varoituksia.").assertIsDisplayed()
