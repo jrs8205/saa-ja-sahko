@@ -46,6 +46,7 @@ fun AppScreen(
     val refresh = when (tab) { 0 -> onWeatherRefresh; 1 -> onPricesRefresh; else -> onWarningsRefresh }
     val current = AppTab.entries[tab]
     val scheme = MaterialTheme.colorScheme
+    val language = LocalAppLanguage.current
     val todayRows = rememberPriceRows(state, state.now.atZone(HELSINKI).toLocalDate())
     val currentBand = priceBand(todayRows.firstOrNull { it.contains(state.now) }?.centsPerKwh)
     val localWarnings = rememberLocalWarnings(state, warnings, permitted)
@@ -57,7 +58,7 @@ fun AppScreen(
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (current == AppTab.PRICES) Column(Modifier.weight(1f).padding(start = 4.dp)) {
                     Text("Sähkön hinta", style = MaterialTheme.typography.headlineLarge)
-                    Text("Suomi · haettu ${updatedLabel(state.prices?.fetchedAt)} · Elering",
+                    Text("Suomi · haettu ${updatedLabel(state.prices?.fetchedAt, language)} · Elering",
                         style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                 } else LocationPill(
                     name = state.place?.name ?: if (current == AppTab.WEATHER) "Sää lähelläsi" else "Oman alueen varoitukset",

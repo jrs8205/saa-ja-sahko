@@ -51,8 +51,8 @@ class ParsersTest {
             row("2026-09-16T01:00:00Z", "Sunset", "20260230T123456") + "</w:FeatureCollection>"
         val day = Parsers.fmi(body, place, now).days.single()
         assertEquals(LocalDate.of(2026, 9, 16), day.date)
-        assertEquals("06.50", clockLabel(day.sunrise!!))
-        assertEquals("19.39", clockLabel(day.sunset!!))
+        assertEquals("06.50", clockLabel(day.sunrise!!, AppLanguage.FI))
+        assertEquals("19.39", clockLabel(day.sunset!!, AppLanguage.FI))
         assertEquals(Instant.parse("2026-09-16T03:50:13Z"), day.sunrise)
     }
     @Test fun `nearby stations remain separate and closest valid station is used`() {

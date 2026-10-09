@@ -22,7 +22,6 @@ import fi.omasaasahko.WarningsState
 import fi.omasaasahko.domain.*
 import java.time.Duration
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scroll: LazyListState,
@@ -32,6 +31,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
     val notificationPlace = app.devicePlace
     val snapshot = state.snapshot
     val uri = LocalUriHandler.current
+    val language = LocalAppLanguage.current
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var selectedDay by rememberSaveable { mutableStateOf("all") }
     val today = app.now.atZone(HELSINKI).toLocalDate()
@@ -42,7 +42,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
     }.distinct().sorted()
     val selectableDays = ((0..4).map { today.plusDays(it.toLong()) } + warningDates).distinct().sorted()
     LaunchedEffect(today, selectedDay) { if (selectedDay != "all" && LocalDate.parse(selectedDay) !in selectableDays) selectedDay = "all" }
-    fun dayLabel(date: LocalDate) = when (date) { today -> "Tänään"; today.plusDays(1) -> "Huomenna"; else -> date.format(DateTimeFormatter.ofPattern("EEE", FINNISH)) }
+    fun dayLabel(date: LocalDate) = when (date) { today -> "Tänään"; today.plusDays(1) -> "Huomenna"; else -> language.weekday(date) }
     fun forDay(date: LocalDate): List<WeatherWarning> {
         val start = date.atStartOfDay(HELSINKI).toInstant(); val end = date.plusDays(1).atStartOfDay(HELSINKI).toInstant()
         return local.filter { it.onset < end && it.expires > start }
@@ -62,8 +62,8 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                 Text(heading, style = MaterialTheme.typography.headlineLarge)
                 if (snapshot != null && place != null && (permitted || app.selectedPlace != null) && (stale || state.error != null || snapshot.partial))
                     Text("Tallennetuissa tiedoissa: ${local.size} ${if (local.size == 1) "varoitus" else "varoitusta"}", style = MaterialTheme.typography.bodyMedium)
-                Text("Ilmatieteen laitos · Nyt ${updatedLabel(app.now)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                snapshot?.let { Text("Tarkistettu ${updatedLabel(it.fetchedAt)} · FMI julkaisi ${updatedLabel(it.publishedAt)}",
+                Text("Ilmatieteen laitos · Nyt ${updatedLabel(app.now, language)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                snapshot?.let { Text("Tarkistettu ${updatedLabel(it.fetchedAt, language)} · FMI julkaisi ${updatedLabel(it.publishedAt, language)}",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
@@ -71,7 +71,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("warning-days")) {
                 item { WarningDayCard("Kaikki", "päivät", selectedDay == "all", "warning-day-all") { selectedDay = "all" } }
                 items(selectableDays, key = { it.toString() }) { day ->
-                    WarningDayCard(dayLabel(day), day.format(DateTimeFormatter.ofPattern("d.M.")),
+                    WarningDayCard(dayLabel(day), language.shortDate(day),
                         selectedDay == day.toString(), "warning-day-$day") { selectedDay = day.toString() }
                 }
             }
@@ -92,7 +92,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         }
         val dates = if (selectedDay == "all") warningDates else listOf(LocalDate.parse(selectedDay))
         dates.forEach { date ->
-            item(key = "date-$date") { Text(when (date) { today -> "Tänään"; today.plusDays(1) -> "Huomenna"; else -> date.format(DateTimeFormatter.ofPattern("EEEE d.M.", FINNISH)) },
+            item(key = "date-$date") { Text(when (date) { today -> "Tänään"; today.plusDays(1) -> "Huomenna"; else -> language.day(date) },
                 style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 4.dp, top = 8.dp)) }
             if (snapshot != null && (permitted || app.selectedPlace != null) && place != null && forDay(date).isEmpty()) item {
                 Block(radius = Radius.tile) { Text(if (stale || state.error != null || snapshot.partial) "Tallennetuissa tiedoissa ei ole tälle päivälle alueesi varoituksia. Päivitä tiedot."
@@ -110,7 +110,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                     }
                     Text(warning.event, style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(top = 12.dp))
                     Text(warning.localAreas(place!!).joinToString { it.name }, style = MaterialTheme.typography.titleSmall, color = colors.muted)
-                    TonePill("${updatedLabel(warning.onset)} – ${updatedLabel(warning.expires)}",
+                    TonePill("${updatedLabel(warning.onset, language)} – ${updatedLabel(warning.expires, language)}",
                         colors.pill, colors.ink, Modifier.padding(top = 12.dp), R.drawable.ic_clock)
                     Text(warning.description, modifier = Modifier.padding(top = 12.dp))
                     if (warning.instruction.isNotBlank()) Text(warning.instruction, modifier = Modifier.padding(top = 8.dp))
@@ -123,7 +123,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                     enabled = permitted && notificationPlace != null)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Ilmoitukset seuraavat puhelimen sijaintia. Suosikin tai hakutuloksen katselu ei muuta seurantaa.", style = MaterialTheme.typography.bodySmall)
-                    notificationPlace?.let { Text("Seurataan: ${it.name} · ${updatedLabel(it.locatedAt)}", style = MaterialTheme.typography.bodySmall) }
+                    notificationPlace?.let { Text("Seurataan: ${it.name} · ${updatedLabel(it.locatedAt, language)}", style = MaterialTheme.typography.bodySmall) }
                     if (app.locating || app.namingLocation) Text("Päivitetään ilmoitusten sijaintia…", style = MaterialTheme.typography.bodySmall)
                     app.locationError?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                     TextButton(onClick = { settingsOpen = !settingsOpen }) { Text(if (settingsOpen) "Sulje ilmoitusasetukset ↑" else "Ilmoitusasetukset · ${state.intervalMinutes} min ↓") }

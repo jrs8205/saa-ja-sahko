@@ -16,6 +16,7 @@ import androidx.core.content.edit
 import androidx.work.*
 import fi.omasaasahko.MainActivity
 import fi.omasaasahko.R
+import fi.omasaasahko.of
 import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -156,6 +157,7 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
         if (locationPending || !enabled || !allowed() || !DeviceLocation(context).permitted() || snapshot.partial) return
         val place = place() ?: return
         createChannel()
+        val language = AppLanguage.of(context)
         val manager = NotificationManagerCompat.from(context)
         val local = snapshot.local(place, now)
         val active = local.associateBy { it.fingerprint(place) }
@@ -170,7 +172,7 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
         active.forEach { (key, warning) ->
             if (!enabled || place() != place || !DeviceLocation(context).permitted()) return
             val title = "${warning.level.label}: ${warning.event}"
-            val text = "${place.name} · ${updatedLabel(warning.onset)}–${updatedLabel(warning.expires)}\n${warning.description}"
+            val text = "${place.name} · ${updatedLabel(warning.onset, language)}–${updatedLabel(warning.expires, language)}\n${warning.description}"
             val previous = existing[key]?.notification
             if (!kept.has(key) || (previous != null && previous.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() != text)) {
                 manager.notify(key, 1, notification(title, text).setOnlyAlertOnce(kept.has(key))

@@ -34,12 +34,12 @@ import fi.omasaasahko.data.PriceAlertState
 import fi.omasaasahko.domain.*
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scroll: LazyListState, onVat: (Boolean) -> Unit = {},
     alerts: PriceAlertState = PriceAlertState(), onAlerts: (Boolean) -> Unit = {}, onNotificationSettings: () -> Unit = {}, pricesRequest: Int = 0, priceDateRequest: String? = null,
     onAlertsTest: () -> Unit = {}, todayRows: List<PriceSlot> = rememberPriceRows(state, state.now.atZone(HELSINKI).toLocalDate())) {
+    val language = LocalAppLanguage.current
     var tomorrow by rememberSaveable { mutableStateOf(false) }
     val today = state.now.atZone(HELSINKI).toLocalDate()
     LaunchedEffect(pricesRequest) { if (pricesRequest > 0) tomorrow = priceDateRequest == today.plusDays(1).toString() }
@@ -63,9 +63,9 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
             Block(color = colors.top, contentColor = colors.ink, radius = Radius.hero, padding = PaddingValues(horizontal = 24.dp, vertical = 20.dp)) {
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(if (state.resolution == Resolution.QUARTER) "NYKYINEN VARTTI" else "NYKYISEN TUNNIN KESKIHINTA", style = MaterialTheme.typography.labelMedium)
-                    Text(current?.let { intervalLabel(it) } ?: "Tietoa odotetaan", style = MaterialTheme.typography.labelMedium)
+                    Text(current?.let { intervalLabel(it, language) } ?: "Tietoa odotetaan", style = MaterialTheme.typography.labelMedium)
                 }
-                Text(Prices.format(current?.centsPerKwh), style = MaterialTheme.typography.displayMedium, color = colors.accent, maxLines = 1,
+                Text(Prices.format(current?.centsPerKwh, language), style = MaterialTheme.typography.displayMedium, color = colors.accent, maxLines = 1,
                     autoSize = TextAutoSize.StepBased(minFontSize = 40.sp, maxFontSize = 80.sp),
                     modifier = Modifier.padding(top = 6.dp).testTag("current-price"))
                 FlowRow(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween,
@@ -97,7 +97,7 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
             }
         }
         item {
-            SectionTitle(date.format(DateTimeFormatter.ofPattern("EEEE d.M.", FINNISH)).replaceFirstChar { it.titlecase(FINNISH) },
+            SectionTitle(language.day(date),
                 if (state.resolution == Resolution.QUARTER) "Varttihinnat · ${rows.size} varttia" else "Tuntikeskiarvot · ${rows.size} tuntia")
         }
         if (available.isEmpty()) {
@@ -115,15 +115,15 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     if (largeFont || (maxWidth - gap * 2) / 3 < summaryWidth) {
                         Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-                            PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
+                            PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let { clockLabel(it, language) }, Modifier.fillMaxWidth(), true)
                             PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.fillMaxWidth(), true)
-                            PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.fillMaxWidth(), true)
+                            PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let { clockLabel(it, language) }, Modifier.fillMaxWidth(), true)
                         }
                     } else {
                         Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                            PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
+                            PriceSummary("Halvin", minimum?.centsPerKwh, minimum?.start?.let { clockLabel(it, language) }, Modifier.weight(1f).fillMaxHeight())
                             PriceSummary("Keskihinta", Prices.average(rows), "snt/kWh", Modifier.weight(1f).fillMaxHeight())
-                            PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let(::clockLabel), Modifier.weight(1f).fillMaxHeight())
+                            PriceSummary("Kallein", maximum?.centsPerKwh, maximum?.start?.let { clockLabel(it, language) }, Modifier.weight(1f).fillMaxHeight())
                         }
                     }
                 }
@@ -132,7 +132,7 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
                 Block {
                     val picked = rows.getOrNull(selected)
                     val pickedBand = priceBand(picked?.centsPerKwh)
-                    Text(picked?.let { "${intervalLabel(it)} · ${Prices.format(it.centsPerKwh)} snt/kWh" } ?: "Paina pylvästä nähdäksesi hinnan",
+                    Text(picked?.let { "${intervalLabel(it, language)} · ${Prices.format(it.centsPerKwh, language)} snt/kWh" } ?: "Paina pylvästä nähdäksesi hinnan",
                         style = MaterialTheme.typography.titleMedium, color = priceColors(pickedBand).accent,
                         modifier = Modifier.testTag("selected-price"))
                     if (pickedBand != null) Text(pickedBand.label, style = MaterialTheme.typography.labelMedium,
@@ -150,18 +150,18 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
                 Surface(shape = RoundedCornerShape(Radius.row), color = if (isNow) colors.top else colors.bottom, contentColor = colors.ink) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(intervalLabel(row), style = MaterialTheme.typography.bodyMedium)
+                            Text(intervalLabel(row, language), style = MaterialTheme.typography.bodyMedium)
                             Text(listOfNotNull(if (isNow) "NYT" else null, band?.label).joinToString(" · "),
                                 style = MaterialTheme.typography.labelSmall, color = colors.accent)
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text(Prices.format(row.centsPerKwh), style = MaterialTheme.typography.titleLarge, color = colors.accent)
+                        Text(Prices.format(row.centsPerKwh, language), style = MaterialTheme.typography.titleLarge, color = colors.accent)
                     }
                 }
             }
         }
         item {
-            Text("Päivitetty ${updatedLabel(state.prices?.fetchedAt)}\nLähde: Elering / Nord Pool, Suomi. " +
+            Text("Päivitetty ${updatedLabel(state.prices?.fetchedAt, language)}\nLähde: Elering / Nord Pool, Suomi. " +
                 (if (state.includeVat) "Hinta sisältää ALV:n 25,5 %. " else "Hinta on veroton (ALV 0 %). ") +
                 "Hinta ei sisällä myyjän marginaalia eikä sähkönsiirtoa. Kellonajat ovat Suomen aikaa.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 12.dp))
@@ -189,21 +189,23 @@ private fun PriceSettingsBlock(state: AppState, alerts: PriceAlertState, onVat: 
     }
 }
 
-private fun intervalLabel(slot: PriceSlot): String = "${clockLabel(slot.start)}–${clockLabel(slot.end)}"
+private fun intervalLabel(slot: PriceSlot, language: AppLanguage): String = "${clockLabel(slot.start, language)}–${clockLabel(slot.end, language)}"
 
 private val SummaryPadding = 14.dp
 private val SummaryMinFontSize = 14.sp
 
 @Composable
 private fun priceSummaryMinWidth(values: List<BigDecimal?>): androidx.compose.ui.unit.Dp {
+    val language = LocalAppLanguage.current
     val measurer = rememberTextMeasurer()
-    val width = values.maxOf { measurer.measure(Prices.format(it),
+    val width = values.maxOf { measurer.measure(Prices.format(it, language),
         MaterialTheme.typography.titleLarge.copy(fontSize = SummaryMinFontSize), softWrap = false).size.width }
     return with(LocalDensity.current) { width.toDp() } + SummaryPadding * 2
 }
 
 @Composable
 private fun PriceSummary(label: String, value: BigDecimal?, footnote: String?, modifier: Modifier, horizontal: Boolean = false) {
+    val language = LocalAppLanguage.current
     val colors = priceColors(priceBand(value))
     Surface(modifier = modifier, shape = RoundedCornerShape(Radius.tile), color = colors.top, contentColor = colors.ink) {
         if (horizontal) {
@@ -212,12 +214,12 @@ private fun PriceSummary(label: String, value: BigDecimal?, footnote: String?, m
                     Text(label, style = MaterialTheme.typography.labelMedium)
                     Text(footnote ?: "–", style = MaterialTheme.typography.labelSmall)
                 }
-                Text(Prices.format(value), style = MaterialTheme.typography.titleLarge, color = colors.accent)
+                Text(Prices.format(value, language), style = MaterialTheme.typography.titleLarge, color = colors.accent)
             }
         } else {
             Column(Modifier.padding(SummaryPadding)) {
                 Text(label, style = MaterialTheme.typography.labelMedium)
-                Text(Prices.format(value), style = MaterialTheme.typography.titleLarge, color = colors.accent, maxLines = 1,
+                Text(Prices.format(value, language), style = MaterialTheme.typography.titleLarge, color = colors.accent, maxLines = 1,
                     autoSize = TextAutoSize.StepBased(minFontSize = SummaryMinFontSize, maxFontSize = 22.sp), modifier = Modifier.padding(vertical = 4.dp))
                 Text(footnote ?: "–", style = MaterialTheme.typography.labelSmall)
             }
@@ -227,6 +229,7 @@ private fun PriceSummary(label: String, value: BigDecimal?, footnote: String?, m
 
 @Composable
 internal fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onSelected: (Int) -> Unit) {
+    val language = LocalAppLanguage.current
     val axis = remember(rows) { priceAxis(rows) }
     val horizontalScroll = rememberLazyListState()
     val selectedColor = MaterialTheme.colorScheme.onSurface
@@ -235,7 +238,7 @@ internal fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onS
     val plotHeight = 220.dp
     val cellWidth = 52.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
     val labelStyle = MaterialTheme.typography.labelSmall.copy(lineHeight = 16.sp)
-    val labelLines = remember(rows) { if (rows.any { '(' in clockLabel(it.start) }) 2 else 1 }
+    val labelLines = remember(rows, language) { if (rows.any { '(' in clockLabel(it.start, language) }) 2 else 1 }
     Column {
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("snt/kWh", style = labelStyle)
@@ -246,13 +249,13 @@ internal fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onS
             Column(Modifier.width(IntrinsicSize.Max).height(plotHeight).padding(end = 10.dp).testTag("price-axis"),
                 verticalArrangement = Arrangement.SpaceBetween, horizontalAlignment = Alignment.End) {
                 axis.ticks.forEach { tick ->
-                    Text(Prices.format(tick), style = labelStyle, modifier = Modifier.height(labelHeight))
+                    Text(Prices.format(tick, language), style = labelStyle, modifier = Modifier.height(labelHeight))
                 }
             }
             LazyRow(state = horizontalScroll, modifier = Modifier.weight(1f).testTag("price-timeline")) {
                 itemsIndexed(rows, key = { _, row -> row.start.toString() }) { index, row ->
                     val color = priceColors(priceBand(row.centsPerKwh)).accent
-                    val description = "${intervalLabel(row)} · ${Prices.format(row.centsPerKwh)} snt/kWh" +
+                    val description = "${intervalLabel(row, language)} · ${Prices.format(row.centsPerKwh, language)} snt/kWh" +
                         (priceBand(row.centsPerKwh)?.let { " · ${it.label}" } ?: " · Hintatieto puuttuu")
                     Column(Modifier.width(cellWidth).testTag("price-bar-$index")
                         .selectable(selected = index == selected, role = Role.Button, onClick = { onSelected(index) })
@@ -288,7 +291,7 @@ internal fun PriceChart(rows: List<PriceSlot>, selected: Int, nowIndex: Int, onS
                             }
                         }
                         val isNow = index == nowIndex
-                        val clock = clockLabel(row.start).replace(" (", "\n(")
+                        val clock = clockLabel(row.start, language).replace(" (", "\n(")
                         // Reserve the longest clock label for every cell, including DST offsets.
                         Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp).height(labelHeight * labelLines + 4.dp),
                             contentAlignment = Alignment.TopCenter) {

@@ -17,6 +17,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.*
 import fi.omasaasahko.MainActivity
 import fi.omasaasahko.R
+import fi.omasaasahko.of
 import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -24,7 +25,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Clock
 import java.time.Instant
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 import java.util.UUID
 
@@ -52,16 +52,16 @@ internal fun priceWork(next: Instant, id: UUID? = null): PeriodicWorkRequest =
         .apply { if (id != null) setId(id) }.build()
 
 /** Notification only after every quarter of the Finnish next day is available (92/96/100). */
-fun tomorrowPriceMessage(data: PriceData, now: Instant, includeVat: Boolean): String? {
+fun tomorrowPriceMessage(data: PriceData, now: Instant, includeVat: Boolean, language: AppLanguage): String? {
     val tomorrow = now.atZone(HELSINKI).toLocalDate().plusDays(1)
     val hours = Prices.slots(data.quarters,tomorrow,Resolution.HOUR,includeVat)
     val average = Prices.average(hours) ?: return null
     val cheapest = hours.minBy { it.centsPerKwh!! }; val highest = hours.maxBy { it.centsPerKwh!! }
-    fun interval(slot: PriceSlot) = "${clockLabel(slot.start)}–${clockLabel(slot.end)}"
-    return "${tomorrow.format(DateTimeFormatter.ofPattern("EEE d.M.",FINNISH))} · ${if (includeVat) "ALV 25,5 %" else "ALV 0 %"}\n" +
-        "Keskihinta ${Prices.format(average)} snt/kWh\n" +
-        "Halvin tunti ${interval(cheapest)}: ${Prices.format(cheapest.centsPerKwh)} snt/kWh\n" +
-        "Kallein tunti ${interval(highest)}: ${Prices.format(highest.centsPerKwh)} snt/kWh"
+    fun interval(slot: PriceSlot) = "${clockLabel(slot.start, language)}–${clockLabel(slot.end, language)}"
+    return "${language.weekday(tomorrow)} ${language.shortDate(tomorrow)} · ${if (includeVat) "ALV 25,5 %" else "ALV 0 %"}\n" +
+        "Keskihinta ${Prices.format(average, language)} snt/kWh\n" +
+        "Halvin tunti ${interval(cheapest)}: ${Prices.format(cheapest.centsPerKwh, language)} snt/kWh\n" +
+        "Kallein tunti ${interval(highest)}: ${Prices.format(highest.centsPerKwh, language)} snt/kWh"
 }
 
 class PriceAlerts(context: Context, private val scheduleClock: Clock = Clock.systemUTC()) {
@@ -110,7 +110,7 @@ class PriceAlerts(context: Context, private val scheduleClock: Clock = Clock.sys
     fun consider(prices: PriceData, now: Instant) = synchronized(notificationLock) {
         if (!needsCheck(now)) return@synchronized
         val vat = context.getSharedPreferences("preferences",Context.MODE_PRIVATE).getBoolean("includeVat",true)
-        val text = tomorrowPriceMessage(prices,now,vat) ?: return@synchronized
+        val text = tomorrowPriceMessage(prices,now,vat,AppLanguage.of(context)) ?: return@synchronized
         if (!needsCheck(now)) return@synchronized
         val expiry = now.atZone(HELSINKI).toLocalDate().plusDays(2).atStartOfDay(HELSINKI).toInstant()
         val notification = notification("Huomisen sähköhinnat julkaistu", text, tomorrow(now))

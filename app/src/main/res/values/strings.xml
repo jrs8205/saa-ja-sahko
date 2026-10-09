@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Weather &amp; Spot Power</string>
+    <!-- Tells the code which language the resources resolved to. -->
+    <string name="language_tag">en</string>
+</resources>

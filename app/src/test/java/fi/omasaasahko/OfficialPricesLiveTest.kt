@@ -84,7 +84,7 @@ class OfficialPricesLiveTest {
                         val expected = parts.reduce(BigDecimal::add).divide(BigDecimal(parts.size))
                             .divide(BigDecimal.TEN).multiply(if (vat) BigDecimal("1.255") else BigDecimal.ONE)
                         val display = expected.setScale(3, RoundingMode.HALF_UP).toPlainString().replace('.', ',')
-                        assertEquals("Displayed price $date $resolution VAT=$vat ${slot.start}", display, Prices.format(slot.centsPerKwh))
+                        assertEquals("Displayed price $date $resolution VAT=$vat ${slot.start}", display, Prices.format(slot.centsPerKwh, AppLanguage.FI))
                         checkedSlots++
                     }
                 }

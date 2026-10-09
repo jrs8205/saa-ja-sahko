@@ -50,7 +50,7 @@ class LocationLiveTest {
             assertEquals(place.latitude, result.place.latitude, 0.0)
             assertEquals(place.longitude, result.place.longitude, 0.0)
             assertEquals(result, repo.cached().weather[WeatherSource.FMI])
-            println("${place.name}: ${result.observationStation.name}, ${decimal(result.observationStation.distanceMeters / 1000)} km; ${result.observation!!.time}")
+            println("${place.name}: ${result.observationStation.name}, ${decimal(result.observationStation.distanceMeters / 1000, AppLanguage.FI)} km; ${result.observation!!.time}")
         }
     }
 }

@@ -3,6 +3,7 @@ package fi.omasaasahko.ui
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -13,6 +14,8 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import fi.omasaasahko.R
+import fi.omasaasahko.domain.AppLanguage
+import fi.omasaasahko.of
 
 private val Light = lightColorScheme(
     primary = Color(0xFF1D4D44), onPrimary = Color.White,
@@ -72,5 +75,7 @@ fun AppTheme(dark: Boolean = isSystemInDarkTheme(), dynamic: Boolean = true, con
     val colors = if (dynamic) {
         if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (dark) Dark else Light
-    MaterialTheme(colorScheme = colors.readable(), typography = AppTypography, content = content)
+    CompositionLocalProvider(LocalAppLanguage provides AppLanguage.of(context)) {
+        MaterialTheme(colorScheme = colors.readable(), typography = AppTypography, content = content)
+    }
 }

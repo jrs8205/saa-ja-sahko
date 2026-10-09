@@ -139,14 +139,14 @@ class PriceAlertsTest {
     @Test fun `only complete Finnish delivery days notify including both daylight saving changes`() {
         listOf("2026-09-17","2026-03-29","2026-10-25").forEach { date ->
             val day=LocalDate.parse(date);val prices=data(day);val now=day.minusDays(1).atTime(15,0).atZone(HELSINKI).toInstant()
-            val text=tomorrowPriceMessage(prices,now,true)!!
+            val text=tomorrowPriceMessage(prices,now,true,AppLanguage.FI)!!
             assertTrue(text.contains("5,035 snt/kWh"));assertTrue(text.contains("ALV 25,5 %"))
-            assertTrue(tomorrowPriceMessage(prices,now,false)!!.contains("4,012 snt/kWh"))
-            assertNull(tomorrowPriceMessage(prices.copy(quarters=prices.quarters.drop(1)),now,true))
+            assertTrue(tomorrowPriceMessage(prices,now,false,AppLanguage.FI)!!.contains("4,012 snt/kWh"))
+            assertNull(tomorrowPriceMessage(prices.copy(quarters=prices.quarters.drop(1)),now,true,AppLanguage.FI))
             // Four midnight spillover quarters and one evening quarter are still not publication.
-            assertNull(tomorrowPriceMessage(prices.copy(quarters=prices.quarters.take(4)+prices.quarters.last()),now,true))
+            assertNull(tomorrowPriceMessage(prices.copy(quarters=prices.quarters.take(4)+prices.quarters.last()),now,true,AppLanguage.FI))
             val conflict=prices.quarters+prices.quarters.first().copy(euroPerMwh=BigDecimal.TEN)
-            assertNull(tomorrowPriceMessage(prices.copy(quarters=conflict),now,true))
+            assertNull(tomorrowPriceMessage(prices.copy(quarters=conflict),now,true,AppLanguage.FI))
         }
     }
     @Test fun `permission denial does not consume date and notification is once per day across instances`() {

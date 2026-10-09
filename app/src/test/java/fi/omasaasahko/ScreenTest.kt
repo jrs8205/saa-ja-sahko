@@ -56,7 +56,7 @@ class ScreenTest {
         for (size in listOf(1f, 2f)) {
             compose.runOnIdle { scale = size }
             compose.onNodeWithTag("price-timeline").performScrollToIndex(0)
-            compose.onNodeWithText(clockLabel(start).replace(" (", "\n("), useUnmergedTree = true).assertTextFits(singleLine = false)
+            compose.onNodeWithText(clockLabel(start, AppLanguage.FI).replace(" (", "\n("), useUnmergedTree = true).assertTextFits(singleLine = false)
             val height = compose.onNodeWithTag("price-timeline").fetchSemanticsNode().size.height
             compose.onNodeWithTag("price-timeline").performScrollToIndex(8)
             assertEquals(height, compose.onNodeWithTag("price-timeline").fetchSemanticsNode().size.height)
@@ -103,7 +103,7 @@ class ScreenTest {
                 val tag = "hour-${source.name}-$time"
                 compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag(tag))
                 assertEquals(heading.left, compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot.left, 1f)
-                compose.onNodeWithText(clockLabel(time), useUnmergedTree = true).assertTextFits()
+                compose.onNodeWithText(clockLabel(time, AppLanguage.FI), useUnmergedTree = true).assertTextFits()
             }
         }
         }
@@ -165,7 +165,7 @@ class ScreenTest {
             compose.runOnIdle { scale = size; temperature = value }
             for (source in WeatherSource.entries) {
                 compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("current-${source.name}"))
-                compose.onNode(hasText(temperature(value)) and hasAnyAncestor(hasTestTag("current-${source.name}"))).assertTextFits()
+                compose.onNode(hasText(temperature(value, AppLanguage.FI)) and hasAnyAncestor(hasTestTag("current-${source.name}"))).assertTextFits()
             }
             if (value == -27.0) screenshot("review-temperature-320-$size")
         }
@@ -509,13 +509,13 @@ class ScreenTest {
         compose.onNodeWithTag("current-price-level").assertTextEquals("Kohtuullista")
         val date = state.now.atZone(HELSINKI).toLocalDate()
         val net = Prices.slots(state.prices!!.quarters, date, Resolution.QUARTER, false).first { it.contains(state.now) }
-        compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(net.centsPerKwh))
+        compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(net.centsPerKwh, AppLanguage.FI))
         compose.onNodeWithText("Veroton hinta · ALV 0 %").assertIsDisplayed()
         screenshot("electricity-vat-off")
         compose.onNodeWithText("Tunti").performClick()
         compose.onNodeWithTag("current-price-level").assertTextEquals("Todella kallista")
         val hourly = Prices.slots(state.prices!!.quarters, date, Resolution.HOUR, false).first { it.contains(state.now) }
-        compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(hourly.centsPerKwh))
+        compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(hourly.centsPerKwh, AppLanguage.FI))
         compose.onNodeWithTag("tab-weather").performClick()
         compose.onNodeWithTag("tab-prices").performClick()
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("vat-switch"))
@@ -523,7 +523,7 @@ class ScreenTest {
         compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasTestTag("current-price"))
         compose.onNodeWithTag("current-price-level").assertTextEquals("Poikkeuksellisen kallista")
         val gross = Prices.slots(state.prices!!.quarters, date, Resolution.HOUR, true).first { it.contains(state.now) }
-        compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(gross.centsPerKwh))
+        compose.onNodeWithTag("current-price").assertTextEquals(Prices.format(gross.centsPerKwh, AppLanguage.FI))
     }
 
     @Test fun `warnings tab shows local future warnings and notification settings in both themes`() {

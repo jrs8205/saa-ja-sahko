@@ -36,7 +36,7 @@ class RepositoryLiveTest {
             val solarDay = a.days.first { it.date == now.atZone(HELSINKI).toLocalDate() }
             assertNotNull("FMI sunrise", solarDay.sunrise)
             assertNotNull("FMI sunset", solarDay.sunset)
-            println("FMI solar: ${clockLabel(solarDay.sunrise!!)} / ${clockLabel(solarDay.sunset!!)}")
+            println("FMI solar: ${clockLabel(solarDay.sunrise!!, AppLanguage.FI)} / ${clockLabel(solarDay.sunset!!, AppLanguage.FI)}")
             val cached = repo.cached()
             assertEquals(a, cached.weather[WeatherSource.FMI])
             assertEquals(b, cached.weather[WeatherSource.OPEN_METEO])

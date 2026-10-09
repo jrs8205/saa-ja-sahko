@@ -3,22 +3,19 @@ package fi.omasaasahko.domain
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.*
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 val HELSINKI: ZoneId = ZoneId.of("Europe/Helsinki")
-val FINNISH: Locale = Locale.forLanguageTag("fi-FI")
-private val clockFormat = DateTimeFormatter.ofPattern("HH.mm", FINNISH)
-fun clockLabel(time: Instant, zone: ZoneId = HELSINKI): String {
+val FINNISH: Locale = AppLanguage.FI.locale
+fun clockLabel(time: Instant, language: AppLanguage, zone: ZoneId = HELSINKI): String {
     val z = time.atZone(zone)
     val ambiguous = zone.rules.getValidOffsets(z.toLocalDateTime()).size > 1
-    return clockFormat.format(z) + if (ambiguous) " (${z.offset})" else ""
+    return language.clock(z) + if (ambiguous) " (${z.offset})" else ""
 }
-fun updatedLabel(time: Instant?): String = time?.atZone(HELSINKI)
-    ?.format(DateTimeFormatter.ofPattern("d.M. HH.mm", FINNISH)) ?: "–"
-fun decimal(value: Double?, places: Int = 1): String = value?.takeIf { it.isFinite() }
-    ?.let { String.format(FINNISH, "%.${places}f", if (kotlin.math.abs(it) < 0.5 * Math.pow(10.0, -places.toDouble())) 0.0 else it) } ?: "–"
-fun temperature(value: Double?): String = value?.let { decimal(it, 1) + "°" } ?: "–"
+fun updatedLabel(time: Instant?, language: AppLanguage): String = time?.atZone(HELSINKI)?.let(language::dateTime) ?: "–"
+fun decimal(value: Double?, language: AppLanguage, places: Int = 1): String = value?.takeIf { it.isFinite() }
+    ?.let { language.number(if (kotlin.math.abs(it) < 0.5 * Math.pow(10.0, -places.toDouble())) 0.0 else it, places) } ?: "–"
+fun temperature(value: Double?, language: AppLanguage): String = value?.let { decimal(it, language) + "°" } ?: "–"
 
 enum class WeatherSource(val title: String) { FMI("Ilmatieteen laitos"), OPEN_METEO("Open-Meteo") }
 enum class Condition(val label: String) {
@@ -110,7 +107,8 @@ enum class Resolution(val label: String) { QUARTER("Vartti"), HOUR("Tunti") }
 object Prices {
     private val vat = BigDecimal("1.255")
     fun withVat(euroPerMwh: BigDecimal): BigDecimal = euroPerMwh.movePointLeft(1).multiply(vat)
-    fun format(value: BigDecimal?): String = value?.setScale(3, RoundingMode.HALF_UP)?.toPlainString()?.replace('.', ',') ?: "–"
+    fun format(value: BigDecimal?, language: AppLanguage): String =
+        value?.setScale(3, RoundingMode.HALF_UP)?.toPlainString()?.replace('.', language.decimalSeparator) ?: "–"
     fun slots(data: List<QuarterPrice>, date: LocalDate, resolution: Resolution, includeVat: Boolean = true): List<PriceSlot> {
         val start = date.atStartOfDay(HELSINKI).toInstant()
         val end = date.plusDays(1).atStartOfDay(HELSINKI).toInstant()
