@@ -8,8 +8,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import fi.omasaasahko.R
 import fi.omasaasahko.domain.HELSINKI
 import fi.omasaasahko.domain.updatedLabel
 import fi.omasaasahko.AppState
@@ -57,11 +59,11 @@ fun AppScreen(
             Row(Modifier.widthIn(max = 720.dp).fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (current == AppTab.PRICES) Column(Modifier.weight(1f).padding(start = 4.dp)) {
-                    Text("Sähkön hinta", style = MaterialTheme.typography.headlineLarge)
-                    Text("Suomi · haettu ${updatedLabel(state.prices?.fetchedAt, language)} · Elering",
+                    Text(stringResource(R.string.prices_title), style = MaterialTheme.typography.headlineLarge)
+                    Text(stringResource(R.string.prices_fetched, updatedLabel(state.prices?.fetchedAt, language)),
                         style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                 } else LocationPill(
-                    name = state.place?.name ?: if (current == AppTab.WEATHER) "Sää lähelläsi" else "Oman alueen varoitukset",
+                    name = state.place?.name ?: stringResource(if (current == AppTab.WEATHER) R.string.weather_near_you else R.string.warnings_for_your_area),
                     onClick = if (current == AppTab.WEATHER && !pickerOpen) ({ pickerOpen = true }) else null,
                     modifier = Modifier.weight(1f))
                 RefreshButton(enabled = !pickerOpen && !refreshing && (tab != 0 || permitted || state.selectedPlace != null), onClick = refresh)

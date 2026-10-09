@@ -2,4 +2,24 @@
 <resources>
     <string name="app_name">Sää &amp; Sähkö</string>
     <string name="language_tag">fi</string>
+    <string name="tab_weather">Sää</string>
+    <string name="tab_prices">Sähkö</string>
+    <string name="tab_warnings">Varoitukset</string>
+    <string name="prices_title">Sähkön hinta</string>
+    <string name="prices_fetched">Suomi · haettu %1$s · Elering</string>
+    <string name="weather_near_you">Sää lähelläsi</string>
+    <string name="warnings_for_your_area">Oman alueen varoitukset</string>
+    <string name="refresh">Päivitä</string>
+    <string name="open_place_search">Hae paikka tai suosikit</string>
+    <string name="symbol_night">%1$s, yö</string>
+    <string name="place_search_title">Hae paikka</string>
+    <string name="place_search_source">Paikkahaku · Maanmittauslaitos</string>
+    <string name="place_search_label">Kunta tai paikannimi</string>
+    <string name="favourites">Suosikit</string>
+    <string name="search_results">Hakutulokset</string>
+    <string name="place_search_no_results">Paikkoja ei löytynyt. Kokeile kunnan tai paikan nimeä.</string>
+    <string name="place_search_hint">Kirjoita vähintään kaksi merkkiä. Tähdestä tallennat paikan suosikiksi.</string>
+    <string name="close">Sulje</string>
+    <string name="remove_favourite">Poista suosikki %1$s</string>
+    <string name="add_favourite">Lisää suosikiksi %1$s</string>
 </resources>

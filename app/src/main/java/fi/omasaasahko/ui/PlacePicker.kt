@@ -9,10 +9,12 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import fi.omasaasahko.AppState
+import fi.omasaasahko.R
 import fi.omasaasahko.domain.PlaceResult
 
 @Composable
@@ -21,32 +23,32 @@ internal fun PlacePicker(state: AppState, onQuery: (String) -> Unit, onSelect: (
     BackHandler(onBack = onDismiss)
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Hae paikka", style = MaterialTheme.typography.headlineLarge)
-                Text("Paikkahaku · Maanmittauslaitos", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.place_search_title), style = MaterialTheme.typography.headlineLarge)
+                Text(stringResource(R.string.place_search_source), style = MaterialTheme.typography.bodySmall)
                 OutlinedTextField(value = state.searchQuery, onValueChange = onQuery, singleLine = true, shape = PillShape,
-                    label = { Text("Kunta tai paikannimi") }, modifier = Modifier.fillMaxWidth().testTag("place-search"))
+                    label = { Text(stringResource(R.string.place_search_label)) }, modifier = Modifier.fillMaxWidth().testTag("place-search"))
                 if (state.searching) LinearProgressIndicator(Modifier.fillMaxWidth())
                 state.searchError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 LazyColumn(Modifier.weight(1f).testTag("place-results"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (state.favorites.isNotEmpty()) {
-                        item { Text("Suosikit", style = MaterialTheme.typography.titleLarge) }
+                        item { Text(stringResource(R.string.favourites), style = MaterialTheme.typography.titleLarge) }
                         items(state.favorites, key = { "favorite-${it.id}" }) { place ->
                             PlaceChoice(place, true, { onSelect(place); onDismiss() }, { onFavorite(place) })
                         }
                     }
                     if (state.searchResults.isNotEmpty()) {
-                        item { Text("Hakutulokset", style = MaterialTheme.typography.titleLarge) }
+                        item { Text(stringResource(R.string.search_results), style = MaterialTheme.typography.titleLarge) }
                         items(state.searchResults, key = { "result-${it.id}" }) { place ->
                             PlaceChoice(place, state.favorites.any { it.id == place.id },
                                 { onSelect(place); onDismiss() }, { onFavorite(place) })
                         }
                     } else if (state.searchQuery.trim().length >= 2 && !state.searching && state.searchError == null) {
-                        item { Text("Paikkoja ei löytynyt. Kokeile kunnan tai paikan nimeä.") }
+                        item { Text(stringResource(R.string.place_search_no_results)) }
                     } else if (state.searchQuery.trim().length < 2) {
-                        item { Text("Kirjoita vähintään kaksi merkkiä. Tähdestä tallennat paikan suosikiksi.") }
+                        item { Text(stringResource(R.string.place_search_hint)) }
                     }
                 }
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) { Text("Sulje") }
+                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) { Text(stringResource(R.string.close)) }
             }
         }
 }
@@ -60,8 +62,7 @@ private fun PlaceChoice(place: PlaceResult, favorite: Boolean, onSelect: () -> U
                 if (place.kind.isNotBlank()) Text(place.kind, style = MaterialTheme.typography.bodySmall)
             }
         }
-        TextButton(onClick = onFavorite, modifier = Modifier.semantics {
-            contentDescription = (if (favorite) "Poista suosikki " else "Lisää suosikiksi ") + place.label
-        }) { Text(if (favorite) "★" else "☆", style = MaterialTheme.typography.headlineSmall) }
+        val description = stringResource(if (favorite) R.string.remove_favourite else R.string.add_favourite, place.label)
+        TextButton(onClick = onFavorite, modifier = Modifier.semantics { contentDescription = description }) { Text(if (favorite) "★" else "☆", style = MaterialTheme.typography.headlineSmall) }
     }
 }

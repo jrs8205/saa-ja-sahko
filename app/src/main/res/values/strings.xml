@@ -3,4 +3,24 @@
     <string name="app_name">Weather &amp; Spot Power</string>
     <!-- Tells the code which language the resources resolved to. -->
     <string name="language_tag">en</string>
+    <string name="tab_weather">Weather</string>
+    <string name="tab_prices">Electricity</string>
+    <string name="tab_warnings">Warnings</string>
+    <string name="prices_title">Electricity price</string>
+    <string name="prices_fetched">Finland · fetched %1$s · Elering</string>
+    <string name="weather_near_you">Weather near you</string>
+    <string name="warnings_for_your_area">Warnings for your area</string>
+    <string name="refresh">Refresh</string>
+    <string name="open_place_search">Search places or favourites</string>
+    <string name="symbol_night">%1$s, night</string>
+    <string name="place_search_title">Find a place</string>
+    <string name="place_search_source">Place search · National Land Survey</string>
+    <string name="place_search_label">Municipality or place name</string>
+    <string name="favourites">Favourites</string>
+    <string name="search_results">Results</string>
+    <string name="place_search_no_results">No places found. Try a municipality or place name.</string>
+    <string name="place_search_hint">Type at least two characters. Tap the star to save a place as a favourite.</string>
+    <string name="close">Close</string>
+    <string name="remove_favourite">Remove favourite %1$s</string>
+    <string name="add_favourite">Add %1$s to favourites</string>
 </resources>

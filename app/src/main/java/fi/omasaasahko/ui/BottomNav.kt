@@ -1,5 +1,7 @@
 package fi.omasaasahko.ui
 
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,16 +21,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import fi.omasaasahko.R
 import fi.omasaasahko.domain.WarningLevel
 
-enum class AppTab(val label: String, val icon: Int, val tag: String) {
-    WEATHER("Sää", R.drawable.ic_tab_weather, "tab-weather"),
-    PRICES("Sähkö", R.drawable.ic_tab_prices, "tab-prices"),
-    WARNINGS("Varoitukset", R.drawable.ic_tab_warnings, "tab-warnings"),
+enum class AppTab(@StringRes val label: Int, @DrawableRes val icon: Int, val tag: String) {
+    WEATHER(R.string.tab_weather, R.drawable.ic_tab_weather, "tab-weather"),
+    PRICES(R.string.tab_prices, R.drawable.ic_tab_prices, "tab-prices"),
+    WARNINGS(R.string.tab_warnings, R.drawable.ic_tab_warnings, "tab-warnings"),
 }
 
 /** Colours of the selected tab's pill; it echoes what the tab currently shows. */
@@ -67,10 +70,10 @@ fun FloatingNavBar(selected: AppTab, tint: NavTint, onSelect: (AppTab) -> Unit, 
             if (active) Row(item, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(painterResource(tab.icon), contentDescription = null, tint = content)
-                Text(tab.label, style = MaterialTheme.typography.labelLarge, color = content, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(tab.label), style = MaterialTheme.typography.labelLarge, color = content, maxLines = 1, overflow = TextOverflow.Ellipsis)
             } else Column(item, verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(painterResource(tab.icon), contentDescription = null, tint = content)
-                Text(tab.label, style = MaterialTheme.typography.labelSmall, color = content, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(tab.label), style = MaterialTheme.typography.labelSmall, color = content, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }

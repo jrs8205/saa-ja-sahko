@@ -2,4 +2,24 @@
 <resources>
     <string name="app_name">Väder &amp; Börsel</string>
     <string name="language_tag">sv</string>
+    <string name="tab_weather">Väder</string>
+    <string name="tab_prices">Elpris</string>
+    <string name="tab_warnings">Varningar</string>
+    <string name="prices_title">Elpriset</string>
+    <string name="prices_fetched">Finland · hämtat %1$s · Elering</string>
+    <string name="weather_near_you">Vädret nära dig</string>
+    <string name="warnings_for_your_area">Varningar för ditt område</string>
+    <string name="refresh">Uppdatera</string>
+    <string name="open_place_search">Sök ort eller favoriter</string>
+    <string name="symbol_night">%1$s, natt</string>
+    <string name="place_search_title">Sök ort</string>
+    <string name="place_search_source">Ortsökning · Lantmäteriverket</string>
+    <string name="place_search_label">Kommun eller ortnamn</string>
+    <string name="favourites">Favoriter</string>
+    <string name="search_results">Sökresultat</string>
+    <string name="place_search_no_results">Inga orter hittades. Prova med en kommun eller ett ortnamn.</string>
+    <string name="place_search_hint">Skriv minst två tecken. Med stjärnan sparar du orten som favorit.</string>
+    <string name="close">Stäng</string>
+    <string name="remove_favourite">Ta bort favoriten %1$s</string>
+    <string name="add_favourite">Lägg till %1$s som favorit</string>
 </resources>

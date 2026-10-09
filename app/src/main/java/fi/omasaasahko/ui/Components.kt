@@ -23,7 +23,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import fi.omasaasahko.R
 import fi.omasaasahko.domain.Condition
 import kotlin.math.cos
 import kotlin.math.sin
@@ -31,7 +33,8 @@ import kotlin.math.sin
 @Composable
 fun WeatherSymbol(condition: Condition, night: Boolean, modifier: Modifier, description: String = condition.label) {
     val (cloud, rearCloud, rain, snow, sun, sunEdge) = symbolColors()
-    Canvas(modifier.semantics { contentDescription = description + if (night) ", yö" else "" }) {
+    val label = if (night) stringResource(R.string.symbol_night, description) else description
+    Canvas(modifier.semantics { contentDescription = label }) {
         scale(size.width / 100f, size.height / 100f, pivot = Offset.Zero) {
             fun sunshine(x: Float, y: Float, radius: Float) {
                 if (night) {

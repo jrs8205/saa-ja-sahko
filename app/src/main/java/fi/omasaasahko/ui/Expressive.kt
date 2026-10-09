@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -57,14 +58,14 @@ fun TonePill(text: String, container: Color, content: Color, modifier: Modifier 
 @Composable
 fun RefreshButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     FilledIconButton(onClick = onClick, enabled = enabled, modifier = modifier.size(52.dp)) {
-        Icon(painterResource(R.drawable.ic_refresh), contentDescription = "Päivitä")
+        Icon(painterResource(R.drawable.ic_refresh), contentDescription = stringResource(R.string.refresh))
     }
 }
 
 @Composable
 fun LocationPill(name: String, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
     Row(modifier.heightIn(min = 52.dp).clip(PillShape).background(MaterialTheme.colorScheme.surfaceContainerHigh)
-        .then(if (onClick != null) Modifier.clickable(onClickLabel = "Hae paikka tai suosikit", role = Role.Button, onClick = onClick)
+        .then(if (onClick != null) Modifier.clickable(onClickLabel = stringResource(R.string.open_place_search), role = Role.Button, onClick = onClick)
             .testTag("open-place-search") else Modifier)
         .padding(horizontal = 18.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
