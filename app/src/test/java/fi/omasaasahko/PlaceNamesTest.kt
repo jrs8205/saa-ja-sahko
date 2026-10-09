@@ -100,6 +100,23 @@ class PlaceNamesTest {
         }
     }
 
+    @Test fun `Swedish app language prefers Swedish spellings and asks MML in Swedish`() = runBlocking {
+        assertEquals("Brunnsparken", PlaceNames.nearby(PlaceNames.points(fixture(), AppLanguage.SV), lat, lon, PlaceNames.FALLBACK_RADIUS_METERS).first().name)
+        assertEquals("Kaivopuisto", PlaceNames.nearby(PlaceNames.points(fixture(), AppLanguage.EN), lat, lon, PlaceNames.FALLBACK_RADIUS_METERS).first().name)
+        val requests = java.util.concurrent.CopyOnWriteArrayList<Request>()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            requests += chain.request()
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK").body(fixture().toResponseBody()).build()
+        }.build()
+        var language = AppLanguage.SV
+        // The ViewModel keeps one instance across a language change, so the language is read per call.
+        val mml = MmlPlaceNames("test-key", client, language = { language })
+        assertEquals("Brunnsparken", mml.reverseCandidates(lat, lon).first().name)
+        language = AppLanguage.FI
+        assertEquals("Kaivopuisto", mml.reverseCandidates(lat, lon).first().name)
+        assertEquals(listOf("sv", "fi"), requests.map { it.url.queryParameter("lang") })
+    }
+
     @Test fun `Swedish-only spelling is usable`() {
         val root = JSONObject(fixture())
         val features = root.getJSONArray("features")

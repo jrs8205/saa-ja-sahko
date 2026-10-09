@@ -126,7 +126,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                     enabled = permitted && notificationPlace != null)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.notifications_follow_phone), style = MaterialTheme.typography.bodySmall)
-                    notificationPlace?.let { Text(stringResource(R.string.tracking, it.name, updatedLabel(it.locatedAt, language)), style = MaterialTheme.typography.bodySmall) }
+                    notificationPlace?.let { Text(stringResource(R.string.tracking, it.displayName(), updatedLabel(it.locatedAt, language)), style = MaterialTheme.typography.bodySmall) }
                     if (app.locating || app.namingLocation) Text(stringResource(R.string.updating_notification_location), style = MaterialTheme.typography.bodySmall)
                     app.locationError?.let { Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                     TextButton(onClick = { settingsOpen = !settingsOpen }) { Text(if (settingsOpen) stringResource(R.string.close_notification_settings) else stringResource(R.string.notification_settings_interval, state.intervalMinutes)) }

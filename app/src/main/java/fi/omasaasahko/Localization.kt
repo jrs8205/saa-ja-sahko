@@ -7,6 +7,9 @@ import fi.omasaasahko.domain.*
 /** The resources decide the language; this keeps code and text in the same language. */
 fun AppLanguage.Companion.of(context: Context): AppLanguage = fromTag(context.getString(R.string.language_tag))
 
+/** The unnamed device fix keeps its stored sentinel name; only its display is translated. */
+fun Place.displayName(context: Context): String = if (name == CURRENT_LOCATION_NAME) context.getString(R.string.current_location) else name
+
 @StringRes fun AppMessage.res(): Int = when (this) {
     AppMessage.WEATHER_REFRESH_FAILED -> R.string.message_weather_refresh_failed
     AppMessage.PRICES_REFRESH_FAILED -> R.string.message_prices_refresh_failed

@@ -259,4 +259,5 @@ Source: Elering / Nord Pool, Finland. %2$s The price excludes the retailer’s m
     <string name="message_location_stale">Couldn’t get a fresh location. Try again.</string>
     <string name="message_warnings_targeting_failed">Couldn’t target the warnings. Try refreshing again.</string>
     <string name="message_warnings_refresh_failed">Warning update failed. Earlier data may be out of date.</string>
+    <string name="current_location">Current location</string>
 </resources>

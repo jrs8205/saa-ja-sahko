@@ -63,7 +63,7 @@ fun AppScreen(
                     Text(stringResource(R.string.prices_fetched, updatedLabel(state.prices?.fetchedAt, language)),
                         style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                 } else LocationPill(
-                    name = state.place?.name ?: stringResource(if (current == AppTab.WEATHER) R.string.weather_near_you else R.string.warnings_for_your_area),
+                    name = state.place?.displayName() ?: stringResource(if (current == AppTab.WEATHER) R.string.weather_near_you else R.string.warnings_for_your_area),
                     onClick = if (current == AppTab.WEATHER && !pickerOpen) ({ pickerOpen = true }) else null,
                     modifier = Modifier.weight(1f))
                 RefreshButton(enabled = !pickerOpen && !refreshing && (tab != 0 || permitted || state.selectedPlace != null), onClick = refresh)

@@ -258,4 +258,5 @@ Källa: Elering / Nord Pool, Finland. %2$s Priset inkluderar inte försäljarens
     <string name="message_location_stale">Ingen aktuell position hittades. Försök igen.</string>
     <string name="message_warnings_targeting_failed">Kunde inte rikta varningarna. Försök uppdatera igen.</string>
     <string name="message_warnings_refresh_failed">Uppdateringen av varningarna misslyckades. Tidigare uppgifter kan vara föråldrade.</string>
+    <string name="current_location">Nuvarande position</string>
 </resources>

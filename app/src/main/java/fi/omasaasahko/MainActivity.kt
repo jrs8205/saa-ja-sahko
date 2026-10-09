@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import fi.omasaasahko.data.*
+import fi.omasaasahko.domain.AppLanguage
 import fi.omasaasahko.domain.Resolution
 import fi.omasaasahko.ui.*
 
@@ -49,7 +50,7 @@ class MainActivity : ComponentActivity() {
                 { resolution -> preferences.edit { putString("resolution", resolution.name) } },
                 initialVat = preferences.getBoolean("includeVat", true),
                 saveVat = { include -> preferences.edit { putBoolean("includeVat", include) } },
-                placeSearch = MmlPlaceNames(), favoriteStore = PlaceStorage(appContext),
+                placeSearch = MmlPlaceNames(language = { AppLanguage.of(appContext) }), favoriteStore = PlaceStorage(appContext),
                 onDeviceLocationStart = warningService::beginLocationUpdate,
                 onDeviceLocationEnd = warningService::endLocationUpdate,
                 onDevicePlace = warningService::savePlace,

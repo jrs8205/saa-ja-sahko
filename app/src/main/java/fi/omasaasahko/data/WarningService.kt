@@ -17,6 +17,7 @@ import androidx.work.*
 import fi.omasaasahko.MainActivity
 import fi.omasaasahko.R
 import fi.omasaasahko.of
+import fi.omasaasahko.displayName
 import fi.omasaasahko.labelRes
 import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
@@ -173,7 +174,7 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
         active.forEach { (key, warning) ->
             if (!enabled || place() != place || !DeviceLocation(context).permitted()) return
             val title = "${context.getString(warning.level.labelRes())}: ${warning.event}"
-            val text = "${place.name} · ${updatedLabel(warning.onset, language)}–${updatedLabel(warning.expires, language)}\n${warning.description}"
+            val text = "${place.displayName(context)} · ${updatedLabel(warning.onset, language)}–${updatedLabel(warning.expires, language)}\n${warning.description}"
             val previous = existing[key]?.notification
             if (!kept.has(key) || (previous != null && previous.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() != text)) {
                 manager.notify(key, 1, notification(title, text).setOnlyAlertOnce(kept.has(key))

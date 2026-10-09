@@ -178,6 +178,16 @@ class LocalizationTest {
         compose.onNodeWithText("Place search failed. Check your connection and try again.").assertIsDisplayed()
     }
 
+    @Test fun `an unnamed device fix is shown as the translated current location`() {
+        val fix = PreviewData.place.copy(name = CURRENT_LOCATION_NAME, origin = PlaceOrigin.DEVICE, nameResolved = false)
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state.copy(place = fix, devicePlace = fix), true, {}, {}, {}, {}, {}, {}) } }
+        compose.onNodeWithText("Current location").assertIsDisplayed()
+        compose.onNodeWithText(CURRENT_LOCATION_NAME).assertDoesNotExist()
+        compose.onNodeWithTag("tab-warnings").performClick()
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Tracking: Current location · 16 Sep 12:10"))
+        compose.onNodeWithText("Tracking: Current location · 16 Sep 12:10").assertIsDisplayed()
+    }
+
     @Test fun `English phone sees English clock punctuation`() {
         compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
         compose.onNodeWithTag("current-time").assertTextContains("12:10", substring = true)

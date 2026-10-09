@@ -10,6 +10,7 @@ import android.os.CancellationSignal
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import fi.omasaasahko.domain.*
+import fi.omasaasahko.of
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlin.coroutines.resume
@@ -64,7 +65,7 @@ class DeviceLocation(private val context: Context) : LocationProvider {
     }
 
     override suspend fun describe(place: Place): Place = DevicePlaceName(
-        reverse = { MmlPlaceNames().reverseCandidates(it.latitude, it.longitude, PlaceNames.FALLBACK_RADIUS_METERS) },
+        reverse = { MmlPlaceNames(language = { AppLanguage.of(context) }).reverseCandidates(it.latitude, it.longitude, PlaceNames.FALLBACK_RADIUS_METERS) },
         address = { placeName(Location("name").apply { latitude = it.latitude; longitude = it.longitude }) },
         finePermission = { ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED },
     ).describe(place)
@@ -81,7 +82,7 @@ class DeviceLocation(private val context: Context) : LocationProvider {
     private suspend fun placeName(location: Location): AddressName? = suspendCancellableCoroutine { c ->
         if (!Geocoder.isPresent()) { c.resume(null); return@suspendCancellableCoroutine }
         try {
-            Geocoder(context, FINNISH).getFromLocation(location.latitude, location.longitude, 1, object : Geocoder.GeocodeListener {
+            Geocoder(context, AppLanguage.of(context).locale).getFromLocation(location.latitude, location.longitude, 1, object : Geocoder.GeocodeListener {
                 override fun onGeocode(addresses: MutableList<android.location.Address>) {
                     val name = addressName(addresses)
                     if (c.isActive) c.resume(name)
