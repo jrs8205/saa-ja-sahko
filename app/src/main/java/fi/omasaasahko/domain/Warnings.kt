@@ -31,12 +31,20 @@ data class WeatherWarning(
     val id: String, val eventCode: String, val event: String, val level: WarningLevel,
     val onset: Instant, val expires: Instant, val description: String, val instruction: String,
     val areas: List<WarningArea>, val sent: Instant,
+    /** The event name in the feed's primary language, so the identity survives an app language change. */
+    val canonicalEvent: String = event,
 ) {
     fun localAreas(place: Place): List<WarningArea> = areas.filter { it.contains(place) }
+    /**
+     * Publication IDs change even when the warning content does not, and translated texts change with
+     * the app language. Only language-independent fields identify a warning; text changes update the
+     * posted notification in place.
+     */
     fun fingerprint(place: Place): String {
-        // Publication IDs change even when the warning content does not.
-        val value = listOf(eventCode, event, level.name, onset.toString(), expires.toString(), description, instruction,
-            localAreas(place).map { it.name }.sorted().joinToString("\n")).joinToString("\u0000")
+        val polygons = localAreas(place).map { area ->
+            area.polygons.joinToString(";") { polygon -> polygon.joinToString(" ") { "${it.latitude},${it.longitude}" } }
+        }.sorted()
+        val value = (listOf(eventCode, canonicalEvent, level.name, onset.toString(), expires.toString()) + polygons).joinToString("\u0000")
         return MessageDigest.getInstance("SHA-256").digest(value.toByteArray()).joinToString("") { "%02x".format(it) }
     }
 }

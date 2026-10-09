@@ -32,6 +32,13 @@ class LocationLiveTest {
         assertEquals("Nikunmäki", result.name)
         assertEquals("Espoo", result.municipality)
     }
+    @Test fun `MML answers Swedish and English requests with translated labels`() = runBlocking {
+        assumeTrue(System.getenv("SAA_LOCATION_CHECK") == "1")
+        val swedish = MmlPlaceNames(language = { AppLanguage.SV }).search("Porvoo").first { it.kind == "Kommun" }
+        assertEquals("Borgå", swedish.name)
+        val english = MmlPlaceNames(language = { AppLanguage.EN }).search("Porvoo").first { it.kind == "Municipality" }
+        assertEquals("Porvoo", english.name)
+    }
     @Test fun `FMI observations identify nearby official stations for Porvoo and Inari`() = runBlocking {
         assumeTrue(System.getenv("SAA_LIVE_API_TESTS") == "1")
         val context = ApplicationProvider.getApplicationContext<Context>()

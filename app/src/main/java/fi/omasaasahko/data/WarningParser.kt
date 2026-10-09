@@ -20,7 +20,11 @@ object WarningParser {
         AppLanguage.FI -> "fi-FI"; AppLanguage.SV -> "sv-FI"; AppLanguage.EN -> "en-GB"
     }
 
-    /** The fat feed carries every language; pick the app's, then Finnish, then anything. */
+    /** A translated block is usable only with the structure the notification logic needs. */
+    private fun Node.complete() = value("severity").isNotEmpty() && value("onset").isNotEmpty() && value("expires").isNotEmpty() &&
+        all("area").isNotEmpty() && all("area").all { area -> area.all("polygon").isNotEmpty() && area.value("areaDesc").isNotEmpty() }
+
+    /** The fat feed carries every language; pick the app's complete block, then Finnish, then anything. */
     fun parse(body: String, fetchedAt: Instant, language: AppLanguage): WarningSnapshot {
         val wanted = capLanguage(language)
         require(body.length <= 16_000_000)
@@ -56,9 +60,10 @@ object WarningParser {
         val warnings = alerts.mapNotNull { alert ->
             if (alert.value("msgType") !in setOf("Alert", "Update") || alert.value("sender") + "|" + alert.value("identifier") in replaced) return@mapNotNull null
             val infos = alert.all("info")
-            val info = infos.firstOrNull { it.value("language").equals(wanted, true) }
-                ?: infos.firstOrNull { it.value("language").startsWith(language.tag, true) }
-                ?: infos.firstOrNull { it.value("language").equals("fi-FI", true) }
+            val finnish = infos.firstOrNull { it.value("language").equals("fi-FI", true) }
+            val info = infos.firstOrNull { it.value("language").equals(wanted, true) && it.complete() }
+                ?: infos.firstOrNull { it.value("language").startsWith(language.tag, true) && it.complete() }
+                ?: finnish
                 ?: infos.firstOrNull { it.value("language").startsWith("en", true) } ?: infos.firstOrNull()
                 ?: error("CAP info puuttuu")
             val level = when (info.value("severity")) {
@@ -84,9 +89,11 @@ object WarningParser {
                 WarningArea(area.required("areaDesc"), polygons)
             }
             if (areas.isEmpty()) partial = true
-            val eventCode = info.all("eventCode").firstOrNull { it.value("valueName").startsWith("profile:cap:https://alerts.fmi.fi/cap/profile/") }?.value("value").orEmpty()
+            // Identity fields come from the primary block so a fingerprint never depends on the app language.
+            val eventCode = (finnish ?: info).all("eventCode").firstOrNull { it.value("valueName").startsWith("profile:cap:https://alerts.fmi.fi/cap/profile/") }?.value("value").orEmpty()
             WeatherWarning(alert.required("identifier"), eventCode, info.required("event"), level, onset, expires,
-                info.required("description"), info.value("instruction"), areas, Instant.parse(alert.required("sent")))
+                info.required("description"), info.value("instruction"), areas, Instant.parse(alert.required("sent")),
+                canonicalEvent = (finnish ?: info).required("event"))
         }.distinctBy { it.id }
         return WarningSnapshot(fetchedAt, published, warnings, partial)
     }

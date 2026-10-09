@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import fi.omasaasahko.data.*
@@ -49,7 +51,7 @@ class LocalizationTest {
 
     @Test fun `navigation and place search speak English`() {
         compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
-        listOf("Weather", "Electricity", "Warnings").forEach { compose.onNodeWithText(it, useUnmergedTree = true).assertTextFits() }
+        listOf("Weather", "Prices", "Warnings").forEach { compose.onNodeWithText(it, useUnmergedTree = true).assertTextFits() }
         compose.onNodeWithTag("open-place-search").performClick()
         compose.onNodeWithText("Find a place").assertIsDisplayed()
         compose.onNodeWithText("Municipality or place name").assertIsDisplayed()
@@ -89,7 +91,7 @@ class LocalizationTest {
     @Test fun `weather screen speaks Swedish`() {
         RuntimeEnvironment.setQualifiers("sv-rFI-w411dp-h891dp-xhdpi")
         compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
-        compose.onNodeWithText("DIN POSITION").assertIsDisplayed()
+        compose.onNodeWithText("DIN PLATS").assertIsDisplayed()
         compose.onNodeWithText("Onsdag 16 september").assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Kommande 24 timmar"))
         compose.onNodeWithText("Kommande 24 timmar").assertIsDisplayed()
@@ -223,6 +225,58 @@ class LocalizationTest {
             compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits(singleLine = false)
         }
     }
+
+    @Test fun `price footer keeps its line break in every language`() {
+        listOf("fi", "sv", "en-rGB").forEach { qualifier ->
+            RuntimeEnvironment.setQualifiers(qualifier)
+            assertTrue(qualifier, app.getString(R.string.prices_footer, "12.10", "x").contains("\n"))
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "ar-w411dp-h891dp-xhdpi")
+    fun `an Arabic phone gets English with Latin digits`() {
+        assertEquals(AppLanguage.EN, AppLanguage.of(app))
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state.copy(devicePlace = PreviewData.place), true, {}, {}, {}, {}, {}, {},
+            warnings = WarningsState(snapshot = warningSnapshot(WarningLevel.YELLOW), enabled = true, allowed = true)) } }
+        compose.onNodeWithTag("tab-warnings").performClick()
+        compose.onNodeWithText("1 warning").assertIsDisplayed()
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Notification settings · 30 min ↓"))
+        compose.onNodeWithText("Notification settings · 30 min ↓").assertIsDisplayed()
+        compose.onNodeWithTag("tab-prices").performClick()
+        compose.onNodeWithTag("electricity-scroll").performScrollToNode(hasText("Quarter-hour prices · 96 slots"))
+        compose.onNodeWithText("Quarter-hour prices · 96 slots").assertIsDisplayed()
+    }
+
+    private fun narrowLabelsFit(tiles: List<String>, tabs: List<String>) {
+        var scale by mutableFloatStateOf(1f)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) }
+            }
+        }
+        for (size in listOf(1f, 1.25f)) {
+            compose.runOnIdle { scale = size }
+            compose.onNode(hasScrollAction()).performScrollToNode(hasText(tiles.first()))
+            tiles.forEach { compose.onNodeWithText(it, useUnmergedTree = true).assertTextFits(singleLine = false) }
+            tabs.forEachIndexed { index, label ->
+                compose.onNodeWithTag(listOf("tab-weather", "tab-prices", "tab-warnings")[index]).performClick()
+                compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits()
+            }
+            compose.onNodeWithTag("tab-weather").performClick()
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "sv-rFI-w320dp-h891dp-xhdpi")
+    fun `narrow Swedish weather tiles and active tab labels stay whole`() =
+        narrowLabelsFit(listOf("Vind · m/s", "Regn · mm", "Risk för regn"), listOf("Väder", "Elpris", "Varningar"))
+
+    @Test
+    @Config(qualifiers = "en-rGB-w320dp-h891dp-xhdpi")
+    fun `narrow English weather tiles and active tab labels stay whole`() =
+        narrowLabelsFit(listOf("Wind · m/s", "Rain · mm", "Chance of rain"), listOf("Weather", "Prices", "Warnings"))
 
     @Test fun `English phone sees English clock punctuation`() {
         compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }

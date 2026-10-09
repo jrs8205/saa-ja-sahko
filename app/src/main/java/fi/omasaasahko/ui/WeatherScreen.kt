@@ -282,7 +282,11 @@ private fun MetricTile(label: String, unit: String, fmi: String, meteo: String, 
         Text(if (unit == "%") label else "$label · $unit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         val noData = stringResource(R.string.no_data)
         listOf(WeatherSource.FMI to fmi, WeatherSource.OPEN_METEO to meteo).forEach { (source, value) ->
-            val description = "${source.title()}: $label ${if (value == "–") noData else "$value $unit"}"
+            val description = "${source.title()}: $label " + when {
+                value == "–" -> noData
+                unit == "%" -> stringResource(R.string.percent, value)
+                else -> "$value $unit"
+            }
             Column(Modifier.padding(top = 8.dp).semantics(mergeDescendants = true) { contentDescription = description }) {
                 // Visible source names also distinguish the values without colour vision.
                 Text(if (source == WeatherSource.FMI) "FMI" else "Open-Meteo", style = MaterialTheme.typography.labelSmall,

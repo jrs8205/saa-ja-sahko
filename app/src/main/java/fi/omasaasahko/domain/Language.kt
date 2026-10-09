@@ -15,6 +15,7 @@ enum class AppLanguage(
 ) {
     FI("fi", Locale.forLanguageTag("fi-FI"), ',', "HH.mm", "d.M.", "d.M. HH.mm", "EEEE d. MMMM", "EEEE d.M.", "EEE"),
     SV("sv", Locale.forLanguageTag("sv-FI"), ',', "HH.mm", "d.M.", "d.M. HH.mm", "EEEE d MMMM", "EEEE d.M.", "EEE"),
+    // Locale.ENGLISH rather than en-GB: en-GB abbreviates September as "Sept"; the clock pattern is explicit anyway.
     EN("en", Locale.ENGLISH, '.', "HH:mm", "d MMM", "d MMM HH:mm", "EEEE d MMMM", "EEEE d MMM", "EEE");
 
     private val clockFormat = DateTimeFormatter.ofPattern(clock, locale)
@@ -28,7 +29,7 @@ enum class AppLanguage(
     fun clock(time: ZonedDateTime): String = clockFormat.format(time)
     fun shortDate(date: LocalDate): String = shortDateFormat.format(date)
     fun dateTime(time: ZonedDateTime): String = dateTimeFormat.format(time)
-    /** "Torstai 17. syyskuuta" */
+    /** "Torstaina 17. syyskuuta" */
     fun longDay(date: LocalDate): String = capitalized(longDayFormat.format(date))
     /** "Torstaina 17.9." */
     fun day(date: LocalDate): String = capitalized(dayFormat.format(date))

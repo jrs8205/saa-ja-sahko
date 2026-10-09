@@ -154,12 +154,12 @@
     <string name="excludes_vat">Veroton hinta · ALV 0 %</string>
     <string name="tomorrow">Huomenna</string>
     <plurals name="quarter_prices_count">
-        <item quantity="one">Varttihinnat · %d vartti</item>
-        <item quantity="other">Varttihinnat · %d varttia</item>
+        <item quantity="one">Varttihinnat · %1$s vartti</item>
+        <item quantity="other">Varttihinnat · %1$s varttia</item>
     </plurals>
     <plurals name="hour_averages_count">
-        <item quantity="one">Tuntikeskiarvot · %d tunti</item>
-        <item quantity="other">Tuntikeskiarvot · %d tuntia</item>
+        <item quantity="one">Tuntikeskiarvot · %1$s tunti</item>
+        <item quantity="other">Tuntikeskiarvot · %1$s tuntia</item>
     </plurals>
     <string name="loading_prices">Haetaan hintoja…</string>
     <string name="tomorrow_prices_unavailable">Huomisen hinnat eivät ole vielä saatavilla. Ne ilmestyvät tähän, kun ne julkaistaan hintapalvelussa.</string>
@@ -175,8 +175,7 @@
     <string name="unit_without_vat">snt/kWh · ALV 0 %</string>
     <string name="now_caps">NYT</string>
     <string name="now">Nyt</string>
-    <string name="prices_footer">Päivitetty %1$s
-Lähde: Elering / Nord Pool, Suomi. %2$s Hinta ei sisällä myyjän marginaalia eikä sähkönsiirtoa. Kellonajat ovat Suomen aikaa.</string>
+    <string name="prices_footer">Päivitetty %1$s\nLähde: Elering / Nord Pool, Suomi. %2$s Hinta ei sisällä myyjän marginaalia eikä sähkönsiirtoa. Kellonajat ovat Suomen aikaa.</string>
     <string name="prices_footer_vat_included">Hinta sisältää ALV:n 25,5 %.</string>
     <string name="prices_footer_vat_excluded">Hinta on veroton (ALV 0 %).</string>
     <string name="vat_switch">ALV 25,5 %</string>
@@ -219,8 +218,8 @@ Lähde: Elering / Nord Pool, Suomi. %2$s Hinta ei sisällä myyjän marginaalia 
     <string name="warnings_unavailable">Varoitustietoa ei saatavilla</string>
     <string name="warnings_uncertain">Varoitustieto epävarma</string>
     <plurals name="warning_count">
-        <item quantity="one">%d varoitus</item>
-        <item quantity="other">%d varoitusta</item>
+        <item quantity="one">%1$s varoitus</item>
+        <item quantity="other">%1$s varoitusta</item>
     </plurals>
     <string name="stored_warning_count">Tallennetuissa tiedoissa: %1$s</string>
     <string name="fmi_now">Ilmatieteen laitos · Nyt %1$s</string>
@@ -243,7 +242,7 @@ Lähde: Elering / Nord Pool, Suomi. %2$s Hinta ei sisällä myyjän marginaalia 
     <string name="tracking">Seurataan: %1$s · %2$s</string>
     <string name="updating_notification_location">Päivitetään ilmoitusten sijaintia…</string>
     <string name="close_notification_settings">Sulje ilmoitusasetukset ↑</string>
-    <string name="notification_settings_interval">Ilmoitusasetukset · %1$d min ↓</string>
+    <string name="notification_settings_interval">Ilmoitusasetukset · %1$s min ↓</string>
     <string name="background_check">Taustatarkistus</string>
     <string name="no_background_location">Ei taustapaikannusta. Virransäästö ja verkkoyhteys voivat viivästyttää ilmoituksia.</string>
     <string name="notifications_blocked">Puhelimen ilmoituslupa tai ilmoituskanava on pois päältä.</string>

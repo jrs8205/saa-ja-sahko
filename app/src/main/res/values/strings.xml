@@ -4,7 +4,7 @@
     <!-- Tells the code which language the resources resolved to. -->
     <string name="language_tag">en</string>
     <string name="tab_weather">Weather</string>
-    <string name="tab_prices">Electricity</string>
+    <string name="tab_prices">Prices</string>
     <string name="tab_warnings">Warnings</string>
     <string name="prices_title">Electricity price</string>
     <string name="prices_fetched">Finland · fetched %1$s · Elering</string>
@@ -21,7 +21,7 @@
     <string name="place_search_no_results">No places found. Try a municipality or place name.</string>
     <string name="place_search_hint">Type at least two characters. Tap the star to save a place as a favourite.</string>
     <string name="close">Close</string>
-    <string name="remove_favourite">Remove favourite %1$s</string>
+    <string name="remove_favourite">Remove %1$s from favourites</string>
     <string name="add_favourite">Add %1$s to favourites</string>
     <string name="source_fmi">Finnish Meteorological Institute</string>
     <string name="source_open_meteo">Open-Meteo</string>
@@ -37,8 +37,8 @@
     <string name="weather_sleet">Sleet</string>
     <string name="weather_snow">Snow</string>
     <string name="weather_hail">Hail</string>
-    <string name="weather_thunder">Thunder</string>
-    <string name="weather_thunder_hail">Thunder and hail</string>
+    <string name="weather_thunder">Thunderstorms</string>
+    <string name="weather_thunder_hail">Thunderstorms with hail</string>
     <string name="weather_fog">Fog</string>
     <string name="weather_unknown">No weather data</string>
     <string name="weather_isolated_showers">Isolated showers</string>
@@ -80,9 +80,9 @@
     <string name="weather_freezing_fog">Freezing fog</string>
     <string name="weather_light_drizzle">Light drizzle</string>
     <string name="weather_moderate_drizzle">Moderate drizzle</string>
-    <string name="weather_dense_drizzle">Dense drizzle</string>
+    <string name="weather_dense_drizzle">Heavy drizzle</string>
     <string name="weather_light_freezing_drizzle">Light freezing drizzle</string>
-    <string name="weather_dense_freezing_drizzle">Dense freezing drizzle</string>
+    <string name="weather_dense_freezing_drizzle">Heavy freezing drizzle</string>
     <string name="weather_light_freezing_rain">Light freezing rain</string>
     <string name="weather_heavy_freezing_rain">Heavy freezing rain</string>
     <string name="weather_snow_grains">Snow grains</string>
@@ -91,8 +91,8 @@
     <string name="weather_heavy_rain_showers">Heavy rain showers</string>
     <string name="weather_light_snow_showers">Light snow showers</string>
     <string name="weather_heavy_snow_showers">Heavy snow showers</string>
-    <string name="weather_thunder_light_hail">Thunder with light hail</string>
-    <string name="weather_thunder_heavy_hail">Thunder with heavy hail</string>
+    <string name="weather_thunder_light_hail">Thunderstorm with light hail</string>
+    <string name="weather_thunder_heavy_hail">Thunderstorm with heavy hail</string>
     <string name="selected_place">SELECTED PLACE</string>
     <string name="locating">LOCATING…</string>
     <string name="your_location">YOUR LOCATION</string>
@@ -101,7 +101,7 @@
     <string name="place_source">%1$s · National Land Survey</string>
     <string name="nearest_place_name">Nearest place name · National Land Survey</string>
     <string name="naming_location">Looking up the place name…</string>
-    <string name="name_point_distance">Named point %1$s km away</string>
+    <string name="name_point_distance">Nearest place name is %1$s km away</string>
     <string name="approximate_location">Approximate location · accuracy about %1$s m</string>
     <string name="back_to_current_location">Back to current location</string>
     <string name="now_time">Now %1$s</string>
@@ -155,12 +155,12 @@
     <string name="excludes_vat">Price excl. VAT · VAT 0%</string>
     <string name="tomorrow">Tomorrow</string>
     <plurals name="quarter_prices_count">
-        <item quantity="one">Quarter-hour prices · %d slot</item>
-        <item quantity="other">Quarter-hour prices · %d slots</item>
+        <item quantity="one">Quarter-hour prices · %1$s slot</item>
+        <item quantity="other">Quarter-hour prices · %1$s slots</item>
     </plurals>
     <plurals name="hour_averages_count">
-        <item quantity="one">Hourly averages · %d hour</item>
-        <item quantity="other">Hourly averages · %d hours</item>
+        <item quantity="one">Hourly averages · %1$s hour</item>
+        <item quantity="other">Hourly averages · %1$s hours</item>
     </plurals>
     <string name="loading_prices">Loading prices…</string>
     <string name="tomorrow_prices_unavailable">Tomorrow’s prices aren’t available yet. They’ll appear here once the price service publishes them.</string>
@@ -176,8 +176,7 @@
     <string name="unit_without_vat">c/kWh · VAT 0%</string>
     <string name="now_caps">NOW</string>
     <string name="now">Now</string>
-    <string name="prices_footer">Updated %1$s
-Source: Elering / Nord Pool, Finland. %2$s The price excludes the retailer’s margin and transmission. Times are Finnish time.</string>
+    <string name="prices_footer">Updated %1$s\nSource: Elering / Nord Pool, Finland. %2$s The price excludes the retailer’s margin and transmission. Times are Finnish time.</string>
     <string name="prices_footer_vat_included">The price includes 25.5% VAT.</string>
     <string name="prices_footer_vat_excluded">The price excludes VAT (VAT 0%).</string>
     <string name="vat_switch">VAT 25.5%</string>
@@ -215,13 +214,13 @@ Source: Elering / Nord Pool, Finland. %2$s The price excludes the retailer’s m
     <string name="level_yellow">Yellow</string>
     <string name="level_orange">Orange</string>
     <string name="level_red">Red</string>
-    <string name="no_warning_area">No warning area</string>
+    <string name="no_warning_area">Warning area unknown</string>
     <string name="loading_warnings">Loading warnings…</string>
     <string name="warnings_unavailable">Warning data unavailable</string>
     <string name="warnings_uncertain">Warning data uncertain</string>
     <plurals name="warning_count">
-        <item quantity="one">%d warning</item>
-        <item quantity="other">%d warnings</item>
+        <item quantity="one">%1$s warning</item>
+        <item quantity="other">%1$s warnings</item>
     </plurals>
     <string name="stored_warning_count">In stored data: %1$s</string>
     <string name="fmi_now">Finnish Meteorological Institute · Now %1$s</string>
@@ -244,7 +243,7 @@ Source: Elering / Nord Pool, Finland. %2$s The price excludes the retailer’s m
     <string name="tracking">Tracking: %1$s · %2$s</string>
     <string name="updating_notification_location">Updating notification location…</string>
     <string name="close_notification_settings">Close notification settings ↑</string>
-    <string name="notification_settings_interval">Notification settings · %1$d min ↓</string>
+    <string name="notification_settings_interval">Notification settings · %1$s min ↓</string>
     <string name="background_check">Background check</string>
     <string name="no_background_location">No background location. Battery saver and connectivity may delay notifications.</string>
     <string name="notifications_blocked">The phone’s notification permission or channel is turned off.</string>
@@ -263,7 +262,7 @@ Source: Elering / Nord Pool, Finland. %2$s The price excludes the retailer’s m
     <string name="message_location_disabled">Turn on the phone’s location.</string>
     <string name="message_location_unavailable">Location is not available.</string>
     <string name="message_location_stale">Couldn’t get a fresh location. Try again.</string>
-    <string name="message_warnings_targeting_failed">Couldn’t target the warnings. Try refreshing again.</string>
+    <string name="message_warnings_targeting_failed">Couldn’t match the warnings to your area. Try refreshing again.</string>
     <string name="message_warnings_refresh_failed">Warning update failed. Earlier data may be out of date.</string>
     <string name="current_location">Current location</string>
 </resources>

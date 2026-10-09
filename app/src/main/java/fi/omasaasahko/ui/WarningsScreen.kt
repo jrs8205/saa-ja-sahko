@@ -52,7 +52,8 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         return local.filter { it.onset < end && it.expires > start }
     }
     val stale = snapshot != null && Duration.between(snapshot.fetchedAt, app.now).toMinutes() > state.intervalMinutes * 2
-    val count = pluralStringResource(R.plurals.warning_count, local.size, local.size)
+    // Numbers go in as text: %d would use the phone's primary locale digits, not the app language.
+    val count = pluralStringResource(R.plurals.warning_count, local.size, local.size.toString())
     val heading = when {
         (!permitted && app.selectedPlace == null) || place == null -> stringResource(R.string.no_warning_area)
         snapshot == null && state.loading -> stringResource(R.string.loading_warnings)
@@ -129,7 +130,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                     notificationPlace?.let { Text(stringResource(R.string.tracking, it.displayName(), updatedLabel(it.locatedAt, language)), style = MaterialTheme.typography.bodySmall) }
                     if (app.locating || app.namingLocation) Text(stringResource(R.string.updating_notification_location), style = MaterialTheme.typography.bodySmall)
                     app.locationError?.let { Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-                    TextButton(onClick = { settingsOpen = !settingsOpen }) { Text(if (settingsOpen) stringResource(R.string.close_notification_settings) else stringResource(R.string.notification_settings_interval, state.intervalMinutes)) }
+                    TextButton(onClick = { settingsOpen = !settingsOpen }) { Text(if (settingsOpen) stringResource(R.string.close_notification_settings) else stringResource(R.string.notification_settings_interval, state.intervalMinutes.toString())) }
                     if (settingsOpen) {
                         val intervals = listOf(15, 30, 60)
                         Text(stringResource(R.string.background_check), style = MaterialTheme.typography.labelLarge)

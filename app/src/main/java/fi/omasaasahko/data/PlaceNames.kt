@@ -88,21 +88,23 @@ interface PlaceSearch { suspend fun search(query: String): List<PlaceResult> }
 /** [language] is read on every call: the ViewModel keeps one instance across an app language change. */
 class MmlPlaceNames(private val apiKey: String = BuildConfig.MML_API_KEY, private val suppliedClient: OkHttpClient? = null,
                     private val language: () -> AppLanguage = { AppLanguage.FI }) : PlaceSearch {
-    private fun url(operation: String) = "https://avoin-paikkatieto.maanmittauslaitos.fi/geocoding/v2/pelias/$operation".toHttpUrl().newBuilder()
-        .addQueryParameter("sources", "geographic-names").addQueryParameter("lang", language().tag).addQueryParameter("size", "100")
+    private fun url(operation: String, language: AppLanguage) = "https://avoin-paikkatieto.maanmittauslaitos.fi/geocoding/v2/pelias/$operation".toHttpUrl().newBuilder()
+        .addQueryParameter("sources", "geographic-names").addQueryParameter("lang", language.tag).addQueryParameter("size", "100")
 
     override suspend fun search(query: String): List<PlaceResult> = withContext(Dispatchers.IO) {
         val text = query.trim()
         require(text.length in 2..200) { "Kirjoita vähintään kaksi merkkiä." }
         check(apiKey.isNotBlank()) { "Paikkahaun MML-avain puuttuu sovelluksesta." }
-        PlaceNames.searchResults(download(url("search").addQueryParameter("text", text).build()), text, language())
+        val language = language()
+        PlaceNames.searchResults(download(url("search", language).addQueryParameter("text", text).build()), text, language)
     }
 
     internal suspend fun reverseCandidates(latitude: Double, longitude: Double, radius: Int = PlaceNames.FALLBACK_RADIUS_METERS): List<NearbyName> = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) return@withContext emptyList()
-        val body = download(url("reverse").addQueryParameter("point.lat", latitude.toString())
+        val language = language()
+        val body = download(url("reverse", language).addQueryParameter("point.lat", latitude.toString())
             .addQueryParameter("point.lon", longitude.toString()).addQueryParameter("boundary.circle.radius", radius.toString()).build())
-        PlaceNames.nearby(PlaceNames.points(body, language()), latitude, longitude, radius)
+        PlaceNames.nearby(PlaceNames.points(body, language), latitude, longitude, radius)
     }
 
     private suspend fun download(url: HttpUrl): String = suspendCancellableCoroutine { continuation ->

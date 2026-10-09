@@ -39,6 +39,28 @@ class WarningRecoveryTest {
         assertEquals(before, prefs.all)
     }
 
+    @Test fun `a language change re-reads the cached warnings even when the refresh fails`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler); Dispatchers.setMain(dispatcher)
+        try {
+            val app = ApplicationProvider.getApplicationContext<Application>()
+            var cachedEvent = "Sadevaroitus"
+            val feed = object : FakeWarningFeed() {
+                override suspend fun cached() = WarningSnapshot(now, now, listOf(WeatherWarning("w", "rain", cachedEvent, WarningLevel.YELLOW,
+                    now, now.plusSeconds(3600), "", "", emptyList(), now)))
+                override suspend fun refresh(): WarningSnapshot = throw java.io.IOException("offline")
+            }
+            val model = WarningsViewModel(app, feed)
+            model.start(); runCurrent()
+            assertEquals("Sadevaroitus", model.state.value.snapshot?.warnings?.single()?.event)
+            model.stop(); runCurrent()
+            cachedEvent = "Regnvarning"
+            org.robolectric.RuntimeEnvironment.setQualifiers("sv")
+            model.start(); runCurrent()
+            assertEquals("Regnvarning", model.state.value.snapshot?.warnings?.single()?.event)
+            model.stop(); runCurrent()
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `place JSON stores origin and resolved state independently of the visible text`() {
         val renamed = place.copy(name = "Oma paikka", nameResolved = false, nameAnchor = NameAnchor(60.27, 24.75, 10f))
         assertEquals(renamed, placeFromJson(renamed.toJson()))

@@ -18,6 +18,10 @@ internal fun SemanticsNodeInteraction.assertTextFits(singleLine: Boolean = true)
     layouts.forEach { layout ->
         val text = layout.layoutInput.text.text
         if (singleLine) assertEquals("Keep the text on one line: $text", 1, layout.lineCount)
+        for (line in 0 until layout.lineCount - 1) {
+            val end = layout.getLineEnd(line, visibleEnd = true)
+            assertTrue("Word broken across lines: $text", end >= text.length || text[end].isWhitespace())
+        }
         assertFalse("Ellipsized text: $text", layout.isLineEllipsized(0))
         assertEquals("All characters must be drawn: $text", text.length,
             layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))

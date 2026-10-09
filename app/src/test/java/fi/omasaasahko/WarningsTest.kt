@@ -19,7 +19,7 @@ import org.json.JSONObject
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35], qualifiers = "fi")
+@Config(sdk = [35])
 class WarningsTest {
     private val now = Instant.parse("2026-09-16T09:00:00Z")
     private val vantaa = Place(60.2925,25.0408,"Tikkurila, Vantaa",now, origin = PlaceOrigin.DEVICE)
@@ -42,6 +42,37 @@ class WarningsTest {
         assertEquals("Sadevaroitus", WarningParser.parse(feed(alert()), now, AppLanguage.SV).warnings.single().event)
         assertEquals("Testområde", WarningParser.parse(feed(swedish), now, AppLanguage.SV).local(vantaa, now).single().areas.single().name)
     }
+    private fun swedishAlert() = alert().replace("<info><language>fi-FI</language>", "<info><language>sv-FI</language><severity>Moderate</severity><event>Regnvarning</event><onset>2026-09-18T12:00:00+03:00</onset><expires>2026-09-19T00:00:00+03:00</expires><description>Kraftigt regn.</description><area><areaDesc>Testområde</areaDesc><polygon>60,24 61,24 61,26 60,26 60,24</polygon></area></info><info><language>fi-FI</language>")
+
+    @Test fun `an incomplete English block falls back to the Finnish block without marking the snapshot partial`() {
+        val english = WarningParser.parse(feed(alert()), now, AppLanguage.EN)
+        assertFalse(english.partial)
+        assertEquals("Sadevaroitus", english.warnings.single().event)
+        assertEquals(WarningLevel.YELLOW, english.warnings.single().level)
+    }
+
+    @Test fun `fingerprint ignores the language and a language round trip keeps one notification`() {
+        val finnish = WarningParser.parse(feed(swedishAlert()), now, AppLanguage.FI).warnings.single()
+        val swedish = WarningParser.parse(feed(swedishAlert()), now, AppLanguage.SV).warnings.single()
+        assertEquals(finnish.fingerprint(vantaa), swedish.fingerprint(vantaa))
+        assertNotEquals(finnish.fingerprint(vantaa), WarningParser.parse(feed(alert(severity = "Severe")), now, AppLanguage.FI).warnings.single().fingerprint(vantaa))
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_COARSE_LOCATION)
+        app.getSharedPreferences("warnings", Context.MODE_PRIVATE).edit().clear().putBoolean("enabled", true).commit()
+        val service = WarningService(app); service.savePlace(vantaa)
+        val manager = app.getSystemService(NotificationManager::class.java)
+        fun text() = manager.activeNotifications.single().notification.extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString()
+        service.notifyNew(WarningParser.parse(feed(swedishAlert()), now, AppLanguage.FI), now)
+        val tag = manager.activeNotifications.single().tag
+        assertTrue(text().contains("Rankkaa sadetta."))
+        service.notifyNew(WarningParser.parse(feed(swedishAlert()), now, AppLanguage.SV), now)
+        assertEquals(tag, manager.activeNotifications.single().tag)
+        assertTrue(text().contains("Kraftigt regn."))
+        service.notifyNew(WarningParser.parse(feed(swedishAlert()), now, AppLanguage.FI), now)
+        assertEquals(tag, manager.activeNotifications.single().tag)
+        assertTrue(text().contains("Rankkaa sadetta."))
+    }
+
     @Test fun `polygon selection follows location and includes every future day`() {
         val snapshot = WarningParser.parse(feed(alert()), now, AppLanguage.FI)
         val warning = snapshot.local(vantaa,now).single()

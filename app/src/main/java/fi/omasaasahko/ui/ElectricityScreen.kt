@@ -102,7 +102,7 @@ fun ElectricityScreen(state: AppState, onResolution: (Resolution) -> Unit, scrol
         }
         item {
             SectionTitle(language.day(date),
-                pluralStringResource(if (state.resolution == Resolution.QUARTER) R.plurals.quarter_prices_count else R.plurals.hour_averages_count, rows.size, rows.size))
+                pluralStringResource(if (state.resolution == Resolution.QUARTER) R.plurals.quarter_prices_count else R.plurals.hour_averages_count, rows.size, rows.size.toString()))
         }
         if (available.isEmpty()) {
             item {

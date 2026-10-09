@@ -7,6 +7,7 @@ import fi.omasaasahko.data.WarningService
 import fi.omasaasahko.data.WarningFeed
 import fi.omasaasahko.data.DelayedNotificationTest
 import fi.omasaasahko.domain.*
+import fi.omasaasahko.of
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
@@ -24,6 +25,7 @@ class WarningsViewModel(application: Application, private val feed: WarningFeed)
     private var fetch: Job? = null
     private var refreshError: AppMessage? = null
     private var evaluationError: AppMessage? = null
+    private var cachedLanguage = AppLanguage.of(application)
     init { viewModelScope.launch { val cache = feed.cached(); mutable.update { it.copy(snapshot = it.snapshot ?: cache) } } }
     fun place(place: Place?) {
         if (place == null) return
@@ -44,6 +46,12 @@ class WarningsViewModel(application: Application, private val feed: WarningFeed)
     }
     fun start() {
         mutable.update { it.copy(enabled = feed.enabled, allowed = feed.allowed()) }
+        // The ViewModel outlives an app language change; the cached feed carries every language.
+        val language = AppLanguage.of(getApplication())
+        if (language != cachedLanguage) {
+            cachedLanguage = language
+            viewModelScope.launch { feed.cached()?.let { cache -> mutable.update { it.copy(snapshot = cache) } } }
+        }
         if (feed.enabled) feed.setEnabled(true)
         if (loop?.isActive == true) return
         loop = viewModelScope.launch { while (isActive) { refresh(); delay(15 * 60_000L) } }

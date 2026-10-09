@@ -16,14 +16,14 @@ Sovellus näkyy puhelimen kielen mukaan suomeksi, ruotsiksi tai englanniksi. Suo
 | desimaali | 12,3° | 12,3° | 12.3° |
 | yksikkö | snt/kWh | c/kWh | c/kWh |
 
-Suomenruotsi käyttää suomalaisia kello- ja päivämäärämerkintöjä.
+Suomenruotsi käyttää suomalaisia kello- ja päivämäärämerkintöjä. Englannin lokaali on `Locale.ENGLISH` (ei en-GB, joka lyhentäisi syyskuun muotoon "Sept"). Luvut annetaan resursseille tekstinä (`%1$s`), koska `%d` käyttäisi puhelimen ensisijaisen kielen numeromerkkejä.
 
 - Näkymät lukevat kielen `LocalAppLanguage`-arvosta ja tekstit `stringResource`-kutsuilla. Ilmoitukset ja taustatyöt käyttävät `AppLanguage.of(context)`-funktiota ja `context.getString`-kutsuja, joten ne seuraavat kieltä myös sovelluksen ollessa suljettuna.
 - Domain-kerros ei sisällä käännettäviä merkkijonoja. Sääkoodien kuvaukset ovat `WeatherText`-enumin arvoja, virheviestit `AppMessage`-arvoja ja varoitustasot, lähteet ja aikavälit enumeja, jotka `Localization.kt` kuvaa resursseiksi. Jokainen sääkuvaus on kokonainen lause kullakin kielellä, jotta taivutus on oikein.
 
 ## Tietolähteet kielen mukaan
 
-- FMI:n CAP-syöte sisältää jokaisen varoituksen suomeksi, ruotsiksi ja englanniksi. Jäsennin valitsee sovelluksen kielen, varalla suomen. Kielen vaihto muuttaa varoitusten sormenjälkiä, joten voimassa olevat varoitukset ilmoitetaan kerran uudelleen uudella kielellä.
+- FMI:n CAP-syöte sisältää jokaisen varoituksen suomeksi, ruotsiksi ja englanniksi. Jäsennin valitsee sovelluksen kielen lohkon, jos se on rakenteeltaan täydellinen, muuten suomen. Varoituksen tunniste (ilmoituksen avain) lasketaan kielestä riippumattomista kentistä (tapahtumakoodi, suomenkielinen tapahtuman nimi, taso, ajat, polygonit), joten kielen vaihto päivittää ilmoituksen tekstin hiljaisesti eikä ilmoita uudelleen. Varoitusruutu lukee välimuistin uudelleen uudella kielellä.
 - Maanmittauslaitoksen paikkahaku ja lähimmän paikan nimi haetaan `lang`-parametrilla (fi, sv tai en) ja ruotsiksi suositaan ruotsinkielistä nimeä (Borgå, Brunnsparken). Suosikit säilyttävät tallennuskielensä. Androidin osoitehaku käyttää samaa lokaalia.
 - Säätiedot ja hinnat ovat kielestä riippumattomia; välimuistit tallentavat raakavastaukset, joten vanha välimuisti toimii kielen vaihdon jälkeen.
 
