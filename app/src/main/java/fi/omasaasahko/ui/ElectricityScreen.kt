@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fi.omasaasahko.AppState
 import fi.omasaasahko.R
+import fi.omasaasahko.labelRes
 import fi.omasaasahko.data.PriceAlertState
 import fi.omasaasahko.domain.*
 import java.math.BigDecimal

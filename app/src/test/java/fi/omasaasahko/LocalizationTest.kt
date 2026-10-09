@@ -128,6 +128,41 @@ class LocalizationTest {
         assertEquals("Electricity price test", notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString())
     }
 
+    private fun warningSnapshot(level: WarningLevel): WarningSnapshot {
+        val now = PreviewData.now
+        val area = WarningArea("Uusimaa", listOf(listOf(GeoPoint(60.0, 24.0), GeoPoint(61.0, 24.0), GeoPoint(61.0, 26.0), GeoPoint(60.0, 26.0), GeoPoint(60.0, 24.0))))
+        val warning = WeatherWarning("w1", "rain", "Rain warning", level, now.plusSeconds(7200), now.plusSeconds(86400), "Heavy rain.", "", listOf(area), now)
+        return WarningSnapshot(now, now, listOf(warning))
+    }
+
+    @Test fun `warnings screen speaks Swedish`() {
+        RuntimeEnvironment.setQualifiers("sv-rFI-w411dp-h891dp-xhdpi")
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state.copy(devicePlace = PreviewData.place), true, {}, {}, {}, {}, {}, {},
+            warnings = WarningsState(snapshot = warningSnapshot(WarningLevel.ORANGE), enabled = true, allowed = true)) } }
+        compose.onNodeWithTag("tab-warnings").performClick()
+        compose.onNodeWithText("1 varning").assertIsDisplayed()
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Orange · Kommande"))
+        compose.onAllNodesWithText("Orange · Kommande").onFirst().assertIsDisplayed()
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Varningsaviseringar"))
+        compose.onNodeWithText("Varningsaviseringar").assertIsDisplayed()
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Varningar på FMI:s webbplats ↗"))
+        compose.onNodeWithText("Varningar på FMI:s webbplats ↗").assertIsDisplayed()
+    }
+
+    @Test fun `warnings screen and warning notifications speak English`() {
+        compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state.copy(devicePlace = PreviewData.place), true, {}, {}, {}, {}, {}, {},
+            warnings = WarningsState(snapshot = warningSnapshot(WarningLevel.RED))) } }
+        compose.onNodeWithTag("tab-warnings").performClick()
+        compose.onNodeWithText("1 warning").assertIsDisplayed()
+        compose.onNodeWithText("Finnish Meteorological Institute · Now 16 Sep 12:10").assertIsDisplayed()
+        compose.onNodeWithTag("warnings-scroll").performScrollToNode(hasText("Red · Upcoming"))
+        compose.onAllNodesWithText("Red · Upcoming").onFirst().assertIsDisplayed()
+        org.robolectric.Shadows.shadowOf(app).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        WarningService(app).testNotification()
+        val notification = app.getSystemService(android.app.NotificationManager::class.java).activeNotifications.single().notification
+        assertEquals("Weather warning test", notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString())
+    }
+
     @Test fun `English phone sees English clock punctuation`() {
         compose.setContent { AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) } }
         compose.onNodeWithTag("current-time").assertTextContains("12:10", substring = true)

@@ -14,10 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import fi.omasaasahko.AppState
 import fi.omasaasahko.R
+import fi.omasaasahko.labelRes
 import fi.omasaasahko.WarningsState
 import fi.omasaasahko.domain.*
 import java.time.Duration
@@ -42,18 +45,20 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
     }.distinct().sorted()
     val selectableDays = ((0..4).map { today.plusDays(it.toLong()) } + warningDates).distinct().sorted()
     LaunchedEffect(today, selectedDay) { if (selectedDay != "all" && LocalDate.parse(selectedDay) !in selectableDays) selectedDay = "all" }
-    fun dayLabel(date: LocalDate) = when (date) { today -> "Tänään"; today.plusDays(1) -> "Huomenna"; else -> language.weekday(date) }
+    val todayLabel = stringResource(R.string.today); val tomorrowLabel = stringResource(R.string.tomorrow)
+    fun dayLabel(date: LocalDate) = when (date) { today -> todayLabel; today.plusDays(1) -> tomorrowLabel; else -> language.weekday(date) }
     fun forDay(date: LocalDate): List<WeatherWarning> {
         val start = date.atStartOfDay(HELSINKI).toInstant(); val end = date.plusDays(1).atStartOfDay(HELSINKI).toInstant()
         return local.filter { it.onset < end && it.expires > start }
     }
     val stale = snapshot != null && Duration.between(snapshot.fetchedAt, app.now).toMinutes() > state.intervalMinutes * 2
+    val count = pluralStringResource(R.plurals.warning_count, local.size, local.size)
     val heading = when {
-        (!permitted && app.selectedPlace == null) || place == null -> "Varoitusalue puuttuu"
-        snapshot == null && state.loading -> "Haetaan varoituksia…"
-        snapshot == null -> "Varoitustietoa ei saatavilla"
-        stale || state.error != null || snapshot.partial -> "Varoitustieto epävarma"
-        else -> "${local.size} ${if (local.size == 1) "varoitus" else "varoitusta"}"
+        (!permitted && app.selectedPlace == null) || place == null -> stringResource(R.string.no_warning_area)
+        snapshot == null && state.loading -> stringResource(R.string.loading_warnings)
+        snapshot == null -> stringResource(R.string.warnings_unavailable)
+        stale || state.error != null || snapshot.partial -> stringResource(R.string.warnings_uncertain)
+        else -> count
     }
     LazyColumn(state = scroll, modifier = Modifier.fillMaxSize().testTag("warnings-scroll"),
         contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -61,15 +66,15 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
             Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(heading, style = MaterialTheme.typography.headlineLarge)
                 if (snapshot != null && place != null && (permitted || app.selectedPlace != null) && (stale || state.error != null || snapshot.partial))
-                    Text("Tallennetuissa tiedoissa: ${local.size} ${if (local.size == 1) "varoitus" else "varoitusta"}", style = MaterialTheme.typography.bodyMedium)
-                Text("Ilmatieteen laitos · Nyt ${updatedLabel(app.now, language)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                snapshot?.let { Text("Tarkistettu ${updatedLabel(it.fetchedAt, language)} · FMI julkaisi ${updatedLabel(it.publishedAt, language)}",
+                    Text(stringResource(R.string.stored_warning_count, count), style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.fmi_now, updatedLabel(app.now, language)), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                snapshot?.let { Text(stringResource(R.string.checked_published, updatedLabel(it.fetchedAt, language), updatedLabel(it.publishedAt, language)),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.testTag("warning-days")) {
-                item { WarningDayCard("Kaikki", "päivät", selectedDay == "all", "warning-day-all") { selectedDay = "all" } }
+                item { WarningDayCard(stringResource(R.string.all_days_title), stringResource(R.string.all_days_subtitle), selectedDay == "all", "warning-day-all") { selectedDay = "all" } }
                 items(selectableDays, key = { it.toString() }) { day ->
                     WarningDayCard(dayLabel(day), language.shortDate(day),
                         selectedDay == day.toString(), "warning-day-$day") { selectedDay = day.toString() }
@@ -78,25 +83,23 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         }
         if ((!permitted && app.selectedPlace == null) || place == null) item {
             Block(radius = Radius.tile, padding = PaddingValues(16.dp)) {
-                Text("Salli sijainti sääsivulla, jotta varoitukset kohdistuvat oikealle alueelle.")
-                TextButton(onClick = onPermission) { Text("Salli sijainti") }
+                Text(stringResource(R.string.allow_location_for_warnings))
+                TextButton(onClick = onPermission) { Text(stringResource(R.string.allow_location)) }
             }
         }
         state.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error) } }
-        if (stale) item { Text("Varoitustietoja ei ole tarkistettu äskettäin. Päivitä näkymä.", color = MaterialTheme.colorScheme.error) }
-        if (snapshot?.partial == true) item { Text("Kaikkia varoituksia ei voitu tulkita. Tarkista myös FMI:n varoitussivu.", color = MaterialTheme.colorScheme.error) }
-        if (snapshot == null && !state.loading) item { Text("Varoitustietoja ei ole vielä saatavilla.") }
+        if (stale) item { Text(stringResource(R.string.warnings_stale), color = MaterialTheme.colorScheme.error) }
+        if (snapshot?.partial == true) item { Text(stringResource(R.string.warnings_partial), color = MaterialTheme.colorScheme.error) }
+        if (snapshot == null && !state.loading) item { Text(stringResource(R.string.warnings_not_yet)) }
         if (snapshot != null && (permitted || app.selectedPlace != null) && place != null && local.isEmpty() && selectedDay == "all") item {
-            Block(radius = Radius.tile) { Text(if (stale || state.error != null || snapshot.partial) "Tallennetuissa tiedoissa ei ole alueelle kohdistuvia varoituksia."
-                else "FMI:n viimeisimmässä syötteessä ei ole tälle sijainnille voimassa olevia tai tulevia varoituksia.") }
+            Block(radius = Radius.tile) { Text(stringResource(if (stale || state.error != null || snapshot.partial) R.string.no_local_warnings_stored else R.string.no_local_warnings)) }
         }
         val dates = if (selectedDay == "all") warningDates else listOf(LocalDate.parse(selectedDay))
         dates.forEach { date ->
-            item(key = "date-$date") { Text(when (date) { today -> "Tänään"; today.plusDays(1) -> "Huomenna"; else -> language.day(date) },
+            item(key = "date-$date") { Text(when (date) { today -> todayLabel; today.plusDays(1) -> tomorrowLabel; else -> language.day(date) },
                 style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 4.dp, top = 8.dp)) }
             if (snapshot != null && (permitted || app.selectedPlace != null) && place != null && forDay(date).isEmpty()) item {
-                Block(radius = Radius.tile) { Text(if (stale || state.error != null || snapshot.partial) "Tallennetuissa tiedoissa ei ole tälle päivälle alueesi varoituksia. Päivitä tiedot."
-                    else "Tälle päivälle ei ole julkaistu alueesi varoituksia.") }
+                Block(radius = Radius.tile) { Text(stringResource(if (stale || state.error != null || snapshot.partial) R.string.no_day_warnings_stored else R.string.no_day_warnings)) }
             }
             items(forDay(date), key = { "$date-${it.id}" }) { warning ->
                 val colors = warningColors(warning.level)
@@ -106,7 +109,7 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
                         Box(Modifier.size(52.dp).background(colors.accent, CircleShape), contentAlignment = Alignment.Center) {
                             Icon(painterResource(R.drawable.ic_tab_warnings), contentDescription = null, tint = colors.onAccent, modifier = Modifier.size(26.dp))
                         }
-                        TonePill("${warning.level.label} · ${if (app.now < warning.onset) "Tulossa" else "Voimassa"}", colors.accent, colors.onAccent)
+                        TonePill("${stringResource(warning.level.labelRes())} · ${stringResource(if (app.now < warning.onset) R.string.upcoming else R.string.in_force)}", colors.accent, colors.onAccent)
                     }
                     Text(warning.event, style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(top = 12.dp))
                     Text(warning.localAreas(place!!).joinToString { it.name }, style = MaterialTheme.typography.titleSmall, color = colors.muted)
@@ -119,34 +122,35 @@ fun WarningsScreen(app: AppState, state: WarningsState, permitted: Boolean, scro
         }
         item(key = "warning-notifications") {
             Block(radius = Radius.panel, padding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)) {
-                SettingSwitchRow("Varoitusilmoitukset", "Keltainen, oranssi ja punainen", state.enabled, onEnable,
+                SettingSwitchRow(stringResource(R.string.warning_notifications), stringResource(R.string.warning_levels_subtitle), state.enabled, onEnable,
                     enabled = permitted && notificationPlace != null)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Ilmoitukset seuraavat puhelimen sijaintia. Suosikin tai hakutuloksen katselu ei muuta seurantaa.", style = MaterialTheme.typography.bodySmall)
-                    notificationPlace?.let { Text("Seurataan: ${it.name} · ${updatedLabel(it.locatedAt, language)}", style = MaterialTheme.typography.bodySmall) }
-                    if (app.locating || app.namingLocation) Text("Päivitetään ilmoitusten sijaintia…", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.notifications_follow_phone), style = MaterialTheme.typography.bodySmall)
+                    notificationPlace?.let { Text(stringResource(R.string.tracking, it.name, updatedLabel(it.locatedAt, language)), style = MaterialTheme.typography.bodySmall) }
+                    if (app.locating || app.namingLocation) Text(stringResource(R.string.updating_notification_location), style = MaterialTheme.typography.bodySmall)
                     app.locationError?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-                    TextButton(onClick = { settingsOpen = !settingsOpen }) { Text(if (settingsOpen) "Sulje ilmoitusasetukset ↑" else "Ilmoitusasetukset · ${state.intervalMinutes} min ↓") }
+                    TextButton(onClick = { settingsOpen = !settingsOpen }) { Text(if (settingsOpen) stringResource(R.string.close_notification_settings) else stringResource(R.string.notification_settings_interval, state.intervalMinutes)) }
                     if (settingsOpen) {
                         val intervals = listOf(15, 30, 60)
-                        Text("Taustatarkistus", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.background_check), style = MaterialTheme.typography.labelLarge)
                         ChoiceRow(intervals.map { "$it min" }, intervals.indexOf(state.intervalMinutes), { onInterval(intervals[it]) }, Modifier.fillMaxWidth())
-                        Text("Ei taustapaikannusta. Virransäästö ja verkkoyhteys voivat viivästyttää ilmoituksia.", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.no_background_location), style = MaterialTheme.typography.bodySmall)
                         if (!state.allowed) {
-                            Text("Puhelimen ilmoituslupa tai ilmoituskanava on pois päältä.")
-                            TextButton(onClick = onSettings) { Text("Avaa ilmoitusasetukset") }
+                            Text(stringResource(R.string.notifications_blocked))
+                            TextButton(onClick = onSettings) { Text(stringResource(R.string.open_notification_settings)) }
                         } else if (state.enabled) {
-                            TextButton(onClick = onTest, enabled = !state.testPending) { Text("Testaa ilmoitus 10 s kuluttua") }
-                            if (state.testPending) Text("Lukitse puhelin nyt ja odota ilmoitusta kelloon.", style = MaterialTheme.typography.bodySmall)
+                            TextButton(onClick = onTest, enabled = !state.testPending) { Text(stringResource(R.string.test_notification)) }
+                            if (state.testPending) Text(stringResource(R.string.lock_phone_hint), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
             }
         }
         item {
-            Text("Alue määräytyy FMI:n varoitusrajoista. Likimääräinen sijainti voi vaikuttaa kohdistukseen lähellä alueen rajaa. Mukana ovat myös kaikki syötteessä julkaistut tulevat varoitukset.",
+            Text(stringResource(R.string.warnings_footer),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = { uri.openUri("https://www.ilmatieteenlaitos.fi/varoitukset") }) { Text("Varoitukset FMI:n sivuilla ↗") }
+            val warningsUrl = stringResource(R.string.fmi_warnings_url)
+            TextButton(onClick = { uri.openUri(warningsUrl) }) { Text(stringResource(R.string.warnings_on_fmi)) }
         }
     }
 }

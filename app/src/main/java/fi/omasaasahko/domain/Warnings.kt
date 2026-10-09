@@ -4,9 +4,7 @@ import java.security.MessageDigest
 import java.time.Instant
 import kotlin.math.abs
 
-enum class WarningLevel(val label: String, val rank: Int) {
-    YELLOW("Keltainen", 1), ORANGE("Oranssi", 2), RED("Punainen", 3)
-}
+enum class WarningLevel(val rank: Int) { YELLOW(1), ORANGE(2), RED(3) }
 data class GeoPoint(val latitude: Double, val longitude: Double)
 data class WarningArea(val name: String, val polygons: List<List<GeoPoint>>) {
     fun contains(place: Place): Boolean = polygons.any { polygonContains(it, place.latitude, place.longitude) }

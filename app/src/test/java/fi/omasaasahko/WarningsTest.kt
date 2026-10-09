@@ -19,7 +19,7 @@ import org.json.JSONObject
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], qualifiers = "fi")
 class WarningsTest {
     private val now = Instant.parse("2026-09-16T09:00:00Z")
     private val vantaa = Place(60.2925,25.0408,"Tikkurila, Vantaa",now, origin = PlaceOrigin.DEVICE)
@@ -35,8 +35,15 @@ class WarningsTest {
         <eventCode><valueName>profile:cap:https://alerts.fmi.fi/cap/profile/v1.1.0</valueName><value>rain</value></eventCode>
         <onset>$onset</onset><expires>$expires</expires><description>Rankkaa sadetta.</description>
         <area><areaDesc>$area</areaDesc><polygon>$polygon</polygon></area></info></alert>""".trimIndent()
+    @Test fun `info block follows the app language and falls back to Finnish`() {
+        val swedish = alert().replace("<info><language>fi-FI</language>", "<info><language>sv-FI</language><severity>Moderate</severity><event>Regnvarning</event><onset>2026-09-18T12:00:00+03:00</onset><expires>2026-09-19T00:00:00+03:00</expires><description>Kraftigt regn.</description><area><areaDesc>Testområde</areaDesc><polygon>60,24 61,24 61,26 60,26 60,24</polygon></area></info><info><language>fi-FI</language>")
+        assertEquals("Regnvarning", WarningParser.parse(feed(swedish), now, AppLanguage.SV).warnings.single().event)
+        assertEquals("Sadevaroitus", WarningParser.parse(feed(swedish), now, AppLanguage.FI).warnings.single().event)
+        assertEquals("Sadevaroitus", WarningParser.parse(feed(alert()), now, AppLanguage.SV).warnings.single().event)
+        assertEquals("Testområde", WarningParser.parse(feed(swedish), now, AppLanguage.SV).local(vantaa, now).single().areas.single().name)
+    }
     @Test fun `polygon selection follows location and includes every future day`() {
-        val snapshot = WarningParser.parse(feed(alert()), now)
+        val snapshot = WarningParser.parse(feed(alert()), now, AppLanguage.FI)
         val warning = snapshot.local(vantaa,now).single()
         assertEquals("Sadevaroitus", warning.event)
         assertEquals(Instant.parse("2026-09-18T09:00:00Z"), warning.onset)
@@ -49,31 +56,31 @@ class WarningsTest {
     @Test fun `updates cancellations and test messages are excluded independent of entry order`() {
         val ref = "urn:oid:2.49.0.0.246.0,a,$now"
         val update = alert("b", "Update", ref, "Extreme")
-        val snapshot = WarningParser.parse(feed(update, alert(), alert("test",status="Test")), now)
+        val snapshot = WarningParser.parse(feed(update, alert(), alert("test",status="Test")), now, AppLanguage.FI)
         assertEquals("b", snapshot.warnings.single().id)
         assertEquals(WarningLevel.RED,snapshot.warnings.single().level)
         val cancel = alert("cancel","Cancel","urn:oid:2.49.0.0.246.0,b,$now")
-        assertTrue(WarningParser.parse(feed(update, cancel, alert()), now).warnings.isEmpty())
-        assertTrue(WarningParser.parse(feed(), now).warnings.isEmpty())
+        assertTrue(WarningParser.parse(feed(update, cancel, alert()), now, AppLanguage.FI).warnings.isEmpty())
+        assertTrue(WarningParser.parse(feed(), now, AppLanguage.FI).warnings.isEmpty())
     }
     @Test fun `unknown severity is marked partial and malformed data is never empty success`() {
-        assertTrue(WarningParser.parse(feed(alert(severity="NewLevel")),now).partial)
-        assertEquals(WarningLevel.ORANGE,WarningParser.parse(feed(alert(severity="Severe")),now).warnings.single().level)
+        assertTrue(WarningParser.parse(feed(alert(severity="NewLevel")), now, AppLanguage.FI).partial)
+        assertEquals(WarningLevel.ORANGE,WarningParser.parse(feed(alert(severity="Severe")), now, AppLanguage.FI).warnings.single().level)
         listOf("<html>error</html>",feed(alert(polygon="60,24 61,24")),feed(alert(expires="bad")),
             "<!DOCTYPE feed [<!ENTITY x 'bad'>]>" + feed()).forEach { body ->
-            assertTrue(runCatching { WarningParser.parse(body,now) }.isFailure)
+            assertTrue(runCatching { WarningParser.parse(body, now, AppLanguage.FI) }.isFailure)
         }
     }
     @Test fun `concave polygons do not match their entire bounding rectangle`() {
         val shape = "60,24 62,24 62,25 61,25 61,26 60,26 60,24"
-        val warning = WarningParser.parse(feed(alert(polygon=shape)),now).warnings.single()
+        val warning = WarningParser.parse(feed(alert(polygon=shape)), now, AppLanguage.FI).warnings.single()
         assertFalse(warning.areas.single().contains(vantaa.copy(latitude=61.5,longitude=25.5)))
         assertTrue(warning.areas.single().contains(vantaa.copy(latitude=60.5,longitude=25.5)))
     }
     @Test fun `official FMI Uusimaa boundary contains Tikkurila but not Tampere`() {
         // FMI CAP archive 2026-07-01 12:01Z, Uusimaa area; data CC BY 4.0 FMI.
         val polygon = javaClass.getResource("/fmi-uusimaa-polygon.txt")!!.readText()
-        val data = WarningParser.parse(feed(alert(polygon=polygon,area="Uusimaa")),now)
+        val data = WarningParser.parse(feed(alert(polygon=polygon,area="Uusimaa")), now, AppLanguage.FI)
         assertEquals("Uusimaa",data.local(vantaa,now).single().localAreas(vantaa).single().name)
         assertTrue(data.local(tampere,now).isEmpty())
     }
@@ -85,7 +92,7 @@ class WarningsTest {
         val manager = app.getSystemService(NotificationManager::class.java)
         val espoo = vantaa.copy(name = "Espoo")
         val porvoo = vantaa.copy(latitude = 60.39, longitude = 25.66, name = "Porvoo")
-        val snapshot = WarningParser.parse(feed(alert()), now)
+        val snapshot = WarningParser.parse(feed(alert()), now, AppLanguage.FI)
         service.savePlace(espoo); service.beginLocationUpdate()
         service.notifyNew(snapshot, now)
         assertTrue(manager.activeNotifications.isEmpty())
@@ -112,19 +119,19 @@ class WarningsTest {
         prefs.edit().clear().putBoolean("enabled",true).commit()
         val service = WarningService(app); service.savePlace(vantaa)
         val manager = app.getSystemService(NotificationManager::class.java)
-        service.notifyNew(WarningParser.parse(feed(alert()),now),now)
+        service.notifyNew(WarningParser.parse(feed(alert()), now, AppLanguage.FI),now)
         assertEquals(1,manager.activeNotifications.size)
         val original = manager.activeNotifications.single().tag
         manager.cancelAll() // User dismisses the notification.
-        service.notifyNew(WarningParser.parse(feed(alert(id="republished")),now),now)
+        service.notifyNew(WarningParser.parse(feed(alert(id="republished")), now, AppLanguage.FI),now)
         assertEquals(0,manager.activeNotifications.size)
-        service.notifyNew(WarningParser.parse(feed(alert(id="stronger",severity="Severe")),now),now)
+        service.notifyNew(WarningParser.parse(feed(alert(id="stronger",severity="Severe")), now, AppLanguage.FI),now)
         assertEquals(1,manager.activeNotifications.size)
         assertNotEquals(original,manager.activeNotifications.single().tag)
-        service.notifyNew(WarningParser.parse(feed(),now),now)
+        service.notifyNew(WarningParser.parse(feed(), now, AppLanguage.FI),now)
         assertEquals(0,manager.activeNotifications.size)
         service.savePlace(tampere)
-        service.notifyNew(WarningParser.parse(feed(alert(id="elsewhere")),now),now)
+        service.notifyNew(WarningParser.parse(feed(alert(id="elsewhere")), now, AppLanguage.FI),now)
         assertEquals(0,manager.activeNotifications.size)
     }
 
@@ -141,7 +148,7 @@ class WarningsTest {
                 service.beginLocationUpdate()
                 File(app.filesDir, "warnings.json").writeText(JSONObject().put("fetched", now.toString()).put("body", body).toString())
                 val before = manager.activeNotifications.size
-                service.notifyNew(WarningParser.parse(body, now), now)
+                service.notifyNew(WarningParser.parse(body, now, AppLanguage.FI), now)
                 assertEquals(before, manager.activeNotifications.size)
                 service.endLocationUpdate()
                 evaluationScope.coroutineContext.job.children.toList().joinAll()

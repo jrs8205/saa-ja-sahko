@@ -17,6 +17,7 @@ import androidx.work.*
 import fi.omasaasahko.MainActivity
 import fi.omasaasahko.R
 import fi.omasaasahko.of
+import fi.omasaasahko.labelRes
 import fi.omasaasahko.domain.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -113,13 +114,13 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
     override suspend fun cached(): WarningSnapshot? = withContext(Dispatchers.IO) { mutex.withLock {
         runCatching {
             val data = JSONObject(file.openRead().bufferedReader().use { it.readText() })
-            WarningParser.parse(data.getString("body"), Instant.parse(data.getString("fetched")))
+            WarningParser.parse(data.getString("body"), Instant.parse(data.getString("fetched")), AppLanguage.of(context))
         }.getOrNull()
     } }
     override suspend fun refresh(): WarningSnapshot = mutex.withLock {
         val body = download()
         val now = Instant.now()
-        val snapshot = withContext(Dispatchers.IO) { WarningParser.parse(body, now) }
+        val snapshot = withContext(Dispatchers.IO) { WarningParser.parse(body, now, AppLanguage.of(context)) }
         withContext(Dispatchers.IO) {
             // Reject an older server snapshot, instead of resurrecting a cancelled warning.
             val previous = runCatching { JSONObject(file.openRead().bufferedReader().use { it.readText() }) }.getOrNull()
@@ -171,7 +172,7 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
         seen.keys().forEach { key -> if (seen.optLong(key) > now.epochSecond) kept.put(key, seen.getLong(key)) }
         active.forEach { (key, warning) ->
             if (!enabled || place() != place || !DeviceLocation(context).permitted()) return
-            val title = "${warning.level.label}: ${warning.event}"
+            val title = "${context.getString(warning.level.labelRes())}: ${warning.event}"
             val text = "${place.name} · ${updatedLabel(warning.onset, language)}–${updatedLabel(warning.expires, language)}\n${warning.description}"
             val previous = existing[key]?.notification
             if (!kept.has(key) || (previous != null && previous.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() != text)) {
@@ -187,7 +188,7 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
         if (!allowed()) return
         createChannel()
         NotificationManagerCompat.from(context).notify("test", 2,
-            notification("Säävaroitusten testi", "Tämä on testi, ei FMI:n säävaroitus. Jos näet tämän kellossa, säävaroituskanavan välitys toimii.").setTimeoutAfter(60_000).build())
+            notification(context.getString(R.string.warning_test_title), context.getString(R.string.warning_test_text)).setTimeoutAfter(60_000).build())
     }
     private fun notification(title: String, text: String): NotificationCompat.Builder {
         val intent = Intent(context, MainActivity::class.java).putExtra("showWarnings", true)
@@ -201,8 +202,8 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
     }
     fun createChannel() {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, "Oman alueen säävaroitukset", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "FMI:n keltaiset, oranssit ja punaiset varoitukset sekä tulevat päivät"
+            NotificationChannel(CHANNEL, context.getString(R.string.warning_channel), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = context.getString(R.string.warning_channel_description)
             })
     }
     companion object {

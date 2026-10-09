@@ -16,7 +16,13 @@ object WarningParser {
         fun required(name: String) = value(name).also { require(it.isNotEmpty()) { "CAP: $name puuttuu" } }
         fun descendants(name: String, ns: String): List<Node> = children.flatMap { (if (it.name == name && it.ns == ns) listOf(it) else emptyList()) + it.descendants(name, ns) }
     }
-    fun parse(body: String, fetchedAt: Instant): WarningSnapshot {
+    private fun capLanguage(language: AppLanguage) = when (language) {
+        AppLanguage.FI -> "fi-FI"; AppLanguage.SV -> "sv-FI"; AppLanguage.EN -> "en-GB"
+    }
+
+    /** The fat feed carries every language; pick the app's, then Finnish, then anything. */
+    fun parse(body: String, fetchedAt: Instant, language: AppLanguage): WarningSnapshot {
+        val wanted = capLanguage(language)
         require(body.length <= 16_000_000)
         val parser = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }.newPullParser()
         parser.setInput(StringReader(body))
@@ -50,7 +56,9 @@ object WarningParser {
         val warnings = alerts.mapNotNull { alert ->
             if (alert.value("msgType") !in setOf("Alert", "Update") || alert.value("sender") + "|" + alert.value("identifier") in replaced) return@mapNotNull null
             val infos = alert.all("info")
-            val info = infos.firstOrNull { it.value("language").equals("fi-FI", true) }
+            val info = infos.firstOrNull { it.value("language").equals(wanted, true) }
+                ?: infos.firstOrNull { it.value("language").startsWith(language.tag, true) }
+                ?: infos.firstOrNull { it.value("language").equals("fi-FI", true) }
                 ?: infos.firstOrNull { it.value("language").startsWith("en", true) } ?: infos.firstOrNull()
                 ?: error("CAP info puuttuu")
             val level = when (info.value("severity")) {
