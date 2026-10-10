@@ -252,30 +252,39 @@ class LocalizationTest {
         var scale by mutableFloatStateOf(1f)
         compose.setContent {
             val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+            // A font size change recreates the activity on a phone; recreate the screen here too.
+            key(scale) { CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 AppTheme(dynamic = false) { AppScreen(PreviewData.state, true, {}, {}, {}, {}, {}, {}) }
-            }
+            } }
         }
-        for (size in listOf(1f, 1.25f)) {
+        val tags = listOf("tab-weather", "tab-prices", "tab-warnings")
+        for (size in listOf(1f, 1.25f, 1.5f, 2f)) {
             compose.runOnIdle { scale = size }
             compose.onNode(hasScrollAction()).performScrollToNode(hasText(tiles.first()))
             tiles.forEach { compose.onNodeWithText(it, useUnmergedTree = true).assertTextFits(singleLine = false) }
-            tabs.forEachIndexed { index, label ->
-                compose.onNodeWithTag(listOf("tab-weather", "tab-prices", "tab-warnings")[index]).performClick()
-                compose.onNodeWithText(label, useUnmergedTree = true).assertTextFits()
+            // Every label, active or idle, stays whole whichever tab is selected.
+            tags.forEach { selected ->
+                compose.onNodeWithTag(selected).performClick()
+                tabs.forEachIndexed { index, label ->
+                    compose.onNode(hasText(label) and hasAnyAncestor(hasTestTag(tags[index])), useUnmergedTree = true).assertTextFits()
+                }
             }
-            compose.onNodeWithTag("tab-weather").performClick()
         }
     }
 
     @Test
+    @Config(qualifiers = "fi-rFI-w320dp-h891dp-xhdpi")
+    fun `narrow Finnish weather tiles and tab labels stay whole`() =
+        narrowLabelsFit(listOf("Tuuli · m/s", "Sade · mm", "Sateen riski"), listOf("Sää", "Sähkö", "Varoitukset"))
+
+    @Test
     @Config(qualifiers = "sv-rFI-w320dp-h891dp-xhdpi")
-    fun `narrow Swedish weather tiles and active tab labels stay whole`() =
+    fun `narrow Swedish weather tiles and tab labels stay whole`() =
         narrowLabelsFit(listOf("Vind · m/s", "Regn · mm", "Risk för regn"), listOf("Väder", "Elpris", "Varningar"))
 
     @Test
     @Config(qualifiers = "en-rGB-w320dp-h891dp-xhdpi")
-    fun `narrow English weather tiles and active tab labels stay whole`() =
+    fun `narrow English weather tiles and tab labels stay whole`() =
         narrowLabelsFit(listOf("Wind · m/s", "Rain · mm", "Chance of rain"), listOf("Weather", "Prices", "Warnings"))
 
     @Test fun `English phone sees English clock punctuation`() {

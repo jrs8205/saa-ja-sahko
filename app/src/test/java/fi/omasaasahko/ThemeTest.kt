@@ -37,6 +37,8 @@ import fi.omasaasahko.ui.symbolColors
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import fi.omasaasahko.domain.WeatherSource
@@ -249,6 +251,26 @@ class ThemeTest {
         assertEquals(1, opened)
         compose.onNodeWithText("Uusimaa").assertHasNoClickAction()
         compose.onNodeWithTag("row").assertIsOff().performClick().assertIsOn()
+    }
+
+    @Test fun `text follows the phone font size up to 150 percent and no further`() {
+        var scale by mutableFloatStateOf(1f)
+        var seen = 0f
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                AppTheme(dynamic = false) {
+                    seen = LocalDensity.current.fontScale
+                    androidx.compose.material3.Text("Tuntuu kuin 14,7°", Modifier.testTag("sample"), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
+        fun height(size: Float): Int { compose.runOnIdle { scale = size }; return compose.onNodeWithTag("sample").fetchSemanticsNode().size.height }
+        val normal = height(1f)
+        val small = height(0.85f); assertEquals(0.85f, seen)
+        val large = height(1.5f); assertEquals(1.5f, seen)
+        assertEquals(large, height(2f)); assertEquals(1.5f, seen)
+        assertTrue("$small < $normal < $large", small < normal && normal < large)
     }
 }
 

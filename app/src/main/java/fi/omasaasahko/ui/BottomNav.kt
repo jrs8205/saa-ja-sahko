@@ -72,13 +72,13 @@ fun FloatingNavBar(selected: AppTab, tint: NavTint, onSelect: (AppTab) -> Unit, 
             if (active) Row(item, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically) {
                 Icon(painterResource(tab.icon), contentDescription = null, tint = content)
-                // Longer Swedish and English labels shrink a little on narrow screens instead of ellipsizing.
+                // Long labels on narrow screens shrink, at most back to their default-size minimum, instead of ellipsizing.
                 Text(stringResource(tab.label), style = MaterialTheme.typography.labelLarge, color = content, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 14.sp))
+                    autoSize = TextAutoSize.StepBased(minFontSize = with(LocalDensity.current) { 10.dp.toSp() }, maxFontSize = 14.sp))
             } else Column(item, verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(painterResource(tab.icon), contentDescription = null, tint = content)
                 Text(stringResource(tab.label), style = MaterialTheme.typography.labelSmall, color = content, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 11.sp))
+                    autoSize = TextAutoSize.StepBased(minFontSize = with(LocalDensity.current) { 9.dp.toSp() }, maxFontSize = 11.sp))
             }
         }
     }

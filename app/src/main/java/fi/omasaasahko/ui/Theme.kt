@@ -6,12 +6,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
 import fi.omasaasahko.R
 import fi.omasaasahko.domain.AppLanguage
@@ -69,13 +71,18 @@ private val AppTypography = Typography(
     labelLarge = body(FontWeight.Bold, 14, 20), labelMedium = body(FontWeight.SemiBold, 12, 16), labelSmall = body(FontWeight.SemiBold, 11, 16),
 )
 
+private const val MaxFontScale = 1.5f
+
 @Composable
 fun AppTheme(dark: Boolean = isSystemInDarkTheme(), dynamic: Boolean = true, content: @Composable () -> Unit) {
     val context = LocalContext.current
     val colors = if (dynamic) {
         if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (dark) Dark else Light
-    CompositionLocalProvider(LocalAppLanguage provides AppLanguage.of(context)) {
+    val density = LocalDensity.current
+    // Text follows the phone setting up to 150 %; the default Density keeps Android's non-linear scaling.
+    val capped = if (density.fontScale > MaxFontScale) Density(density.density, MaxFontScale) else density
+    CompositionLocalProvider(LocalAppLanguage provides AppLanguage.of(context), LocalDensity provides capped) {
         MaterialTheme(colorScheme = colors.readable(), typography = AppTypography, content = content)
     }
 }
