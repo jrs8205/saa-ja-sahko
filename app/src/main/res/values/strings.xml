@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Weather &amp; Spot Power</string>
+    <string name="app_name">Weather &amp; Spot Prices</string>
     <!-- Tells the code which language the resources resolved to. -->
     <string name="language_tag">en</string>
     <string name="tab_weather">Weather</string>

@@ -1,6 +1,6 @@
 # Kielet: suomi, ruotsi ja englanti
 
-Sovellus näkyy puhelimen kielen mukaan suomeksi, ruotsiksi tai englanniksi. Suomi ja ruotsi näytetään omalla kielellään, kaikki muut kielet englanniksi. Androidin sovelluskohtainen kielivalinta (Asetukset → Sovellukset → Sää & Sähkö → Kieli) ohittaa puhelimen kielen.
+Sovellus näkyy puhelimen kielen mukaan suomeksi, ruotsiksi tai englanniksi. Suomi ja ruotsi näytetään omalla kielellään, kaikki muut kielet englanniksi. Androidin sovelluskohtainen kielivalinta (Asetukset → Sovellukset → Sää & Sähkö → Kieli) ohittaa puhelimen kielen. Sovelluksen nimi on kielen mukaan Sää & Sähkö, Väder & Börsel tai Weather & Spot Prices.
 
 ## Rakenne
 
