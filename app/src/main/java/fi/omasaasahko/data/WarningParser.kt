@@ -21,7 +21,7 @@ object WarningParser {
     }
 
     /** A translated block is usable only with the structure the notification logic needs. */
-    private fun Node.complete() = value("severity").isNotEmpty() && value("onset").isNotEmpty() && value("expires").isNotEmpty() &&
+    private fun Node.complete() = listOf("severity", "event", "description", "onset", "expires").all { value(it).isNotEmpty() } &&
         all("area").isNotEmpty() && all("area").all { area -> area.all("polygon").isNotEmpty() && area.value("areaDesc").isNotEmpty() }
 
     /** The fat feed carries every language; pick the app's complete block, then Finnish, then anything. */

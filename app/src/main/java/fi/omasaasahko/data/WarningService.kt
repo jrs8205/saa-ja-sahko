@@ -176,7 +176,9 @@ class WarningService(context: Context, private val clock: Clock = Clock.systemUT
             val title = "${context.getString(warning.level.labelRes())}: ${warning.event}"
             val text = "${place.displayName(context)} · ${updatedLabel(warning.onset, language)}–${updatedLabel(warning.expires, language)}\n${warning.description}"
             val previous = existing[key]?.notification
-            if (!kept.has(key) || (previous != null && previous.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() != text)) {
+            val changed = previous != null && (previous.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() != title ||
+                previous.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() != text)
+            if (!kept.has(key) || changed) {
                 manager.notify(key, 1, notification(title, text).setOnlyAlertOnce(kept.has(key))
                     .setTimeoutAfter((warning.expires.toEpochMilli() - now.toEpochMilli()).coerceAtLeast(1)).build())
                 kept.put(key, warning.expires.epochSecond)

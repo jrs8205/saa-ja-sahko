@@ -11,6 +11,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.Instant
@@ -71,6 +72,31 @@ class WarningsTest {
         service.notifyNew(WarningParser.parse(feed(swedishAlert()), now, AppLanguage.FI), now)
         assertEquals(tag, manager.activeNotifications.single().tag)
         assertTrue(text().contains("Rankkaa sadetta."))
+    }
+
+    @Test fun `a translated block without event or description falls back to Finnish instead of failing the feed`() {
+        listOf("<event>Regnvarning</event>", "<description>Kraftigt regn.</description>").forEach { field ->
+            val snapshot = WarningParser.parse(feed(swedishAlert().replace(field, "")), now, AppLanguage.SV)
+            assertFalse(field, snapshot.partial)
+            assertEquals(field, "Sadevaroitus", snapshot.warnings.single().event)
+            assertEquals(field, "Rankkaa sadetta.", snapshot.warnings.single().description)
+        }
+    }
+
+    @Test fun `a language change that alters only the title updates the notification quietly`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_COARSE_LOCATION)
+        app.getSharedPreferences("warnings", Context.MODE_PRIVATE).edit().clear().putBoolean("enabled", true).commit()
+        val service = WarningService(app); service.savePlace(vantaa)
+        val manager = app.getSystemService(NotificationManager::class.java)
+        fun posted() = manager.activeNotifications.single().notification
+        RuntimeEnvironment.setQualifiers("fi")
+        service.notifyNew(WarningParser.parse(feed(alert()), now, AppLanguage.FI), now)
+        assertEquals("Keltainen: Sadevaroitus", posted().extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString())
+        RuntimeEnvironment.setQualifiers("sv")
+        service.notifyNew(WarningParser.parse(feed(alert()), now, AppLanguage.SV), now)
+        assertEquals("Gul: Sadevaroitus", posted().extras.getCharSequence(android.app.Notification.EXTRA_TITLE).toString())
+        assertTrue(posted().flags and android.app.Notification.FLAG_ONLY_ALERT_ONCE != 0)
     }
 
     @Test fun `polygon selection follows location and includes every future day`() {
