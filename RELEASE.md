@@ -1,3 +1,18 @@
+# Sää & Sähkö 0.4.0
+
+Julkaisu 10.10.2026: sovellus suomeksi, ruotsiksi ja englanniksi. Versio **0.4.0**, versionCode **9**, paketti `fi.omasaasahko`, Android 13+ (API 33), kohde Android 17 (API 37).
+
+- Kieli seuraa puhelimen kieltä: suomi ja ruotsi omalla kielellään, kaikki muut kielet englanniksi. Androidin sovelluskohtainen kielivalinta ohittaa puhelimen kielen. Sovelluksen nimi on Sää & Sähkö, Väder & Börsel tai Weather & Spot Prices.
+- Kellonajat, päivämäärät ja desimaalierotin seuraavat kieltä. FMI:n varoitustekstit, varoitusilmoitukset ja Maanmittauslaitoksen paikannimet haetaan sovelluksen kielellä; puuttuvan tai vajaan käännöksen tilalla näytetään suomenkielinen teksti.
+- Kielen vaihto päivittää näkyvän varoitusilmoituksen hiljaisesti. Päivitettäessä 0.3.1:stä voimassa olevat varoitukset ilmoitetaan kerran uudelleen, koska ilmoituksen tunniste laskettiin uudella tavalla.
+- Tekstikoko seuraa puhelimen asetusta 150 %:iin asti; suuremmalla asetuksella sovellus käyttää 150 %:a. Alapalkin nimet mahtuvat kokonaan myös 320 dp:n näytöllä.
+- Ennen julkaisua kaksi erillistä katselmointia; löydökset korjattu testit edellä. `validate.ps1`: 177 testiä, 0 virhettä, 7 ohitettua verkkotestiä, lint 0 virhettä.
+- Release rakennettu `build-release.ps1`-skriptillä: R8, APK Signature Scheme v3, sama julkaisuvarmenne `C7:0B:B7:BE:…:FF:96:5E`. Symbolikartta talletettu varmuuskopiokansioon `mapping-0.4.0-9/`.
+- Tiedosto projektin juuressa: `Saa-Sahko-0.4.0-release.apk`, 3,2 MB, SHA-256 `C3FB3EA3FAE3FB380AF27DC3CA29266AFDDAF6ECD20ED5E91545EF02D52E9118`.
+- [GitHub-julkaisu v0.4.0](https://github.com/jrs8205/saa-ja-sahko/releases/tag/v0.4.0) sisältää APK:n, julkisen varmenteen ja RELEASE-INFO.txt-tiedoston. Puhelinasennukset tehdään käsin.
+
+---
+
 # Sää & Sähkö 0.3.1
 
 Korjausjulkaisu 9.10.2026: valittu paikka näkyy sääruudun otsikossa. Versio **0.3.1**, versionCode **8**, paketti `fi.omasaasahko`, muuten kuten 0.3.0.

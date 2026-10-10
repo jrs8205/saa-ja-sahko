@@ -22,8 +22,8 @@ android {
         applicationId = "fi.omasaasahko"
         minSdk = 33
         targetSdk = 37
-        versionCode = 8
-        versionName = "0.3.1"
+        versionCode = 9
+        versionName = "0.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "MML_API_KEY", "\"$mmlApiKey\"")
     }
