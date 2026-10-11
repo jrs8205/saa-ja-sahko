@@ -4,6 +4,8 @@ Android-sovellus, joka näyttää Ilmatieteen laitoksen ja Open-Meteon sääennu
 
 **Vaatimukset:** Android 13 tai uudempi (API 33). Kohdealusta Android 17 (API 37). Versio 0.3.0.
 
+**Lataus:** uusin APK [Releases-sivulta](https://github.com/jrs8205/saa-ja-sahko/releases/latest); kaikki julkaisut löytyvät myös [SourceForgesta](https://sourceforge.net/projects/saa-ja-sahko/).
+
 **Rekisteröity Googlelle.** Paketin nimi ja allekirjoitusavain on rekisteröity Googlen Android Developer Consoleen, joten sovellus asentuu jatkossakin normaalisti, kun Googlen uudet [sivulataussäännöt](https://developer.android.com/developer-verification) tulevat voimaan.
 
 ## Ominaisuudet
