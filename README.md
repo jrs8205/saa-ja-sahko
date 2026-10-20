@@ -55,6 +55,13 @@ $env:SAA_LIVE_API_TESTS = '1'
 
 Tarkemmat kuvaukset: [sään ja varoitusten varmennus](docs/WEATHER-VERIFICATION.md), [hintavarmennus](docs/PRICE-VERIFICATION.md), [käyttöliittymä](docs/UI-EXPRESSIVE.md) ja [paikannus](docs/LOCATION-0.2.2.md).
 
+## Tue kehitystä
+
+Jos sovelluksesta on sinulle hyötyä, voit tukea sen kehitystä:
+
+- [GitHub Sponsors](https://github.com/sponsors/jrs8205) – kuukausittain tai kertaluontoisesti
+- [Buy Me a Coffee](https://buymeacoffee.com/jrs8205) – ilman rekisteröitymistä
+
 ## Lisenssi
 
 [Apache License 2.0](LICENSE).
